@@ -1,12 +1,20 @@
 # RADIO — Kernel delivery roadmap
 
-Status: proposed engineering sequence, not a protocol specification or approved release. Baseline: `radio-organized.zip`, 2026-11-25. Read [VISION.md](VISION.md) and [SPEC.md](SPEC.md) first. SPEC §15 is the source of target requirements; this file owns only work order, dependencies and acceptance. Decisions below are gates, not decisions already taken. PR identifiers are roadmap identifiers, not GitHub PR numbers.
+Status: architect-directed rigid-first engineering sequence (2026-11-25), not a protocol specification or approved release. Baseline: `radio-organized.zip`, 2026-11-25. Read [VISION.md](VISION.md) and [SPEC.md](SPEC.md) first. SPEC §15 is the source of target requirements; this file owns only work order, dependencies and acceptance. Decisions below are gates, not decisions already taken. PR identifiers are roadmap identifiers, not GitHub PR numbers.
 
 ## Delivery boundary
 
 Build the smallest common kernel for forming verifiable trajectories: free JSON -> deterministic recognition -> RUN -> signed object -> durable trajectory -> independent listener -> next JSON. One runtime-neutral TypeScript evaluator, one receipt family with explicit versions, one logical machine per community, no application daemon in the hosted path. Supabase Auth is the native OAuth authority; Postgres, Realtime and ephemeral Edge Functions supply managed persistence, broadcast and computation. Participants own their orchestration. The v1 local HTTP/SSE reference remains executable. No PATT implementation, financial product, general workflow manager, custom identity provider, arbitrary Skill-script execution, blockchain, microservice fleet or multi-region deployment is required.
 
 Scale belongs to the elastic substrate; protocol identity belongs to the rigid core (contracts, specified mechanisms, vectors, conformance and CI gates). Supabase is the chosen native materialization at the intended scale. Prefer its existing capabilities to custom infrastructure; do not build alternative providers or a portability framework. Avoid global serialization where correctness does not require it; enforce shared uniqueness atomically. Independent communities remain possible; global multi-tenant operation is not claimed by the single-community release.
+
+### Two delivery cycles
+
+**Cycle I — Rigid core (M0–M2).** Complete the provider-independent semantic contract, executable reference, portable vectors, mechanism contracts and conformance gates. Freeze the first RADIO protocol release, 1.0, at the end of M2 after explicit review. This is a protocol release, not a hosted service release; it does not rename the existing versioned objects (process@1, process-type@1, receipt@1, receipt@2, etc.).
+
+**Cycle II — Elastic substrate (M3–M6).** Materialize the frozen contract natively in Supabase, using the existing research matrix as an implementation aid, not normative law. No new hosted implementation or provider-specific optimization before the freeze. Preserve the working hosted preview, CI/CD configuration and existing PostgreSQL regression tests. Read-only research can inform contract decisions, but not silently define their meaning. Supabase-specific integration gates become mandatory in this cycle.
+
+If materialization exposes an actual deficiency in the frozen contract, record it, review the correction, and version incompatible behavior with new vectors; never weaken an invariant or rewrite frozen expected results to accommodate infrastructure. The location of enforcement can change without changing the semantics.
 
 ## Working agreement
 
@@ -15,7 +23,7 @@ Scale belongs to the elastic substrate; protocol identity belongs to the rigid c
 - For semantic changes, update the relevant part of SPEC in the same PR before implementation. Resolve explicit decisions with the architect first. Version incompatibilities and retain historical vectors; do not change tests just to pass. A failing baseline is investigated, not silently waived.
 - Every code PR runs build and `npm test`; if a stage is blocked, run the remaining stages independently and report exact results. Add a targeted regression or conformance test for each new invariant. Infrastructure PRs require actual service tests, not only doubles. Never substitute a mock for an acceptance gate.
 - No publish, merge, remote configuration or deployment without explicit approval. Disposable project selection is a decision, not implicit permission. No production credentials in fixtures, archives or logs.
-- Work in order of dependencies, with two complementary kinds of work: rigid-core proof and native materialization. For every PR identify the invariant, its portable evidence, and, where applicable, the actual native enforcement boundary. Prepare native mappings as soon as their contracts are stable; merge only in dependency order and stop at failed gates. Keep the local reference sufficient for conformance, not a second production backend. No separate document per PR.
+- Work in order of dependencies. Complete Cycle I and obtain freeze approval before Cycle II implementation. For each rigid-core PR identify the invariant, mechanism contract, portable evidence and trust boundary; for each substrate PR map that invariant to the smallest actual native enforcement mechanism and test it at its real boundary. Keep the reference sufficient for conformance, not a second production backend. No separate document per PR.
 
 ## Baseline inventory
 
@@ -49,7 +57,7 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 
 ### Cross-cutting delivery gate (before PR-04)
 - CI/CD is part of the existing PR-03 verification checkpoint, not a new kernel milestone. GitHub-hosted CI runs all current executable tests, verifies package identity and exercises the real PostgreSQL migration path on every PR and main push; required status checks must be enabled in repository settings before relying on enforcement.
-- Staging uses an explicit main revision and the artifact produced by the same CI run. Plan mode previews migrations; apply requires approval of the staging project and hosted API (M3), scoped credentials and environment protection. M2/M3/M4/M5 add actual Edge/PostgREST/Auth/Realtime/MCP integration checks; M6 adds the production promotion gate. A green reference CI is not authorization to deploy the v1 preview.
+- Staging uses an explicit main revision and the artifact produced by the same CI run. Plan mode previews migrations; apply requires approval of the staging project and hosted API (M3), scoped credentials and environment protection. M3/M4/M5 add actual Edge/PostgREST/Auth/Realtime/MCP integration checks after the 1.0 freeze; M6 adds the production promotion gate. A green reference CI is not authorization to deploy the v1 preview.
 - No project creation, automatic production deployment, persistent self-hosted runner or additional application server. Release provenance is commit + package hashes within the trusted GitHub artifact channel, not an independent signature.
 
 ## M1 — The Machine
@@ -70,14 +78,14 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 
 ## M2 — The Trajectory
 
-Exit: multiple process instances progress independently, with receipts as the objects, portable evidence of causal history and uniqueness after restart. The same guarantees are materialized in native PostgreSQL transactions and ephemeral execution (PR-10/11). Real Edge/Postgres acceptance is required; use an explicitly approved isolated environment, not a production deployment. The local demonstration is evidence, not a second product.
+Exit: multiple process instances progress independently, with receipts as the objects, portable evidence of causal history and uniqueness after restart. Provider-independent boundary contracts are complete for the declared 1.0 scope. The rigid-core release has passed all required reference and CI gates and is explicitly approved for freeze. Native PostgreSQL/Edge materialization begins in M3, not as an M2 exit requirement.
 
 ### PR-06 — Instance formation and continuation
 - [ ] Depends on PR-05. Connect first and successor RUNs to instance identity and eligibility in the reference ledger. Use explicit ancestry, not in-memory conversational state.
 - Acceptance: two instances of one law; cannot substitute one instance's receipts for another; retry and invalid successor cases. Nonlinear trajectories permitted only as specified.
 
 ### PR-07 — Atomic uniqueness and retry semantics
-- [ ] Depends on PR-06. Implement contract-scoped idempotency and once claims in the reference commit boundary; no automatic external reactions for target laws. Specify the native PostgreSQL uniqueness and transaction mapping alongside these invariants so PR-10 can be prepared immediately, without inventing a second authoritative state.
+- [ ] Depends on PR-06. Implement contract-scoped idempotency and once claims in the reference commit boundary; no automatic external reactions for target laws. Define atomicity and conflict behavior independently of physical storage; PR-10 will map these guarantees to native PostgreSQL after freeze.
 - Acceptance: competing claims produce only permitted effects; failed activation consumes nothing; replay returns the same result; failed persistence emits nothing and creates no phantom claim.
 
 ### PR-08 — Portable trajectory and independent verification
@@ -85,27 +93,37 @@ Exit: multiple process instances progress independently, with receipts as the ob
 - Acceptance: offline reproduction, tampered/missing evidence refusal, swapped law/RUN/instance failure, equal projection with distinct histories, explicit limits of individual verification versus ledger completeness.
 
 ### PR-09 — Local continuity demonstration
-- [ ] Depends on PR-08. Minimally extend the existing external-listener demonstration and local HTTP/SSE reference to prove target continuity without removing legacy v1 behavior. Do not extend the reference into a separate hosted backend, or delay native schema/Edge preparation for local-only polish.
+- [ ] Depends on PR-08. Minimally extend the existing external-listener demonstration and local HTTP/SSE reference to prove target continuity without removing legacy v1 behavior. Do not extend the reference into a separate hosted backend or build alternative infrastructure providers.
 - Acceptance: separate participants with different identities receive same signed header; independent next submission; restart machine and replace listener, recover history, continue same instance and verify offline. No reaction worker in the target path.
 
+### PR-09A — Rigid boundary contracts and conformance
+
+- [ ] Depends on PR-08/09. Review the unresolved items in SPEC §15.6 and the interface-facing acceptance requirements of PR-13–19. Close the provider-independent semantics in the existing SPEC, not a new specification. Make explicit: admitted identity and delegation versus claimed input; publication and read authority; trust/key boundaries and privacy; authoritative commit and retry observations; committed-only notification, tuning, history completeness scope, reconnect and deduplication; stateless discovery/submission/evidence behavior. Define the guarantees and failure modes, not a particular SQL schema, OAuth product, WebSocket or MCP SDK implementation.
+- Acceptance: normative behavior and portable contract scenarios for allowed/denied operations, revocation/freshness bounds within declared scope, spoofed identity, private evidence, failed commits, late arrivals and observer replacement, duplicate events and stateless retries. Exercise those mechanisms in the reference where applicable; distinguish simulated observations from real hosted evidence. Resolve or explicitly exclude every open semantic decision relevant to 1.0 (including cross-community, key rotation/erasure, external effects and optional Skill/MAP contracts). No invented provider or UI.
+
+### PR-09B — RADIO Protocol 1.0 freeze
+
+- [ ] Depends on PR-09A and all earlier rigid-core gates. Review the complete SPEC for consistent normative terminology, version dispatch, bounded behavior, reason codes, evidence and explicit trust assumptions. Preserve the historical versions; the protocol release number is separate from object format versions. Curate a versioned conformance corpus with independently specified expectations, cryptographic/encoding fixtures, negative/adversarial cases, targeted mutations and complete trajectories. Retain historical vectors without modification.
+- Acceptance: reproducible clean build; required Node, Bun, Chromium and mutation checks; portable bundle replay; forced reference concurrency, rollback and replacement scenarios; deterministic results across runtime and ordering changes; existing PostgreSQL regression gate for the preserved preview; actual GitHub Actions execution and required checks verified, no unexplained skips or failures. Review the declared scope, independent-oracle limitations and outstanding hosted-only gates. Archive the exact reviewed commit, SPEC, vector hashes, tool lockfile and test results in Git; tag the protocol release only after explicit architect approval. No hosted deployment or assertion of hosted security/scale/conformance at this gate.
+
+## M3 — The Substrate
+
+Exit: the approved isolated Supabase materialization implements the frozen 1.0 contract with real transactional persistence, ephemeral execution, native identity, delegated authorization and privacy tests. Hosted staging writes remain gated until explicit project and hosted-contract approval; production remains separate. No native service is replaced by a custom equivalent.
+
 ### PR-10 — Hosted transaction schema and CAS
-- [ ] Depends on PR-07/08; preparation starts once PR-07's transaction invariants are stable, merge after PR-09 proves reference continuity. Adapt existing migration/RPCs to the approved new semantic contract; verify migration history before editing or adding a migration. Make native constraints, transactions, CAS and RLS the enforcement boundary; retain only needed indexes. Decide and remove or retain reserved outbox/reaction_jobs with architect approval, no community reaction worker.
+- [ ] Depends on the approved PR-09B freeze; implement against the frozen transaction and evidence contracts. Adapt existing migration/RPCs to the approved new semantic contract; verify migration history before editing or adding a migration. Make native constraints, transactions, CAS and RLS the enforcement boundary; retain only needed indexes. Decide and remove or retain reserved outbox/reaction_jobs with architect approval, no community reaction worker.
 - Acceptance: real PostgreSQL concurrent idempotency/once/instance tests; rollback on conflict; immutable CAS; publication snapshot races; real RLS tests for direct access and private evidence; no UUID in broadcast rows. No evaluator in SQL.
 
 ### PR-11 — Ephemeral publish and submit
 - [ ] Depends on PR-10. Reuse staged TypeScript evaluator in existing Edge Functions and commit adapter. Define root response and version compatibility. Re-evaluate on transactional conflict; bound retries. Decide citation bundle transport: retain server-resolved citations for initial path unless approved otherwise.
 - Acceptance: actual Deno/Edge runtime against disposable Postgres; identical local/hosted results for fixed inputs/context; no warm-worker dependency; no duplicate effects across concurrent invocations; invalid/failed writes never broadcast.
 
-## M3 — The Substrate
-
-Exit: the approved disposable Supabase materialization has real native identity, delegated authorization and privacy tests on the transaction/execution foundation of M2. Hosted staging writes remain gated until explicit project and hosted-contract approval; production remains separate. No native service is replaced by a custom equivalent.
-
 ### PR-12 — Native OAuth flow and consent
-- [ ] Depends on PR-00; prepare native configuration and OAuth interoperability in parallel with M1/M2, without remote changes until project approval; merge after PR-11. Verify current Supabase docs/config; use native OAuth code + PKCE, metadata and token lifecycle; minimal static consent/login surface, no application backend or separate accounts system.
+- [ ] Depends on PR-09B; prepare native configuration and OAuth interoperability in Cycle II, without remote changes until project approval; merge after PR-11. Verify current Supabase docs/config; use native OAuth code + PKCE, metadata and token lifecycle; minimal static consent/login surface, no application backend or separate accounts system.
 - Acceptance: real approved test OAuth client can sign in, consent/deny, obtain and refresh token; invalid/expired credentials refused; machine key distinct from issuer key. Test callback and consent binding. No production deployment.
 
 ### PR-13 — Delegation and access boundary
-- [ ] Depends on PR-11/12. Specify and enforce caller/client authorization, admin publication, community/authority scope, revocation and RLS, using verified identity not tuple claims. Keep initial deployment single-community unless architect approves otherwise.
+- [ ] Depends on PR-11/12. Materialize and enforce the frozen caller/client authorization contract, admin publication, community/authority scope, revocation and RLS, using verified identity not tuple claims. Keep initial deployment single-community unless architect approves otherwise.
 - Acceptance: real client-specific positive/negative tests, wrong issuer/audience and unauthorized client, revoked access under declared freshness bound, spoofed `who`, private evidence denied to others, anonymous/public policy per SPEC. Document key provisioning and operator trust; do not invent a rotation protocol.
 
 ## M4 — The Radio
@@ -117,7 +135,7 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 - Acceptance: two independent authenticated/authorized listeners see the same committed object; no event for rolled-back commit; unauthorized subscription and private data leak tests; no bespoke WebSocket server.
 
 ### PR-15 — Durable history and reconnect contract
-- [ ] Depends on PR-10/14. Resolve late commits, cursor semantics and live/catch-up overlap before implementing. Sequence allocation is not commit order; do not promise `seq > cursor` alone. Pick minimal correctness-preserving mechanism with architect approval.
+- [ ] Depends on PR-10/14. Materialize the frozen history/reconnect guarantees; resolve physical cursor design and live/catch-up overlap before implementing. Sequence allocation is not commit order; do not promise `seq > cursor` alone. Pick minimal correctness-preserving mechanism with architect approval.
 - Acceptance: forced out-of-order transaction commits, pagination with concurrent writes, disconnect/reconnect, duplicate delivery and listener replacement. Every accessible committed receipt recoverable under declared cursor contract; dedupe by receipt ID. No listener registry or per-agent workflow in machine.
 
 ### PR-16 — Direct participant client
@@ -129,7 +147,7 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 Exit: a real OAuth-authorized MCP client discovers types and submits free JSON to the same hosted RUN boundary, with independent requests. No resident application server.
 
 ### PR-17 — Stateless MCP profile and discovery
-- [ ] Depends on PR-02/13. Verify published MCP revision (target inspiration 2026-07-28) and actual client interoperability before fixing the profile; specify metadata, discovery/cache, auth resource metadata, version errors, supported capabilities and explicit context. Discovery excludes mutable head. Implement minimal ephemeral MCP endpoint.
+- [ ] Depends on PR-09B/13. Verify published MCP revision (target inspiration 2026-07-28) and actual client interoperability before fixing the profile; specify metadata, discovery/cache, auth resource metadata, version errors, supported capabilities and explicit context. Discovery excludes mutable head. Implement minimal ephemeral MCP endpoint.
 - Acceptance: protocol fixtures plus real compatible client discovery; repeat against fresh workers; stable ordering/cache keys; malformed/unsupported messages and credentials rejected. No invented MAP wire contract or required session state.
 
 ### PR-18 — MCP submission and evidence
@@ -137,7 +155,7 @@ Exit: a real OAuth-authorized MCP client discovers types and submits free JSON t
 - Acceptance: real authenticated MCP client obtains the same receipt semantics as API, retries safely, follows citations and verifies a returned object; stateless continuation and unauthorized actions tested. No automatic orchestration tools.
 
 ### PR-19 — Process Type distribution / Agent Skills interoperability
-- [ ] Depends on PR-03/17. Decision gate: approve optional standard `SKILL.md` + canonical JSON law, or narrower distribution format. A Skill is instruction, not authority; no ZIP loader or scripts in evaluator. Add a minimal example and discovery linkage after approval. MAP integration only to supplied contract; otherwise demonstrate translation without claiming MAP compliance.
+- [ ] Depends on PR-09B/17. Within the frozen semantic boundary, decision gate: approve optional standard `SKILL.md` + canonical JSON law, or narrower distribution format. A Skill is instruction, not authority; no ZIP loader or scripts in evaluator. Add a minimal example and discovery linkage after approval. MAP integration only to supplied contract; otherwise demonstrate translation without claiming MAP compliance.
 - Acceptance: agent can locate exact law and learn how to form input; package/instruction edits cannot change law identity or authorize actions; machine works with law JSON alone. Optional wrapper not needed for RUN correctness.
 
 ## M6 — The Community
@@ -164,6 +182,6 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 
 ## Suggested merge order
 
-`00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
+`00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 09A -> 09B [1.0 FREEZE] -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
 
-Workstreams overlap without renumbering or changing semantic dependencies: PR-10 native schema preparation starts after PR-07 stabilizes, alongside PR-08/09; PR-11 preparation follows the stable transaction contract. PR-12 native OAuth preparation, PR-17 protocol research and PR-19 format comparison may overlap earlier work; their implementation/merge gates still apply. The existing CI/CD gate ties both kinds of work to the same conformance evidence. Measure native limits as components become testable, not only in PR-21. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review and merge PR-03 (GitHub #5), then implement PR-04 under the existing recognition contract. M0 is complete.
+The two new review gates (09A/09B) preserve every existing numbered PR and acceptance criterion. No native implementation overlaps Cycle I. After the approved freeze, native work can overlap where its dependencies allow. CI/CD ties the materialization to frozen conformance evidence. Measure native limits as components become testable in Cycle II, not only in PR-21. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review and merge PR-03 (GitHub #5), then implement PR-04 under the existing recognition contract. M0 is complete.
