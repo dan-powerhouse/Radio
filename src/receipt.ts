@@ -52,6 +52,10 @@ export const MAX_DEPTH = 64;
 export const WHEN_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const isObj = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 
+// JCS commits to keys, not insertion order; every observable map traversal
+// must use the same UTF-16 ordering as JCS.
+const ordered = <T>(o: Record<string, T>): [string, T][] => Object.keys(o).sort().map(k => [k, o[k]]);
+
 function typeOk(v: unknown, t: FieldType): boolean {
   switch (t) {
     case "date": return isDate(v);
@@ -68,7 +72,7 @@ export function activationGaps(process: Process, tuple: unknown): string[] {
   const gaps: string[] = [];
   if (tuple.this !== process.id) gaps.push(`this is ${canonicalize(tuple.this ?? null)}; this process listens on "${process.id}"`);
   if (tuple.did !== process.accepts.did) gaps.push(`did is ${canonicalize(tuple.did ?? null)}; this process accepts "${process.accepts.did}"`);
-  for (const [path, t] of Object.entries(process.requires)) {
+  for (const [path, t] of ordered(process.requires)) {
     const v = lookup(tuple, path);
     if (v === undefined) gaps.push(`${path} is missing (${t})`);
     else if (!typeOk(v, t)) gaps.push(`${path} is not a ${t}`);
@@ -83,7 +87,7 @@ export async function resolveCites(process: Process, tuple: unknown, opts: RunOp
   const gaps: string[] = [], cited: Record<string, Cited> = {};
   const given = isObj(tuple) && isObj(tuple.cites) ? tuple.cites : {};
   const spent = new Set(opts.spent ?? []);
-  for (const [slot, rule] of Object.entries(process.cites ?? {})) {
+  for (const [slot, rule] of ordered(process.cites ?? {})) {
     const id = given[slot];
     const at = `cites.${slot}`;
     if (id === undefined) { if (!rule.optional) gaps.push(`${at} is missing: cite a receipt on ${rule.frequency}`); continue; }
@@ -147,7 +151,7 @@ export async function run(process: Process | null, tuple: unknown, opts: RunOpti
     if (status === "ok" && process.grants) {
       try {
         grants = {};
-        for (const [k, e] of Object.entries(process.grants)) grants[k] = evaluate(e, scope, budget);
+        for (const [k, e] of ordered(process.grants)) grants[k] = evaluate(e, scope, budget);
         canonicalize(grants);
       } catch (e) {
         grants = null;

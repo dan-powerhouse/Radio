@@ -1,6 +1,8 @@
-# LogLine Receipt
+# RADIO — LogLine Receipt
 
-Run a free JSON tuple on a published JSON process. Get one signed receipt that anyone can verify without trusting the issuer. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target scanner and multi-RUN format are not implemented yet.
+
+Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
 ```
 tuple + process + when ──▶ machine ──▶ receipt
@@ -11,16 +13,21 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 
 | Path | What |
 |---|---|
-| `SPEC.md` | LogLine Receipt v1, draft for freeze |
+| `VISION.md` | Purpose, architecture and principles |
+| `SPEC.md` | Single technical contract: existing v1 and target requirements (§15) |
+| `AGENTS.md` | Shared engineering instructions for coding agents |
+| `ROADMAP.md` | Proposed milestones, PR dependencies and acceptance gates |
+| `CLAUDE.md` | Imports the same instructions for Claude Code |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/ledger.ts` | Reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
 | `processes/` | The first process: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
 | `bin/logline.mjs` | CLI: `logline verify-bundle <bundle.json\|url> [--keys keys.json\|url]` |
-| `server/` | The machine over HTTP: a durable, hash-chained ledger file and the routes below. Node only, no dependencies |
+| `src/hosted.ts` | Direct Supabase client: native OAuth discovery, ephemeral writes, RLS reads and local verification |
+| `server/` | Optional local HTTP reference: a durable, hash-chained ledger file. Not on the hosted request path |
 | `bin/logline-server.mjs` | `logline-server serve`, `account`, `head` |
 | `vectors/` | Conformance vectors. JCS cases come from RFC 8785; receipt and citation goldens are signed with a test-only key |
-| `supabase/migrations/` | Draft schema for hosting the ledger and the radio; not applied |
+| `supabase/` | Hosted target: Auth, transactional ledger, native radio and ephemeral functions; preview, not deployed |
 
 ```bash
 npm test          # build, then conformance + adversarial + trajectory suites in Node, Bun, Chromium
@@ -29,19 +36,37 @@ npm run example   # the course, start to certificate
 
 `dist/` is prebuilt in the release zip, so `node examples/course.mjs` and `node bin/logline.mjs` work without a build.
 
-## The first process: a course as a trajectory
+## The v1 reference example: a course as a trajectory
 
 - `course.lesson@1`: each lesson **cites the previous lesson's receipt**. The rules check that it's the same learner, the same course and the next lesson, with a score of at least 70. The receipt's grants carry `completed`, which the next lesson builds on. A cited lesson can be consumed only once, so a trajectory can't fork. A failed attempt consumes nothing, so it can be retried.
 - `course.certificate.logline-101@1` **cites the last lesson**. Its rules require 5 completed lessons by the same learner. The certificate's bundle holds the whole trajectory, and every receipt in it is re-run by hash when it's verified.
 - `alumni.logline-101@1` **listens to the radio**. When a certificate comes out `ok`, it reacts with a receipt of its own that cites the certificate. Nobody submits anything.
 
-## The machine
+An alternative law in `examples/alumni.external.logline-101@1.json` has no automatic reaction; an independent listener submits the next input. This is the target RADIO interaction model.
+
+## The v1 reference machine
 
 - **Choreography.** Processes with `on` react to receipts on air. Loops are stopped by three limits: one reaction per trigger and process, a maximum depth, and a budget per submission. Halted reactions are reported.
 - **Idempotency.** The same submission from the same person in the same time window returns the receipt that already exists. A retry never decides twice and never consumes twice.
 - **Strict input.** `submitText` parses I-JSON and refuses duplicate keys, lone surrogates and integers that would be silently rounded.
 
-## Run a machine
+## Primary architecture: Supabase-native (hosted preview)
+
+No LogLine HTTP daemon, identity broker or application session is required. Supabase Auth is the OAuth 2.1 authorization server; Postgres holds the ledger; Edge Functions evaluate and sign individual submissions. The OAuth consent surface must exist but can be a static browser application. See [the hosted architecture](supabase/README.md) for setup boundaries and outstanding verification.
+
+```js
+import { hostedClient } from "@logline/receipt";
+const radio = hostedClient({
+  url: supabaseOrigin, publishableKey, keys: trustedMachineKeys,
+  accessToken: () => currentOAuthAccessToken,
+});
+const result = await radio.submit(tuple);
+const receipt = await radio.receipt(result.receipt.id);
+```
+
+This client does not acquire or refresh credentials itself; supply a current token from the native OAuth client. Public receipt reads are unauthenticated; private CAS reads use the caller’s token and RLS. It verifies returned signatures and content addresses without contacting the local server. Hosted root-only writes are still gated by `LOGLINE_ENABLE_PREVIEW`; asynchronous reactions are not implemented.
+
+## Run the optional local reference machine
 
 ```bash
 npm run build
@@ -54,7 +79,8 @@ Everything lives in `./data` (or `--data DIR`): `ledger.jsonl`, the machine key 
 
 | Route | Who | What |
 |---|---|---|
-| `GET /.well-known/logline.json` | anyone | published keys, limits and the ledger head `{n, hash}` |
+| `GET /.well-known/logline.json` | anyone | cacheable keys, limits and supported transport versions |
+| `GET /head` | anyone | changing ledger head `{n, hash}` (no-store) |
 | `GET /processes`, `GET /processes/:hash` | anyone | the published law, by content address |
 | `POST /processes` | admin | publish a process; an id can't be republished (409), amend under a new id |
 | `POST /submit` | anyone; a token sets `by` | I-JSON body → `{receipt, detail, replayed, reactions, halted}`; 201 new, 200 replayed |
@@ -63,6 +89,8 @@ Everything lives in `./data` (or `--data DIR`): `ledger.jsonl`, the machine key 
 | `GET /history?…&after=&limit=` | anyone | past receipts, paged by `seq` |
 | `GET /radio?…` | anyone | Server-Sent Events, one `receipt` event per broadcast; resumes from `Last-Event-ID` |
 | `GET /me` | token | your account and on-air pseudonym |
+
+`LogLine-Version: 1` is accepted on each request (omission defaults to `1`). Unknown versions return 400 with `supported` and `requested`. Public hash-addressed resources are immutable; private details and bundles are never cached.
 
 Tuning parameters are `frequency`, `status`, `by`, `process_hash` (comma lists; `course.*` patterns) and `activated`. `by=me` means your pseudonym.
 
@@ -81,6 +109,10 @@ LOGLINE_TOKEN=$TOKEN node bin/logline.mjs verify-bundle http://localhost:8080/re
 - **Limits answer with reasons.** Body size (413), submissions per caller (429 with `Retry-After`), strict I-JSON (400 `ijson`). A radio listener that can't keep up is disconnected and resumes from `Last-Event-ID`.
 
 Not yet: key rotation, encrypted objects with erasure, an external anchor for the head, TLS (put it behind a reverse proxy). One process, one file: it is a single-writer machine.
+
+## Hosted readiness
+
+The Supabase-native path is the target, not yet the production implementation. See [supabase/README.md](supabase/README.md) for the transaction boundary and tests; [SPEC.md §15](SPEC.md#15-radio-target-architecture--design-requirements-not-yet-a-wire-specification) defines the target and unresolved contracts. The optional local server remains the executable reference, never a dependency of the hosted client.
 
 ## Use the library
 

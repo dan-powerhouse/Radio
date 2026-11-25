@@ -10,19 +10,22 @@
     "bin",
     "server",
     "SPEC.md",
+    "VISION.md",
     "vectors",
     "processes"
   ],
   "scripts": {
     "build": "tsc -p .",
     "vectors": "npm run build && node scripts/make-vectors.mjs",
-    "test:node": "node --test test/*.test.mjs",
+    "test:node": "node scripts/stage-edge.mjs && node --test test/*.test.mjs",
     "test:bun": "bun test test/",
     "test:browser": "node scripts/browser-conformance.mjs",
     "test": "npm run build && npm run test:node && npm run test:bun && npm run test:browser",
     "example": "npm run build && node examples/course.mjs",
     "serve": "npm run build && node bin/logline-server.mjs serve --publish processes",
-    "zip": "node scripts/zip.mjs"
+    "zip": "node scripts/zip.mjs",
+    "stage:edge": "npm run build && node scripts/stage-edge.mjs",
+    "test:postgres": "npm run stage:edge && node test/postgres.integration.mjs"
   },
   "license": "MIT",
   "engines": {

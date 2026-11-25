@@ -17,6 +17,8 @@ export async function conformance(L, jcs, receipts) {
     const store = { receipt: async (id) => cited.get(id) ?? null };
     const { header, detail, id } = await L.run(c.process, c.tuple, { ...c.options, keys, store });
     const e = c.expected;
+    const cas = await L.run(JSON.parse(L.canonicalize(c.process)), JSON.parse(L.canonicalize(c.tuple)), { ...c.options, keys, store });
+    rec(`receipt/${c.name}/cas-round-trip`, cas.id === id && L.canonicalize(cas.detail) === L.canonicalize(detail));
     rec(`receipt/${c.name}/header`, L.canonicalize(header) === e.header_jcs);
     rec(`receipt/${c.name}/detail`, L.canonicalize(detail) === e.detail_jcs);
     rec(`receipt/${c.name}/id`, id === e.id && (await L.sha256(e.header_jcs)) === e.id);

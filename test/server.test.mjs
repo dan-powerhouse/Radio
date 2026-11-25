@@ -25,13 +25,13 @@ async function boot(dir, opts = {}) {
   const stop = async () => { await server.shutdown(); m.close(); };
   return { m, base, call, stop };
 }
-async function fresh(opts) {
+async function fresh(opts, processes = PROCESSES) {
   const dir = tmp();
   const pre = await openMachine(dir);
   const tokens = { root: pre.accounts.add("root", { admin: true }), ana: pre.accounts.add("ana"), bob: pre.accounts.add("bob") };
   pre.close();
   const s = await boot(dir, opts);
-  for (const f of PROCESSES) assert.equal((await s.call("POST", "/processes", { token: tokens.root, body: load(f) })).status, 201);
+  for (const f of processes) assert.equal((await s.call("POST", "/processes", { token: tokens.root, body: load(f) })).status, 201);
   return { dir, tokens, ...s };
 }
 const lesson = (n, score, previous) => ({ who: "learner", did: "complete", this: "course.lesson@1",
@@ -101,12 +101,12 @@ test("after a restart: same keys and head, retries replay, consumed citations st
   const s = await fresh();
   const ids = await course(s, s.tokens.ana);
   const cert = await s.call("POST", "/submit", { token: s.tokens.ana, body: certificate(ids[4]) });
-  const before = (await s.call("GET", "/.well-known/logline.json")).json;
+  const before = (await s.call("GET", "/head")).json;
   await s.stop();
 
   const t = await boot(s.dir);
   try {
-    const after = (await t.call("GET", "/.well-known/logline.json")).json;
+    const after = (await t.call("GET", "/head")).json;
     assert.deepEqual(after, before);
     const again = await t.call("POST", "/submit", { token: s.tokens.ana, body: certificate(ids[4]) });
     assert.equal(again.status, 200);
@@ -116,7 +116,7 @@ test("after a restart: same keys and head, retries replay, consumed citations st
     const fork = await t.call("POST", "/submit", { token: s.tokens.ana, body: lesson(2, 100, ids[0]) });
     assert.notEqual(fork.json.receipt.header.status, "ok");
     assert.match(fork.json.detail.unmet.join(" "), /already been used/);
-    assert.equal((await t.call("GET", "/.well-known/logline.json")).json.head.n, before.head.n + 1);
+    assert.equal((await t.call("GET", "/head")).json.n, before.n + 1);
   } finally { await t.stop(); }
 });
 
@@ -213,4 +213,104 @@ test("an account added while the server runs can submit at once", async () => {
     assert.equal(me.status, 200); assert.equal(me.json.account, "late");
     assert.equal(me.json.by, await s.m.pseudonym("late"));
   } finally { await s.stop(); }
+});
+
+test("discovery is stable, version travels with each request, only immutable public objects are cached", async () => {
+  const s = await fresh();
+  try {
+    const before = await s.call("GET", "/.well-known/logline.json");
+    const head = (await s.call("GET", "/head")).json;
+    assert.equal(before.json.head, undefined);
+    assert.deepEqual(before.json.versions, ["1"]);
+    assert.equal(before.headers.get("cache-control"), "public, max-age=60");
+    const bad = await s.call("POST", "/submit", { body: {}, headers: { "logline-version": "999" } });
+    assert.equal(bad.status, 400);
+    assert.deepEqual(bad.json, { error: "version", message: "unsupported LogLine-Version", supported: ["1"], requested: "999" });
+    assert.equal((await s.call("GET", "/head")).json.n, head.n);
+    const r = await s.call("POST", "/submit", { token: s.tokens.ana, body: lesson(1, 90), headers: { "logline-version": "1" } });
+    assert.equal(r.status, 201);
+    assert.equal(r.headers.get("logline-version"), "1");
+    assert.deepEqual((await s.call("GET", "/.well-known/logline.json")).json, before.json);
+    assert.equal((await s.call("GET", "/head")).json.n, head.n + 1);
+    const uri = `/receipts/${r.json.receipt.id}`;
+    assert.equal((await s.call("GET", uri)).headers.get("cache-control"), "public, max-age=31536000, immutable");
+    assert.equal((await s.call("GET", `/processes/${r.json.receipt.header.process_hash}`)).headers.get("cache-control"), "public, max-age=31536000, immutable");
+    assert.equal((await s.call("GET", uri + "/detail", { token: s.tokens.ana })).headers.get("cache-control"), "private, no-store");
+    assert.equal((await s.call("GET", uri + "/detail", { token: s.tokens.bob })).headers.get("cache-control"), "no-store");
+    assert.equal((await s.call("GET", "/head")).headers.get("cache-control"), "no-store");
+    const catalog = (await s.call("GET", "/processes")).json.map(p => p.id);
+    assert.deepEqual(catalog, [...catalog].sort());
+  } finally { await s.stop(); }
+});
+
+// The new architecture: a participant listens and decides, not the machine.
+// This fixture is a new immutable law, not a modification of the old alumni law.
+const externalAlumni = JSON.parse(fs.readFileSync(new URL("../examples/alumni.external.logline-101@1.json", import.meta.url), "utf8"));
+const externalTuple = id => ({ did: "enroll", this: externalAlumni.id, cites: { trigger: id } });
+const externalSetup = async () => {
+  const s = await fresh({}, PROCESSES.slice(0, 2));
+  assert.equal((await s.call("POST", "/processes", { token: s.tokens.root, body: externalAlumni })).status, 201);
+  return s;
+};
+
+test("independent listeners hear the same object; only an explicit new input extends the trajectory", { timeout: 15000 }, async () => {
+  const s = await externalSetup();
+  try {
+    const keys = (await s.call("GET", "/.well-known/logline.json")).json.keys;
+    const ids = await course(s, s.tokens.ana);
+    const a = await radio(s.base, "frequency=course.certificate.*&status=ok", 1);
+    const b = await radio(s.base, "frequency=course.certificate.*&status=ok", 1);
+    const cert = await s.call("POST", "/submit", { token: s.tokens.ana, body: certificate(ids.at(-1)) });
+    assert.equal(cert.status, 201);
+    assert.equal(cert.json.receipt.header.status, "ok");
+    assert.deepEqual(cert.json.reactions, []);
+    const [heardA, heardB] = await Promise.all([a.heard, b.heard]);
+    assert.deepEqual(heardA[0].receipt, cert.json.receipt);
+    assert.deepEqual(heardB[0].receipt, heardA[0].receipt);
+    assert.equal((await L.verify(heardB[0].receipt, keys)).valid, true);
+    assert.equal((await s.call("GET", "/history")).json.items.length, 6);
+    // The receiver needs neither the learner's private evidence nor credentials.
+    assert.equal((await s.call("GET", `/receipts/${cert.json.receipt.id}/detail`, { token: s.tokens.bob })).status, 403);
+    const result = await s.call("POST", "/submit", { token: s.tokens.bob, body: externalTuple(heardB[0].receipt.id) });
+    assert.equal(result.status, 201);
+    assert.equal(result.json.receipt.header.status, "ok");
+    assert.deepEqual(result.json.receipt.header.prev, [cert.json.receipt.id]);
+    assert.notEqual(result.json.receipt.header.by, cert.json.receipt.header.by);
+    assert.equal(result.json.detail.grants.member, cert.json.receipt.header.by);
+    assert.equal(result.json.receipt.header.depth, 0); // independently submitted, not a machine reaction
+    assert.deepEqual(result.json.reactions, []);
+    const bundle = (await s.call("GET", `/receipts/${result.json.receipt.id}/bundle`, { token: s.tokens.root })).json;
+    assert.equal(bundle.entries.length, 7);
+    assert.equal((await L.verifyBundle(bundle, keys)).valid, true);
+    // An external workflow does not acquire blanket access to another person's private evidence.
+    assert.equal((await s.call("GET", `/receipts/${result.json.receipt.id}/bundle`, { token: s.tokens.bob })).status, 403);
+  } finally { await s.stop(); fs.rmSync(s.dir, { recursive: true, force: true }); }
+});
+
+test("continuity: an absent listener catches up after restart; competing listeners cannot consume a certificate twice", { timeout: 15000 }, async () => {
+  const s = await externalSetup();
+  let t;
+  try {
+    const keys = (await s.call("GET", "/.well-known/logline.json")).json.keys;
+    const ids = await course(s, s.tokens.ana);
+    const cursor = (await s.call("GET", "/history")).json.items.at(-1).seq;
+    const cert = await s.call("POST", "/submit", { token: s.tokens.ana, body: certificate(ids.at(-1)) });
+    assert.equal(cert.json.receipt.header.status, "ok");
+    assert.deepEqual(cert.json.reactions, []);
+    await s.stop();
+    t = await boot(s.dir);
+    const catchup = await (await radio(t.base, "frequency=course.certificate.*&status=ok", 1, { "last-event-id": String(cursor) })).heard;
+    assert.equal(catchup[0].receipt.id, cert.json.receipt.id);
+    assert.equal((await L.verify(catchup[0].receipt, keys)).valid, true);
+    const tuple = externalTuple(catchup[0].receipt.id);
+    const claims = await Promise.all([s.tokens.bob, s.tokens.root].map(token => t.call("POST", "/submit", { token, body: tuple })));
+    assert.deepEqual(claims.map(x => x.json.receipt.header.status).sort(), ["ok", "registered"]);
+    const winner = claims.find(x => x.json.receipt.header.status === "ok");
+    const loser = claims.find(x => x.json.receipt.header.status === "registered");
+    assert.match(loser.json.detail.unmet.join(" "), /already been used/);
+    const again = await t.call("POST", "/submit", { token: winner === claims[0] ? s.tokens.bob : s.tokens.root, body: tuple });
+    assert.equal(again.status, 200);
+    assert.equal(again.json.receipt.id, winner.json.receipt.id);
+    assert.equal((await t.call("GET", "/history?frequency=" + externalAlumni.id + "&status=ok")).json.items.length, 1);
+  } finally { if (t) await t.stop(); else await s.stop(); fs.rmSync(s.dir, { recursive: true, force: true }); }
 });
