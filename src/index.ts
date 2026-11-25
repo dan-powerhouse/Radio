@@ -11,3 +11,4 @@ export { b64url, unb64url } from "./bytes.js";
 export { inauthentic } from "./authentic.js";
 export * from "./ledger.js";
 export { parseStrict } from "./strict.js";
+export * from './hosted.js';

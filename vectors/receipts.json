@@ -775,10 +775,10 @@
         "by": "p:demo-marta"
       },
       "expected": {
-        "header_jcs": "{\"activated\":false,\"by\":\"p:demo-marta\",\"depth\":0,\"detail_hash\":\"sha256:32c06fed84a6a2d74f427afbdf4d0352e4aa03a06ca851e176c7f789e79c4538\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:008fe834f5e2a504a180bc9fd1ee7abf6c159ad12d91ad1818ede62b93de26d6\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:8b69cb9a9a18e6ee0d9cbc330d4c47afeac8a1d5a7502365bba67c4b3fd7ac08",
-        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"did is \\\"request\\\"; this process accepts \\\"apply\\\"\",\"with.passport.number is missing (string)\",\"with.passport.expiry is missing (date)\",\"with.travel.arrival is missing (date)\",\"with.travel.stay_days is missing (integer)\",\"with.travel.purpose is missing (string)\",\"with.travel.return_ticket is missing (boolean)\",\"with.means.funds_usd is missing (number)\",\"with.history.previous_overstay is missing (boolean)\"]}",
-        "signature": "LwmfZmelwu0yR5RkNeKw--wzlzSWvX99LBw6qJiBpKGNUM4W-jBZBoQVFxZ3YuykUXLykurbMrDp1uEYmZQtAw"
+        "header_jcs": "{\"activated\":false,\"by\":\"p:demo-marta\",\"depth\":0,\"detail_hash\":\"sha256:2eda0dfb00c7ca6972613322837f725a70cc9bd96ab78264fcdb3268fa1bd1aa\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:008fe834f5e2a504a180bc9fd1ee7abf6c159ad12d91ad1818ede62b93de26d6\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:bd6606903f590a6fb6e57da859e7d80a0142674234236413a2b66c3b68cbd550",
+        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"did is \\\"request\\\"; this process accepts \\\"apply\\\"\",\"with.history.previous_overstay is missing (boolean)\",\"with.means.funds_usd is missing (number)\",\"with.passport.expiry is missing (date)\",\"with.passport.number is missing (string)\",\"with.travel.arrival is missing (date)\",\"with.travel.purpose is missing (string)\",\"with.travel.return_ticket is missing (boolean)\",\"with.travel.stay_days is missing (integer)\"]}",
+        "signature": "8qBKz6ShRpSpcvt5KJsSC0uubSmn82TuplCPB5BiIWL1UuLEjKozLhGad6jRyW3xMFkRFEUjPKvcOiwTMGIMAw"
       }
     },
     {
@@ -1573,9 +1573,9 @@
             ],
             "unmet": null,
             "grants": {
-              "course": "logline-101",
+              "best_score": 88,
               "completed": 1,
-              "best_score": 88
+              "course": "logline-101"
             }
           }
         }
@@ -1789,9 +1789,9 @@
             ],
             "unmet": null,
             "grants": {
-              "course": "logline-101",
+              "best_score": 88,
               "completed": 1,
-              "best_score": 88
+              "course": "logline-101"
             }
           }
         }
@@ -2008,9 +2008,9 @@
             ],
             "unmet": null,
             "grants": {
-              "course": "logline-101",
+              "best_score": 88,
               "completed": 1,
-              "best_score": 88
+              "course": "logline-101"
             }
           }
         }

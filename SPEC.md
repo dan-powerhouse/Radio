@@ -4,6 +4,10 @@ Status: **draft for freeze**. Normative keywords: MUST, MUST NOT, SHOULD, MAY.
 
 A *machine* takes a free JSON *tuple*, runs it on a published JSON *process*, and returns one thing: a signed *receipt*. Anyone holding the receipt and the machine's published key can check that the receipt is authentic. Anyone who also holds the tuple and the process (fetched by hash) can re-run the decision and get byte-identical output.
 
+## 0. Scope and version status
+
+This is the single technical specification for RADIO, the universal protocol for the formation of verifiable trajectories. [VISION.md](VISION.md) explains the purpose. Sections 1–14 retain the existing LogLine Receipt v1 contract (`process@1` and reference HTTP). Section 15 describes the agreed target architecture and unresolved design requirements; it is **not** a new wire format or a claim of implementation. Do not apply target semantics to v1 receipts or laws. The hosted adapter is a gated v1 preview, not a deployed or conformance-tested service.
+
 ## 1. What a receipt proves, and what it does not
 
 A valid receipt proves:
@@ -102,15 +106,15 @@ Input: a process or `null`, the tuple, and:
 2. **Activation.** With no process, the submission is unmet: `no process is published on frequency "<f>"`. Otherwise every condition below must hold. Each one that fails adds a human-readable entry to `unmet`.
    - `tuple.this == process.id`
    - `tuple.did == process.accepts.did`
-   - every `requires` path is present with its type
-   - every citation resolves (§9)
+   - every `requires` path is present with its type (paths in ascending UTF-16 code-unit order, as in JCS)
+   - every citation resolves (§9; slots in ascending UTF-16 code-unit order)
 3. **Not activated** gives status `registered`. No step runs, `findings` is empty and `grants` is null.
 4. **Activated:** each step is evaluated in order against the same budget.
    - The result is exactly `true`: the finding is `ok`.
    - Any other value: the finding is the step's `if_not`, with its `reason`.
    - An error: the finding is `doubt`, with `reason` and `error` (the error code and message). The machine never turns an undecidable step into `ok`, and never silently into `not`.
 5. **Status** is `not` if any finding is `not`. Otherwise it is `doubt` if any finding is `doubt`. Otherwise it is `ok`.
-6. **Grants** are evaluated only when the status is `ok`. If a grant raises an error, the status becomes `doubt`, `grants` becomes null, and a finding `{step: "grants", result: "doubt", ...}` is appended.
+6. **Grants** are evaluated only when the status is `ok`, in ascending UTF-16 code-unit order of grant names. If a grant raises an error, the status becomes `doubt`, `grants` becomes null, and a finding `{step: "grants", result: "doubt", ...}` is appended.
 7. **Consequence** is the process's `if_<status>`. For `registered` it is the fixed text in the reference implementation.
 8. **Broadcast:** each `broadcast` path that resolves is copied into `public` under its full path string.
 
@@ -249,7 +253,7 @@ Together these limits guarantee that every submission terminates, even when proc
 
 ## 11. Keys
 
-A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. The document MAY carry other fields; the reference server adds `limits` and the ledger `head`. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
+A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. The document MAY carry other fields; the reference HTTP server adds `limits`, `versions`, `ttlMs` and `cacheScope`. The changing ledger head is a separate `GET /head` resource. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
 
 ## 12. Conformance
 
@@ -262,3 +266,66 @@ A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { 
 - Key rotation receipt format *(M2)*.
 - Encryption envelope for private objects and erasure by key deletion *(M5)*.
 - Trajectories across machines. A citation currently resolves only against one key ring, so citing another operator's receipts needs a ring with several issuers *(v2: federation)*.
+
+## 14. Reference HTTP transport
+
+Each request may carry `LogLine-Version: 1`; omission means `1` for compatibility. Unsupported versions return HTTP 400 with `error: "version"`, `supported` and `requested`. There is no session handshake. Discovery is cacheable for 60 seconds and does not include the head. Public receipt and process resources addressed by hash may be cached for one year as immutable; private detail and bundle responses MUST NOT be stored in shared caches (the reference sends `private, no-store`). Mutable history and head, errors, and submissions are `no-store`. The local server retains synchronous choreography and resumable SSE.
+
+## 15. RADIO target architecture — design requirements, not yet a wire specification
+
+### 15.1 Formation model
+
+RADIO forms verifiable trajectories. A free I-JSON expression is submitted through an independent MCP or API request. A human or LLM translator, including MAP where applicable, can turn natural language into that expression. The machine does not interpret natural language. Authenticated identity is derived from the verified credential, not from `who` or any other claimed tuple field. Supabase OAuth is the hosted identity authority; it is distinct from the machine's receipt-signing authority.
+
+A published **Process Type** is an immutable, content-addressed JSON law. It specifies recognition conditions, interpretation and requirements for tuple fields, and one or more RUNs with their functions expressed in JSON. The machine's deterministic **scanner** recognizes applicable published types. The first RUN of a recognized and eligible type can constitute an instance; subsequent RUNs advance that instance subject to the type's published conditions and ancestry. A valid expression that activates no type is recorded rather than discarded. Malformed I-JSON is not an expression (§2). Each executed RUN produces a signed receipt; a registration without activation must also have a receipt. The exact registration and match contract is open (§15.6).
+
+The **receipt** is the constituted digital object, not a secondary log for effects internal to the protocol. Its content address, law reference, input, authenticated attribution, result and relevant ancestry support independent verification given the necessary evidence and trusted keys. The exact versioned envelope for type, instance, RUN and registry recognition is open. A trajectory is the causal composition of receipts; state is a projection under a published law, not a competing authoritative mutable object. Consumption restrictions and shared uniqueness must be checked at the authoritative transaction boundary. A trajectory need not be linear unless its law requires this.
+
+### 15.2 Communication and continuity
+
+The hosted input path is stateless MCP or API. No correctness property depends on a protocol session or warm application worker. Version and necessary context travel with each request; explicit references replace hidden conversational state. Discovery should separate cacheable metadata and immutable definitions from mutable history. The exact MCP wire profile must be checked against the applicable version before implementation.
+
+The hosted output path is Supabase Realtime WebSocket. Committed public signed headers are broadcast on their frequencies; participants tune, verify, interpret, and independently choose whether and when to submit again. Private evidence is not broadcast by default. Each participant may operate arbitrary private listening, recording and orchestration infrastructure. RADIO does not orchestrate those participants or guarantee their reactions. Durable history and catch-up must support continuity when an observer disconnects or is replaced; the live transport is not itself a durable replay contract.
+
+A participant's disappearance, model replacement or runtime restart must not erase previously constituted commitments or their causal history. This property does not guarantee performance of the commitment. Legacy `process@1.on` is reference behavior (§10.1); it is not the target mechanism for external community choreography. Whether any deterministic internal RUN advancement is needed is an open type-level design question, not a reason to introduce a global workflow worker.
+
+### 15.3 Hosted authority and persistence
+
+One logical RADIO provides a common reference for a community. Use the same runtime-neutral evaluator in the reference, browser, CLI and ephemeral hosted functions. The target hosted path consists of Supabase Auth, stateless Edge Functions, Postgres/CAS, transactional uniqueness, and Realtime. The optional local HTTP/SSE server remains executable reference infrastructure and is not in the production request path. No parallel evaluator in SQL, custom OAuth broker or resident application server. The static consent surface and precise client-specific delegation are still outstanding.
+
+The account identifier stays private; the machine attests a pseudonym derived from verified identity. Publication requires authority; an amendment creates a new content address. Private evidence access must be checked independently of the public header. Published laws must be reviewed for disclosure through their output fields. Machine keys and OAuth keys remain separate. The operator controlling the signing key can issue receipts; individual receipt verification is not proof of the completeness or global consistency of the ledger. For an external effect, the protected executor must enforce the exact authorization, with replay protection and recoverable commit semantics. A receipt of authorization is not proof of execution.
+
+Community and authority scope must be explicit before multi-community operation. The same code base may serve a single community or a larger hosted service; no cross-community access or consumption guarantee is implied by this goal. Physical scaling and cost require measurement.
+
+### 15.4 Agent Skills interoperability — proposed packaging direction
+
+Agent Skills (https://agentskills.io/specification) define an agent-facing directory with a `SKILL.md` containing YAML metadata (`name`, `description` required) and Markdown instructions; other resources are optional. A RADIO Process Type is a machine-facing JSON law, not a Markdown instruction set. A skill may explain translation, discovery, valid submissions, listening and continuation for one or more laws. It cannot grant authority, alter recognition, or provide executable semantics merely by asserting them.
+
+Recommended direction for approval: retain JSON as the canonical law and optionally distribute it alongside a standards-compatible `SKILL.md` (for example `course-enrollment/SKILL.md` plus `process.json`). A ZIP can transport these files, but must not define law identity by archive bytes. The law's hash follows the canonical JSON rule; instructions are non-authoritative unless a future law explicitly binds supporting content. A machine must not execute arbitrary skill scripts or interpret instructions to determine the legal result. No new file schema, ZIP loader, registry format or mandatory Skill dependency is adopted here.
+
+### 15.5 Compatibility and verification checkpoint
+
+The existing `process@1` evaluator selects by `tuple.this`, evaluates a single law and supports legacy `on` reactions. The current hosted preview uses root-only writes and a reserved internal outbox; no reaction worker is implemented. The target scanner and multi-RUN semantics are not implemented. Version incompatible changes explicitly before coding; retain v1 vectors and do not reinterpret historical signatures.
+
+Before this checkpoint, an unfrozen v1 ordering defect was corrected: `requires`, `cites` and `grants` are evaluated in UTF-16 key order. The `registered-free-form` golden changed; receipts affected by the earlier ordering may not replay with the current evaluator. No migration of historical receipts was performed. This is a known compatibility boundary, not a claim that all past v1 receipts replay.
+
+The external alumni fixture (`examples/alumni.external.logline-101@1.json`) has no `on` and demonstrates the external-listener design using the local reference. Tests demonstrate two listeners seeing the same signed receipt, independent submission, catch-up after restart, once-consumption and offline replay. They do not demonstrate hosted OAuth, MCP, RLS, Deno or WebSocket conformance.
+
+### 15.6 Open decisions before a new normative version
+
+- Exact Process Type JSON, recognition semantics, overlapping matches and no-match registration (including receipt cardinality and frequency).
+- Registry publication/versioning and immutable recognition snapshot; instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope.
+- Whether the optional Skill wrapper is adopted, and if so the association between instructions and immutable law versions. MAP wire contract has not been supplied.
+- Root-only response shape and removal or retention of reserved outbox/reaction jobs; any automatic internal RUN advancement must be explicitly specified.
+- Hosted history recovery under concurrent commits, client-specific authorization and revocation, trust and community scope, citation bundle input and protection against fabricated or spent citations.
+- Key rotation, external anchors (including the suggested Merkle anchor; no approved design), private evidence erasure and federation (§13). The actual Supabase project and deployment must be approved.
+
+### 15.7 Engineering sequence and acceptance
+
+1. Specify scanner and multi-RUN semantics, including all open recognition/instantiation decisions; implement in the single evaluator and reference machine with new positive, negative and adversarial vectors. Preserve the existing v1 contract.
+2. Prove object constitution, multiple independent instances, trajectory composition and continuation after runtime replacement. Test that retries and once claims do not duplicate instances or effects.
+3. Carry these semantics into the hosted transaction adapter; reassess the existing outbox without building a universal reaction worker. Verify actual Postgres concurrency and RLS; resolve history catch-up without missing late commits. Keep the preview gate closed until validated.
+4. Implement stateless MCP discovery/submission, native OAuth consent and delegated scope, and Realtime listening and recovery. The ordinary API shares the RUN boundary. Test actual infrastructure with explicit approval.
+5. Demonstrate the vertical path: natural language -> translated tuple -> OAuth/MCP -> scanner -> RUN -> receipt -> listener -> new input. Independently verify the trajectory, including interruptions, retries, refusals and conflicting consumption. External effects require their own protected executor, which is not implied by this test.
+
+PATT native Transformer state, trusted execution and metered resource enforcement are separate experiments, not prerequisites for RADIO or proven by a working RADIO ledger.

@@ -1,6 +1,7 @@
 // HTTP for a machine opened with openMachine. Node's http module, no dependencies.
 //
-//   GET  /.well-known/logline.json      published keys, limits, ledger head
+//   GET  /.well-known/logline.json      published keys, limits (cacheable)
+//   GET  /head                         current ledger head (not cacheable)
 //   GET  /processes                     published processes {id, hash}
 //   GET  /processes/:hash               a process (the law is public)
 //   POST /processes                     publish a process            (admin)
@@ -16,10 +17,11 @@
 import http from "node:http";
 import * as L from "../dist/index.js";
 
-const HASH = /^sha256:[0-9a-f]{64}$/;
+const VERSION = "1";
+const IMMUTABLE = "public, max-age=31536000, immutable";
 const DEFAULTS = { maxBody: 64 * 1024, ratePerMinute: 60, burst: 30, heartbeatMs: 15_000, maxBuffered: 1 << 20 };
 
-class HttpError extends Error { constructor(status, code, message, headers = {}) { super(message); this.status = status; this.code = code; this.headers = headers; } }
+class HttpError extends Error { constructor(status, code, message, headers = {}, extra = {}) { super(message); this.status = status; this.code = code; this.headers = headers; this.extra = extra; } }
 
 /** Token bucket per caller (account, or IP when anonymous). */
 function limiter({ ratePerMinute, burst }) {
@@ -47,7 +49,7 @@ export function createServer(machine, options = {}) {
 
   async function caller(req) {
     const m = /^Bearer (\S+)$/.exec(req.headers.authorization ?? "");
-    if (!m) return null;
+    if (!m) { if (req.headers.authorization !== undefined) throw new HttpError(401, "token", "expected a bearer token"); return null; }
     const a = machine.accounts.find(m[1]);
     if (!a) throw new HttpError(401, "token", "unknown bearer token");
     return { ...a, by: await machine.pseudonym(a.account) };
@@ -88,14 +90,17 @@ export function createServer(machine, options = {}) {
       logline: "machine@1",
       keys: ledger.keys,
       limits: { maxDepth: ledger.maxDepth, maxReactions: ledger.maxReactions, maxBody: o.maxBody },
-      head: machine.head(),
+      versions: [VERSION],
+      ttlMs: 60000,
+      cacheScope: "public",
     })],
+    ["GET", /^\/head$/, () => machine.head()],
     ["GET", /^\/me$/, async (req) => {
       const who = await caller(req);
       if (!who) throw new HttpError(401, "token", "no bearer token");
       return { account: who.account, admin: who.admin, by: who.by };
     }],
-    ["GET", /^\/processes$/, () => ledger.published().map(({ id, hash }) => ({ id, hash }))],
+    ["GET", /^\/processes$/, () => ledger.published().map(({ id, hash }) => ({ id, hash })).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)],
     ["GET", /^\/processes\/(sha256:[0-9a-f]{64})$/, (req, m) => ledger.processByHash(m[1]) ?? notFound("no process has that hash")],
     ["POST", /^\/processes$/, async (req) => {
       const who = await caller(req);
@@ -136,7 +141,7 @@ export function createServer(machine, options = {}) {
       const who = await caller(req);
       const t = tuning(q, who);
       const after = seqParam(req.headers["last-event-id"] ?? null, "Last-Event-ID") ?? seqParam(q.get("after"), "after");
-      res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no", ...cors });
+      res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no", "logline-version": VERSION, "vary": "LogLine-Version", ...cors });
       res.write(": tuned\n\n");
       const stream = { res, stop: null };
       const send = (receipt, seq) => {
@@ -154,20 +159,22 @@ export function createServer(machine, options = {}) {
     }],
   ];
   const notFound = (msg) => { throw new HttpError(404, "not_found", msg); };
-  const cors = { "access-control-allow-origin": "*" };
+  const cors = { "access-control-allow-origin": "*", "access-control-expose-headers": "LogLine-Version, Retry-After" };
 
   const server = http.createServer(async (req, res) => {
     const send = (status, value, headers = {}) => {
       const text = JSON.stringify(value);
-      res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...cors, ...headers });
+      res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", "logline-version": VERSION, "vary": "LogLine-Version", ...cors, ...headers });
       res.end(text + "\n");
     };
     try {
       const url = new URL(req.url, "http://machine");
       if (req.method === "OPTIONS") {
-        res.writeHead(204, { ...cors, "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "authorization, content-type, last-event-id", "access-control-max-age": "86400" });
+        res.writeHead(204, { ...cors, "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "authorization, content-type, last-event-id, logline-version", "access-control-max-age": "86400" });
         return res.end();
       }
+      const requested = req.headers["logline-version"] ?? VERSION;
+      if (requested !== VERSION) throw new HttpError(400, "version", "unsupported LogLine-Version", {}, { supported: [VERSION], requested });
       const matches = routes.filter(([, re]) => re.test(url.pathname));
       if (!matches.length) throw new HttpError(404, "not_found", "no such route");
       const route = matches.find(([method]) => method === req.method);
@@ -183,10 +190,16 @@ export function createServer(machine, options = {}) {
       const out = await route[2](req, url.pathname.match(route[1]), url.searchParams, res);
       if (out === undefined) return;
       const [status, value] = Array.isArray(out) && typeof out[0] === "number" ? out : [200, out];
-      send(status, value);
+      let cache = "no-store";
+      if (req.method === "GET" && status === 200) {
+        if (/^\/(processes|receipts)\/sha256:[0-9a-f]{64}$/.test(url.pathname)) cache = IMMUTABLE;
+        else if (url.pathname === "/.well-known/logline.json") cache = "public, max-age=60";
+        else if (/^\/receipts\/.*\/(detail|bundle)$/.test(url.pathname)) cache = "private, no-store";
+      }
+      send(status, value, { "cache-control": cache });
     } catch (e) {
       if (res.headersSent) { res.destroy(); return; }
-      if (e instanceof HttpError) return send(e.status, { error: e.code, message: e.message }, e.headers);
+      if (e instanceof HttpError) return send(e.status, { error: e.code, message: e.message, ...e.extra }, e.headers);
       if (e instanceof L.LoglineError) {
         const status = e.code === "unavailable" ? 503 : e.code === "process_exists" ? 409 : 400;
         return send(status, { error: e.code, message: e.message });
