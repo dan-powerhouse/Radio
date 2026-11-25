@@ -10,7 +10,7 @@ Scale is a property of the boundary, not the number of services. Avoid global se
 
 ## Working agreement
 
-- [ ] PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 is documentation-only.
+- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 is documentation-only. PR-01 is architect-approved in SPEC §15.8; runtime implementation and remote merge are separate.
 - Use one branch per PR, one reviewable purpose, tests alongside implementation, and a short PR description: intent, invariant, changed files, tests/results, compatibility, unresolved issues. Prefer subtracting code. No speculative framework or mandatory new dependency.
 - For semantic changes, update the relevant part of SPEC in the same PR before implementation. Resolve explicit decisions with the architect first. Version incompatibilities and retain historical vectors; do not change tests just to pass. A failing baseline is investigated, not silently waived.
 - Every code PR runs build and `npm test`; if a stage is blocked, run the remaining stages independently and report exact results. Add a targeted regression or conformance test for each new invariant. Infrastructure PRs require actual service tests, not only doubles. Never substitute a mock for an acceptance gate.
@@ -38,7 +38,7 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 - Acceptance: all existing source, tests and vectors unchanged; verify archive and baseline build/test results.
 
 ### PR-01 — Process Type and recognition contract
-- [ ] Depends on PR-00. Define canonical JSON law version, registry identity/publication/amendment, scanner input and deterministic bounded match contract in SPEC.
+- [x] Architect-approved (2026-11-25): canonical JSON law version, registry identity/publication/amendment, scanner input and deterministic bounded match contract in SPEC §15.8.
 - Decision gate: overlapping matches (no implicit winner), no-match receipt cardinality/frequency, recognition versus activation, errors and total scanner budget, immutable registry snapshot used for replay, version separation from `process@1`.
 - Acceptance: agreed examples for zero/one/multiple matches, malformed versus valid unmatched input, reordered JSON, publication changes and overlapping types. Expected outcomes specified before code.
 

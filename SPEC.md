@@ -277,9 +277,9 @@ Each request may carry `LogLine-Version: 1`; omission means `1` for compatibilit
 
 RADIO forms verifiable trajectories. A free I-JSON expression is submitted through an independent MCP or API request. A human or LLM translator, including MAP where applicable, can turn natural language into that expression. The machine does not interpret natural language. Authenticated identity is derived from the verified credential, not from `who` or any other claimed tuple field. Supabase OAuth is the hosted identity authority; it is distinct from the machine's receipt-signing authority.
 
-A published **Process Type** is an immutable, content-addressed JSON law. It specifies recognition conditions, interpretation and requirements for tuple fields, and one or more RUNs with their functions expressed in JSON. The machine's deterministic **scanner** recognizes applicable published types. The first RUN of a recognized and eligible type can constitute an instance; subsequent RUNs advance that instance subject to the type's published conditions and ancestry. A valid expression that activates no type is recorded rather than discarded. Malformed I-JSON is not an expression (§2). Each executed RUN produces a signed receipt; a registration without activation must also have a receipt. The exact registration and match contract is open (§15.6).
+A published **Process Type** is an immutable, content-addressed JSON law. It specifies recognition conditions, interpretation and requirements for tuple fields, and one or more RUNs with their functions expressed in JSON. The machine's deterministic **scanner** recognizes applicable published types. The first RUN of a recognized and eligible type can constitute an instance; subsequent RUNs advance that instance subject to the type's published conditions and ancestry. A valid expression that activates no type is recorded rather than discarded. Malformed I-JSON is not an expression (§2). Each executed RUN produces a signed receipt; a registration without activation must also have a receipt. The recognition and registration contract is approved in §15.8; the RUN and receipt contract is proposed in §15.9.
 
-The **receipt** is the constituted digital object, not a secondary log for effects internal to the protocol. Its content address, law reference, input, authenticated attribution, result and relevant ancestry support independent verification given the necessary evidence and trusted keys. The exact versioned envelope for type, instance, RUN and registry recognition is open. A trajectory is the causal composition of receipts; state is a projection under a published law, not a competing authoritative mutable object. Consumption restrictions and shared uniqueness must be checked at the authoritative transaction boundary. A trajectory need not be linear unless its law requires this.
+The **receipt** is the constituted digital object, not a secondary log for effects internal to the protocol. Its content address, law reference, input, authenticated attribution, result and relevant ancestry support independent verification given the necessary evidence and trusted keys. The proposed versioned envelope for type, instance, RUN and registry recognition is in §15.9. A trajectory is the causal composition of receipts; state is a projection under a published law, not a competing authoritative mutable object. Consumption restrictions and shared uniqueness must be checked at the authoritative transaction boundary. A trajectory need not be linear unless its law requires this.
 
 ### 15.2 Communication and continuity
 
@@ -313,8 +313,8 @@ The external alumni fixture (`examples/alumni.external.logline-101@1.json`) has 
 
 ### 15.6 Open decisions before a new normative version
 
-- Exact Process Type JSON, recognition semantics, overlapping matches and no-match registration (including receipt cardinality and frequency).
-- Registry publication/versioning and immutable recognition snapshot; instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope.
+- Recognition and registry semantics are approved in §15.8. The complete Process Type and RUN schema, instance identity and receipt encoding remain subject to §15.9 review.
+- Instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope (§15.9 proposal).
 - Whether the optional Skill wrapper is adopted, and if so the association between instructions and immutable law versions. MAP wire contract has not been supplied.
 - Root-only response shape and removal or retention of reserved outbox/reaction jobs; any automatic internal RUN advancement must be explicitly specified.
 - Hosted history recovery under concurrent commits, client-specific authorization and revocation, trust and community scope, citation bundle input and protection against fabricated or spent citations.
@@ -329,3 +329,61 @@ The external alumni fixture (`examples/alumni.external.logline-101@1.json`) has 
 5. Demonstrate the vertical path: natural language -> translated tuple -> OAuth/MCP -> scanner -> RUN -> receipt -> listener -> new input. Independently verify the trajectory, including interruptions, retries, refusals and conflicting consumption. External effects require their own protected executor, which is not implied by this test.
 
 PATT native Transformer state, trusted execution and metered resource enforcement are separate experiments, not prerequisites for RADIO or proven by a working RADIO ledger.
+
+### 15.8 PR-01 — Process Type and scanner contract
+
+Status: **approved by the architect on 2026-11-25; not implemented**. This is the target recognition contract, normative for the next protocol version when it is frozen. It does not change §§1–14 or freeze a receipt envelope. PR-02 completes the remaining semantics.
+
+#### 15.8.1 Law and publication
+
+A new law uses `logline: "process-type@1"`, distinct from `process@1`. Its proposed top-level fields are `logline`, `id`, `issuer`, `recognize`, and `runs`. `id` is a versioned frequency following the existing identifier rules (§4); `_unaddressed` is reserved. `issuer` is descriptive, not an authentication claim. `recognize` is one expression in the existing JSON expression language (§5); `runs` is a non-empty ordered array of RUN definitions, with the first entry defining instantiation. The RUN body, identifiers, entry and successor eligibility are reserved for PR-02; this is not yet a complete publishable schema. Unknown fields are rejected, rather than treated as executable extensions. Skills are not part of the law or scanner.
+
+The law address is `hash(law)` (§2), including all RUN definitions. Reordering object keys does not change its identity; reordering the RUN array does. Publication is an authenticated, authorized operation; a previously published id cannot be rebound to different bytes or a different hash. An amendment has a new id and content address. A repeated publication of identical canonical content is idempotent. A law removed from the active recognition set remains retrievable for historical verification. No arbitrary code, network access or natural-language interpretation participates in recognition.
+
+#### 15.8.2 Registry snapshot
+
+Recognition uses an explicit immutable snapshot of the active Process Type laws for one logical machine. The proposed CAS object is `{"logline":"registry@1","types":["sha256:..."],"scan_ops":1000000}`. `types` contains unique law hashes in ascending UTF-16 code-unit order; it may be empty. There are no legacy `process@1` laws in this snapshot. All referenced laws must exist and validate before a snapshot can become active; active ids must be unique. `scan_ops` is an integer from 1 to 1,000,000 inclusive, a proposed versioned recognition budget, not a CPU-time guarantee.
+
+A publication or retirement changes the active snapshot atomically, never the previous snapshot. The machine selects the authoritative snapshot at admission; the caller cannot choose an obsolete snapshot to gain authority. A scan and its resulting decision use that exact snapshot, even if publication occurs concurrently. Retries and subsequent RUNs must preserve the applicable law and context under the PR-02 contract. The signed receipt will bind the snapshot hash for a new recognition decision. Replay receives the snapshot and its referenced laws, checks their hashes and repeats recognition. A hash and receipt signature establish the evidence used by the issuer, not that the snapshot was globally complete or was the latest possible publication at the time.
+
+#### 15.8.3 Recognition is not activation
+
+The scanner is a pure function of the admitted I-JSON tuple and the immutable snapshot with its laws. It does not read the clock, identity, citations, grants, private state, network, or `tuple.this` as a privileged selector. The tuple's fields (including `this` and `who`) have no universal routing or authority meaning. A law can test them if its definition explicitly says so. An authenticated caller and a recognized type are necessary inputs to activation, not sufficient authorization.
+
+Evaluate each `recognize` expression against the tuple alone using the existing evaluator and §5 equality, laziness and own-property lookup. `var` and `has` take one literal non-empty tuple path; machine paths beginning `$` are forbidden in recognition. The predicate must return a boolean; only `true` is a match. The author can guard absent fields with `has` and lazy `and`/`if`. All operators and arities must be statically valid (including branches not visited); inherited JavaScript properties are not operators. Runtime errors, including missing values or non-boolean results, are not silently converted to `false`. They mark the scan indeterminate. A malformed law or unavailable/hash-mismatched snapshot object is an infrastructure/contract failure, not a no-match verdict.
+
+Evaluate all candidates in snapshot order, without an early exit on the first match. Charge one unit per candidate and one per expression operator application, from the single shared `scan_ops` budget. Existing expression depth limits apply. Admission must also bound input and definition bytes and expression breadth; those operational limits are to be published and measured before hosted use. The logical operation count alone does not bound wall time, allocation or the cost of comparing large values. If recognition exhausts its budget, no partial candidate list may authorize an effect. Future indexing may skip a law only when it can establish the same result (including error behavior) under this reference contract; optimization is not a different recognition semantics.
+
+#### 15.8.4 Disposition
+
+| Complete scanner outcome | Disposition |
+|---|---|
+| No match | One `registered` receipt on `_unaddressed`; no RUN or instance. |
+| Exactly one match | Attempt the type's eligible entry RUN under PR-02. Recognition alone consumes nothing and grants nothing. If activation is unmet, one `registered` receipt on that type's frequency, no instance. |
+| More than one match | One `registered` receipt on `_unaddressed` with an ambiguity reason and sorted matching law hashes in private detail; no implicit priority, no RUN or instance. The participant may clarify the tuple and submit again. |
+| Predicate error or exhausted scan budget | One `registered` receipt on `_unaddressed` with the indeterminate reason; no RUN or instance, even if a candidate already matched. |
+| Malformed I-JSON or failed admission | A stable transport/protocol error; no tuple receipt. An unavailable or corrupt registry fails the request rather than falsely asserting recognition. |
+
+For each admitted initial tuple, at most one root receipt is constituted under this single-winner contract, subject to successful durable commit. It binds the tuple hash and recognition snapshot, with the selected law if any, and attested caller attribution. Private diagnostic details are hash-bound, not automatically broadcast. The exact error strings, receipt encoding and idempotency key are PR-02 work. `registered` does not confer an effect or authorize external action. No automatic community reaction follows from registration or execution: listeners decide what to submit next. Continuation of an existing instance is explicitly reserved for PR-02; the initial scanner must not accidentally instantiate a new process from a continuation input.
+
+#### 15.8.5 Acceptance cases (expected, not executed target tests)
+
+Use two illustrative recognition predicates, with RUN bodies omitted: Blue recognizes `{"and":[{"has":"did"},{"==":[{"var":"did"},"request"]}]}`; Green recognizes `{"and":[{"has":"with.green"},{"==":[{"var":"with.green"},true]}]}`. Both are guarded and inspect only tuple fields. Assume a sufficient budget and a valid snapshot containing both.
+
+| Input or change | Expected recognition / disposition |
+|---|---|
+| `null`, `[]`, or `{"did":"other"}` | No match; one registered receipt. |
+| `{"did":"request"}` | Blue only; attempt its entry RUN, whose activation may still fail. |
+| `{"did":"other","with":{"green":true}}` | Green only. |
+| `{"did":"request","with":{"green":true}}` | Both; one ambiguous registration, no effect. |
+| `{"this":"green@1","did":"request"}` | Blue only; `this` cannot override recognition. |
+| `{"who":"admin","did":"request"}` | Blue only; claimed identity confers no permission. |
+| `{"did":"request","did":"other"}` as raw bytes | Invalid I-JSON; no receipt. |
+| Reorder object keys in law or tuple | Same content hash and recognition outcome. |
+| Reverse registry hash order | Not a valid canonical registry snapshot; no silent alternate order. |
+| Remove Green from a new snapshot | Former overlap becomes Blue only for new admissions; old evidence replays as overlap. |
+| Add an unguarded predicate that errors on missing data | Indeterminate, not a partial Blue success. |
+| Exhaust budget after evaluating Blue | Indeterminate; no RUN. |
+| Supply a different law under the same hash | Integrity failure; no false registration verdict. |
+
+Approved decisions: single-winner ambiguity (rather than fan-out), `_unaddressed` registration frequency, fail-closed indeterminate handling, immutable snapshot selection and the recognition budget profile. PR-02 must finish the RUN/instance and receipt contract before implementation begins.
