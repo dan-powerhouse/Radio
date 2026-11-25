@@ -23,6 +23,7 @@ export interface Header {
   by: string | null;      // submitter as attested by the machine (a pseudonym in production)
   prev: string[];         // receipt ids this one cites or was caused by, sorted, unique
   spent: string[];        // cited ids the ledger reported as already consumed (sorted); an input, recorded
+  depth: number;          // 0: submitted by `by`; n > 0: a reaction, n links from a submission
   public: Record<string, unknown>; // the process's `broadcast` fields
 }
 /** Private part, stored by its hash. */
@@ -44,7 +45,9 @@ export interface RunOptions {
   store?: Store;      // needed when the process cites receipts
   keys?: KeyRing;     // whose signatures a cited receipt must carry
   spent?: string[];   // ledger state: cited ids already consumed in a `once` slot of this process
+  depth?: number;     // 0 for submissions; reactions carry their trigger's depth + 1
 }
+export const MAX_DEPTH = 64;
 
 export const WHEN_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const isObj = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -105,6 +108,7 @@ export const frequencyOf = (tuple: unknown) =>
 function checkOptions(o: RunOptions) {
   if (typeof o.when !== "string" || !WHEN_RE.test(o.when) || Number.isNaN(Date.parse(o.when))) throw new LoglineError("run_when", "when must be YYYY-MM-DDTHH:MM:SSZ");
   if (o.by != null && (typeof o.by !== "string" || o.by.length > 256)) throw new LoglineError("run_by", "by must be a string up to 256 characters");
+  if (o.depth !== undefined && (!Number.isInteger(o.depth) || o.depth < 0 || o.depth > MAX_DEPTH)) throw new LoglineError("run_depth", `depth must be an integer 0..${MAX_DEPTH}`);
   for (const p of [...(o.prev ?? []), ...(o.spent ?? [])]) if (typeof p !== "string" || !HASH_RE.test(p)) throw new LoglineError("run_prev", "prev and spent entries must be receipt ids");
 }
 
@@ -175,6 +179,7 @@ export async function run(process: Process | null, tuple: unknown, opts: RunOpti
     by: opts.by ?? null,
     prev: [...new Set([...(opts.prev ?? []), ...Object.values(cited).map((c) => c.id)])].sort(),
     spent: [...new Set(opts.spent ?? [])].sort(),
+    depth: opts.depth ?? 0,
     public: pub,
   };
   return { header, detail, id: await hashOf(header) };
@@ -186,8 +191,12 @@ export async function issue(key: MachineKey, process: Process | null, tuple: unk
   return { receipt, detail };
 }
 
-/** Cache key for "this law already decided this input": see SPEC §7. */
-export async function cacheKey(process: Process, inputHash: string, when: string): Promise<string> {
-  const bucket = process.time === "exact" ? when : process.time === "none" ? "" : when.slice(0, 10);
-  return hashOf({ process_hash: await hashOf(process), input_hash: inputHash, bucket });
+/**
+ * Idempotency key: the same input, from the same submitter, at the same depth,
+ * under the same law, in the same time bucket, is the same submission (SPEC §7.4).
+ */
+export async function cacheKey(process: Process | null, inputHash: string, when: string, by: string | null = null, depth = 0): Promise<string> {
+  const time = process?.time ?? "day";
+  const bucket = time === "exact" ? when : time === "none" ? "" : when.slice(0, 10);
+  return hashOf({ process_hash: process ? await hashOf(process) : null, input_hash: inputHash, bucket, by, depth });
 }

@@ -198,10 +198,10 @@
         "by": "p:demo-ana"
       },
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-ana\",\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:2a6fcf32b93d0e8f3bc344cef5c33ba484463be8215e7fe8b069303260b24b65",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-ana\",\"depth\":0,\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:e65ff4b99bf4ce6bc63386787e69ede3d4f447dad4deac4720d8a1fc60fd126b",
         "detail_jcs": "{\"consequence\":\"Entry permitted within the granted window.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":{\"entries\":\"single\",\"max_stay_days\":21,\"valid_from\":\"2027-02-10\",\"valid_until\":\"2027-05-11\"},\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "j5O6LkH-mjOHGi5t7fEP0Lx3knbSmjEUmTzWC4elCybmWnWDYpV-kzzHRHiCAX9y-GaVASw5iYVWsc078SxYCQ"
+        "signature": "CQjznAFMNjBrvXIWLTfYU-2YcgT-ZHW_oY95L8F2jlgzK-YvxEHliE34q9yLL5vcXnN6ERFGy8DPe6gScOIhAg"
       }
     },
     {
@@ -395,10 +395,10 @@
         "by": "p:demo-kenji"
       },
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-kenji\",\"detail_hash\":\"sha256:f36d2e750a73bcc4b8d598b9a1ef122f6a9f6a6bb3edf95e3294a94a169a650a\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:003b7e6e12c48aab375b0b66229436095e4daf62b64435b8a297592ef3db74d2\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"not\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:56d13d9ab482dbe219117e88ae56f5f0e4d967c027200d202bbd2667eeba2b92",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-kenji\",\"depth\":0,\"detail_hash\":\"sha256:f36d2e750a73bcc4b8d598b9a1ef122f6a9f6a6bb3edf95e3294a94a169a650a\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:003b7e6e12c48aab375b0b66229436095e4daf62b64435b8a297592ef3db74d2\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"not\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:4fb147c5a8e76368159586b2b19d9904e53e03df156a1b623747d90a988e2150",
         "detail_jcs": "{\"consequence\":\"Refused. The findings state why.\",\"findings\":[{\"reason\":\"The passport must be valid for 180 days after arrival.\",\"result\":\"not\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "CwYavKrUjYlxJzHXxiYEgUaH3xTLbD88vaJMCru2g8p6I8Mql0WKWnamYWZQG6v1xEU_v2vvuz6ZFsVzqCbCDw"
+        "signature": "9TLbHxFn_7ErpiPqQO8biz1yuAcpg2kK4gPS8Fk3ZB4_zaKo4yMnssBuNttCvkg5xGbHbFZAa6B9iq9BJaw5CA"
       }
     },
     {
@@ -592,10 +592,10 @@
         "by": "p:demo-lea"
       },
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-lea\",\"detail_hash\":\"sha256:d785fd4fefb13cb4851a577dcf10f9ac0ff769e513bf53522b36b16e2a5ccca9\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d54c57b80286157514e333191f9f797022e7360a872ae3159d4f1f538d35af1c\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:e3f6809f97b93d513cc181328e3e848ad538a1b3fd350846dd1cdca0f86598ce",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-lea\",\"depth\":0,\"detail_hash\":\"sha256:d785fd4fefb13cb4851a577dcf10f9ac0ff769e513bf53522b36b16e2a5ccca9\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d54c57b80286157514e333191f9f797022e7360a872ae3159d4f1f538d35af1c\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:b1ac2e9dd4538bfbf0aefcb24c237fc6b5063cd21f8b1b54f406c285234d04e9",
         "detail_jcs": "{\"consequence\":\"Referred to an officer. No entry permission yet.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"reason\":\"Funds are below 80 USD per day of stay.\",\"result\":\"doubt\",\"step\":\"sufficient_funds\"},{\"reason\":\"No return ticket was declared.\",\"result\":\"doubt\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "_txAdWNb38DJQ0Tjn5WC-swXDqPMLJ_e_Kxl-c8aM4D4JGd_U3o0446rG_OTHLF5p4wfNuc-lS1V-MwqmerNCQ"
+        "signature": "U2XUoMQ7RX5u_T5AcOxXJyO-KS22q_GJznyZu2gAm_YdXTXp7NPOQT_Ja81E8KruU3mJqRVmTPHWKsd9UoLICA"
       }
     },
     {
@@ -775,10 +775,10 @@
         "by": "p:demo-marta"
       },
       "expected": {
-        "header_jcs": "{\"activated\":false,\"by\":\"p:demo-marta\",\"detail_hash\":\"sha256:32c06fed84a6a2d74f427afbdf4d0352e4aa03a06ca851e176c7f789e79c4538\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:008fe834f5e2a504a180bc9fd1ee7abf6c159ad12d91ad1818ede62b93de26d6\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:53a29349bff125605ba5f0c86d0b72676525b81db3521179c04e962c8166f4f1",
+        "header_jcs": "{\"activated\":false,\"by\":\"p:demo-marta\",\"depth\":0,\"detail_hash\":\"sha256:32c06fed84a6a2d74f427afbdf4d0352e4aa03a06ca851e176c7f789e79c4538\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:008fe834f5e2a504a180bc9fd1ee7abf6c159ad12d91ad1818ede62b93de26d6\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:8b69cb9a9a18e6ee0d9cbc330d4c47afeac8a1d5a7502365bba67c4b3fd7ac08",
         "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"did is \\\"request\\\"; this process accepts \\\"apply\\\"\",\"with.passport.number is missing (string)\",\"with.passport.expiry is missing (date)\",\"with.travel.arrival is missing (date)\",\"with.travel.stay_days is missing (integer)\",\"with.travel.purpose is missing (string)\",\"with.travel.return_ticket is missing (boolean)\",\"with.means.funds_usd is missing (number)\",\"with.history.previous_overstay is missing (boolean)\"]}",
-        "signature": "m08BhuA1HULTJ1uKtffmvQlP-2PociNwQWbInZqtIKoa68S2SURwRH6qkMjB4BEeXmyF4BWey2XMBgQx_FS_CA"
+        "signature": "LwmfZmelwu0yR5RkNeKw--wzlzSWvX99LBw6qJiBpKGNUM4W-jBZBoQVFxZ3YuykUXLykurbMrDp1uEYmZQtAw"
       }
     },
     {
@@ -792,10 +792,10 @@
         "when": "2026-11-25T12:00:00Z"
       },
       "expected": {
-        "header_jcs": "{\"activated\":false,\"by\":null,\"detail_hash\":\"sha256:68a1c6c8151ca85c83094e68bacf7a7fcb03040690b8f6d176880132e37be2ce\",\"frequency\":\"_unaddressed\",\"input_hash\":\"sha256:823b9146a65a37b7627a6eac5f65473896dc479cbeb7f112ecf5f4b9ba965929\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":null,\"process_hash\":null,\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:f0a6d13bf5631583565f0341e6e98f9252b8437e1de3ab41004250d640c424a2",
+        "header_jcs": "{\"activated\":false,\"by\":null,\"depth\":0,\"detail_hash\":\"sha256:68a1c6c8151ca85c83094e68bacf7a7fcb03040690b8f6d176880132e37be2ce\",\"frequency\":\"_unaddressed\",\"input_hash\":\"sha256:823b9146a65a37b7627a6eac5f65473896dc479cbeb7f112ecf5f4b9ba965929\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":null,\"process_hash\":null,\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:e5a9e557f08d400373a1fc8c873a676809fd94029e241c24d09a05f844c9c4dc",
         "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"no process is published on frequency \\\"_unaddressed\\\"\"]}",
-        "signature": "30mtQttBNlfO8lBZ2LeFPwjZD-94Mzcs3fyICL8YsXCHXfXU-BYpXog7waK_oWPXjf7-IuRn38eDE_fVPdesCA"
+        "signature": "K45TJSiUF9qBauZhRqhuEYn78mI2rhTasfx3Soaxw1OQC6nYe8NTKLRfAu3P_dWri6zmwwlMero-SrZBV1jJBA"
       }
     },
     {
@@ -1009,10 +1009,10 @@
         "when": "2026-11-25T12:00:00Z"
       },
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":null,\"detail_hash\":\"sha256:e868f6da597945040909ad112186391616295a6746c56f1bf3c351a287f88b17\",\"frequency\":\"budget.demo@1\",\"input_hash\":\"sha256:8f511d370b1b2644343698d373c2e97c08659537e9113d896e73a0de9a0d402d\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"budget.demo@1\",\"process_hash\":\"sha256:987044090be71576f89105f7473dadfb4cee9b81a6ac9d291d49efdd68e54bb5\",\"public\":{},\"spent\":[],\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:e8e44530f12a17653732e8fe0d238ff9077b78a826149822dbe38156a61eb95e",
+        "header_jcs": "{\"activated\":true,\"by\":null,\"depth\":0,\"detail_hash\":\"sha256:e868f6da597945040909ad112186391616295a6746c56f1bf3c351a287f88b17\",\"frequency\":\"budget.demo@1\",\"input_hash\":\"sha256:8f511d370b1b2644343698d373c2e97c08659537e9113d896e73a0de9a0d402d\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"budget.demo@1\",\"process_hash\":\"sha256:987044090be71576f89105f7473dadfb4cee9b81a6ac9d291d49efdd68e54bb5\",\"public\":{},\"spent\":[],\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:4f40341ac5986faa698e2a83a9552519bf4dd40af8ae2a58efdd71caed3022f8",
         "detail_jcs": "{\"consequence\":\"Referred to an officer. No entry permission yet.\",\"findings\":[{\"error\":\"eval_budget: operation budget exhausted\",\"reason\":\"Expensive check.\",\"result\":\"doubt\",\"step\":\"expensive\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "qAzGq69ruuAeLkE5G-WHiq8A6YYgL7WXkK2K44okIXeAgZuzBRvBP9-vdCdSA7QJWdooYNd-Wn8ibnE-TkiXAQ"
+        "signature": "De91gbUalvzksh_4n9Ck60urGe1U223dROx42j0ZxQdga9Y1-CS1StjvxLYLVcpshe0H06n8v38FtNLo9lpqAQ"
       }
     },
     {
@@ -1210,10 +1210,10 @@
         ]
       },
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":null,\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"sha256:2222222222222222222222222222222222222222222222222222222222222222\"],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:ba853f758b91c56440275ac91bb6d1602a378dc3ac0956dc14ac15aa4eda69aa",
+        "header_jcs": "{\"activated\":true,\"by\":null,\"depth\":0,\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"sha256:2222222222222222222222222222222222222222222222222222222222222222\"],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:7f7e0891b402332c0c983f50d57ddd8580322afc4f45b41b02be3e615ec5ab3d",
         "detail_jcs": "{\"consequence\":\"Entry permitted within the granted window.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":{\"entries\":\"single\",\"max_stay_days\":21,\"valid_from\":\"2027-02-10\",\"valid_until\":\"2027-05-11\"},\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "dnm1Aq8LUIAAFh__cwW0J7g2pljakZ7T7jDV32fYcDgYmOk-NAFsykEu3vHYQvznI6hQR16xxmhykZiwOPCbBw"
+        "signature": "lnuldzscyXmHmcMSloWUd1QcwjPNoZhsVyV-5UVKJGLn5-HjLAV9ry3wuoOMAbjOl8sEppaabmHvrpyAqjk8DA"
       }
     },
     {
@@ -1365,10 +1365,10 @@
       },
       "cited": [],
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:ana\",\"detail_hash\":\"sha256:397dc6139d2b249fbb8b55ad1e68148ff7034de8abee5f3c8501498c8fce1298\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:e9d7032dc01ee0fd9411146813c5a9115dde4cb67affb8b6521a1e739299baac\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{\"detail.grants.completed\":1,\"detail.grants.course\":\"logline-101\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T10:00:00Z\"}",
-        "id": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:ana\",\"depth\":0,\"detail_hash\":\"sha256:397dc6139d2b249fbb8b55ad1e68148ff7034de8abee5f3c8501498c8fce1298\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:e9d7032dc01ee0fd9411146813c5a9115dde4cb67affb8b6521a1e739299baac\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{\"detail.grants.completed\":1,\"detail.grants.course\":\"logline-101\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T10:00:00Z\"}",
+        "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
         "detail_jcs": "{\"consequence\":\"Lesson completed. Cite this receipt when you submit the next lesson.\",\"findings\":[{\"result\":\"ok\",\"step\":\"same_course\"},{\"result\":\"ok\",\"step\":\"same_learner\"},{\"result\":\"ok\",\"step\":\"next_in_order\"},{\"result\":\"ok\",\"step\":\"passed\"}],\"grants\":{\"best_score\":88,\"completed\":1,\"course\":\"logline-101\"},\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "ddouuc5WTaG9wiJkrTmZo6EvO0FO4YJ2s33j_9M4lP2QBUZt4kmrJ7p4WG7OPUPf3rHzMw40wrFGDOdAXtxRBA"
+        "signature": "pNTdM7jC27mCbHQ1C2c0DWWEZqTg9aQSiyqAEx3w_GyZ5aF2hcTvNfXBiBqYzdHDFrz1sky_ptFeRiVIuYtbDQ"
       }
     },
     {
@@ -1514,7 +1514,7 @@
           "score": 91
         },
         "cites": {
-          "previous": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4"
+          "previous": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
         }
       },
       "options": {
@@ -1537,16 +1537,17 @@
               "by": "p:ana",
               "prev": [],
               "spent": [],
+              "depth": 0,
               "public": {
                 "detail.grants.course": "logline-101",
                 "detail.grants.completed": 1
               }
             },
-            "id": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4",
+            "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
             "sig": {
               "alg": "Ed25519",
               "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
-              "value": "ddouuc5WTaG9wiJkrTmZo6EvO0FO4YJ2s33j_9M4lP2QBUZt4kmrJ7p4WG7OPUPf3rHzMw40wrFGDOdAXtxRBA"
+              "value": "pNTdM7jC27mCbHQ1C2c0DWWEZqTg9aQSiyqAEx3w_GyZ5aF2hcTvNfXBiBqYzdHDFrz1sky_ptFeRiVIuYtbDQ"
             }
           },
           "detail": {
@@ -1580,10 +1581,10 @@
         }
       ],
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:ana\",\"detail_hash\":\"sha256:bb03abc71233ed772c32c11910f08ce16bbc7276d375a7ee4ef76d0c062e98e3\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:b65df3a11736adb8286715f15ead628d7ef84eef3f597fdbc3740024a5d10dd2\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4\"],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{\"detail.grants.completed\":2,\"detail.grants.course\":\"logline-101\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T11:00:00Z\"}",
-        "id": "sha256:ff25d893ed1e6e49de19ddf1cc32cf6ad7865c9f8628b04a07849ccc568c08cc",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:ana\",\"depth\":0,\"detail_hash\":\"sha256:bb03abc71233ed772c32c11910f08ce16bbc7276d375a7ee4ef76d0c062e98e3\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:15896319156ebf48c96898617970aee590083e017a28964e1c62e8ca36aa852c\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284\"],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{\"detail.grants.completed\":2,\"detail.grants.course\":\"logline-101\"},\"spent\":[],\"status\":\"ok\",\"when\":\"2026-11-25T11:00:00Z\"}",
+        "id": "sha256:1734b7a92f3a7ad979b75a74e27ce28d58f1dfdf574e14c4b67984497991bf91",
         "detail_jcs": "{\"consequence\":\"Lesson completed. Cite this receipt when you submit the next lesson.\",\"findings\":[{\"result\":\"ok\",\"step\":\"same_course\"},{\"result\":\"ok\",\"step\":\"same_learner\"},{\"result\":\"ok\",\"step\":\"next_in_order\"},{\"result\":\"ok\",\"step\":\"passed\"}],\"grants\":{\"best_score\":91,\"completed\":2,\"course\":\"logline-101\"},\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "WdWZoBIKvN8Ka64ewnj-eyHN-iFM2pzP_kZWOJuQzhX8C1NxmyKLkjXPY4vBTW2MgFkoGbgXFrBqfRVL8_QHCA"
+        "signature": "eVM1ZS9PM9RWYj1E-gvigc6QGuKYDtxWrv6BwhD9pG5W-jM7AD_VY7oyRuSfFzQTAuV7Z3-6YNucWH2zQPx5Aw"
       }
     },
     {
@@ -1729,7 +1730,7 @@
           "score": 91
         },
         "cites": {
-          "previous": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4"
+          "previous": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
         }
       },
       "options": {
@@ -1752,16 +1753,17 @@
               "by": "p:ana",
               "prev": [],
               "spent": [],
+              "depth": 0,
               "public": {
                 "detail.grants.course": "logline-101",
                 "detail.grants.completed": 1
               }
             },
-            "id": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4",
+            "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
             "sig": {
               "alg": "Ed25519",
               "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
-              "value": "ddouuc5WTaG9wiJkrTmZo6EvO0FO4YJ2s33j_9M4lP2QBUZt4kmrJ7p4WG7OPUPf3rHzMw40wrFGDOdAXtxRBA"
+              "value": "pNTdM7jC27mCbHQ1C2c0DWWEZqTg9aQSiyqAEx3w_GyZ5aF2hcTvNfXBiBqYzdHDFrz1sky_ptFeRiVIuYtbDQ"
             }
           },
           "detail": {
@@ -1795,10 +1797,10 @@
         }
       ],
       "expected": {
-        "header_jcs": "{\"activated\":true,\"by\":\"p:bob\",\"detail_hash\":\"sha256:24fb7aab23ec532f8f9d7630fceacb4899e768775844e9fa6047d0097a8da05f\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:b65df3a11736adb8286715f15ead628d7ef84eef3f597fdbc3740024a5d10dd2\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4\"],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[],\"status\":\"not\",\"when\":\"2026-11-25T11:00:00Z\"}",
-        "id": "sha256:cabc439255914e2d2fe5c9c5b9dd2d12fb5edea0479d26f638643b9cb1369c7c",
+        "header_jcs": "{\"activated\":true,\"by\":\"p:bob\",\"depth\":0,\"detail_hash\":\"sha256:24fb7aab23ec532f8f9d7630fceacb4899e768775844e9fa6047d0097a8da05f\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:15896319156ebf48c96898617970aee590083e017a28964e1c62e8ca36aa852c\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284\"],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[],\"status\":\"not\",\"when\":\"2026-11-25T11:00:00Z\"}",
+        "id": "sha256:e1fb6314adc49a3a0211c53bd7f63052ba2fc2c440d8bbd316c9fa254ed92c13",
         "detail_jcs": "{\"consequence\":\"Not completed. The findings say why; nothing was consumed.\",\"findings\":[{\"result\":\"ok\",\"step\":\"same_course\"},{\"reason\":\"The cited lesson was completed by someone else.\",\"result\":\"not\",\"step\":\"same_learner\"},{\"result\":\"ok\",\"step\":\"next_in_order\"},{\"result\":\"ok\",\"step\":\"passed\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
-        "signature": "-dhkCerObevxRUckplSH7R2-qcBasS-N290FGIDZFb_dHk96DqNcE01rWmgFt9Gftj_nzIMEg4bYuMYxFpArDw"
+        "signature": "iVpYVDEWdksmSSpq65eY2lstZz8kadN3k2_nPQoVYCY9olSyhEIGMTnJs3IoYNNLQ9dT1O3PEfHrkUXmXhdLCg"
       }
     },
     {
@@ -1944,14 +1946,14 @@
           "score": 91
         },
         "cites": {
-          "previous": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4"
+          "previous": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
         }
       },
       "options": {
         "when": "2026-11-25T12:00:00Z",
         "by": "p:ana",
         "spent": [
-          "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4"
+          "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
         ]
       },
       "cited": [
@@ -1970,16 +1972,17 @@
               "by": "p:ana",
               "prev": [],
               "spent": [],
+              "depth": 0,
               "public": {
                 "detail.grants.course": "logline-101",
                 "detail.grants.completed": 1
               }
             },
-            "id": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4",
+            "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
             "sig": {
               "alg": "Ed25519",
               "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
-              "value": "ddouuc5WTaG9wiJkrTmZo6EvO0FO4YJ2s33j_9M4lP2QBUZt4kmrJ7p4WG7OPUPf3rHzMw40wrFGDOdAXtxRBA"
+              "value": "pNTdM7jC27mCbHQ1C2c0DWWEZqTg9aQSiyqAEx3w_GyZ5aF2hcTvNfXBiBqYzdHDFrz1sky_ptFeRiVIuYtbDQ"
             }
           },
           "detail": {
@@ -2013,10 +2016,10 @@
         }
       ],
       "expected": {
-        "header_jcs": "{\"activated\":false,\"by\":\"p:ana\",\"detail_hash\":\"sha256:a3001499aa3b3bdc74dfe8ccfcc2872c516315215c94ae6950f7d58f8870918f\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:b65df3a11736adb8286715f15ead628d7ef84eef3f597fdbc3740024a5d10dd2\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[\"sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4\"],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
-        "id": "sha256:0d56f687e85d521cb796db89a189650bebe3bd003386ba1530902b55352c92c3",
-        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"cites.previous: receipt sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4 has already been used by this process\"]}",
-        "signature": "CehYtBgXbhmR_vmVZtnIF9BWWYqX8A0V4HA_FK8GnX2Ni_CZxUW79QZ6H4vmgbLLamjcN8usTFImgf1gc-CPBw"
+        "header_jcs": "{\"activated\":false,\"by\":\"p:ana\",\"depth\":0,\"detail_hash\":\"sha256:f10298c974968981c4b49a1711b08ab36c0487703255b5bd3118160353174a8e\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:15896319156ebf48c96898617970aee590083e017a28964e1c62e8ca36aa852c\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[\"sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284\"],\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:588cbc58d5bb5d3a546c14929342afecc2d76fb09b8b779300fa836a709e95cf",
+        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"cites.previous: receipt sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284 has already been used by this process\"]}",
+        "signature": "ejc9-J--v7_6N53P1CUw58Z2r0S_pkHusuXioM5CWJ6TslQDo24CFi5bAKU2mCbMAtaK5WRMUdg-BIEv296SCg"
       }
     },
     {
@@ -2162,7 +2165,7 @@
           "score": 91
         },
         "cites": {
-          "previous": "sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4"
+          "previous": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
         }
       },
       "options": {
@@ -2171,10 +2174,10 @@
       },
       "cited": [],
       "expected": {
-        "header_jcs": "{\"activated\":false,\"by\":\"p:ana\",\"detail_hash\":\"sha256:23ee8c0322f0083471b391a2d5faa4f5f4dc4a843c277afcf9c6a62f80ff8e89\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:b65df3a11736adb8286715f15ead628d7ef84eef3f597fdbc3740024a5d10dd2\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T11:00:00Z\"}",
-        "id": "sha256:363dc4e4ee2257daa3efef9470a76893041978c7b448b7aebfece0729067a021",
-        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"cites.previous: receipt sha256:cf6479584c65ed02a4d647a258a16bf260b9d30e5dc4121509c338790ef31ca4 was not found\"]}",
-        "signature": "Yn21de_43BUKKUERcfwwwkNkSb_2SyLTQF0H-HUDRR9HEPacb9FliIGq2j1Y2OpZhd7lOWC6nm_yrHp-a_7lDA"
+        "header_jcs": "{\"activated\":false,\"by\":\"p:ana\",\"depth\":0,\"detail_hash\":\"sha256:f61a36475cc56c9a4405084a7e76cdf2b78c3b755f8a60e277293d2569c57e85\",\"frequency\":\"course.lesson@1\",\"input_hash\":\"sha256:15896319156ebf48c96898617970aee590083e017a28964e1c62e8ca36aa852c\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"course.lesson@1\",\"process_hash\":\"sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27\",\"public\":{},\"spent\":[],\"status\":\"registered\",\"when\":\"2026-11-25T11:00:00Z\"}",
+        "id": "sha256:b3662528c8ac1acd5abc6e46746fb1fb3d436e4a4700329adf659481ad7a81f4",
+        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"cites.previous: receipt sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284 was not found\"]}",
+        "signature": "zKM7xUCaiZD8P0aISNJsDyUic_GHD5AzNawKvo_DxUY9-h-UrcKdyb9yGmMhPO16GWfB7H9e_fgBeNN9W627DQ"
       }
     }
   ]

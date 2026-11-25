@@ -23,7 +23,15 @@ It does **not** prove:
 - **Canonical JSON** is RFC 8785 (JCS). Every hash and every comparison in this spec uses the JCS form. Values that JCS cannot encode (non-finite numbers, lone surrogates, non-JSON types) MUST be rejected with `jcs_number`, `jcs_string` or `jcs_type`.
 - **Hash** is `"sha256:" + lowercase hex(SHA-256(UTF-8(JCS(value))))`. The prefix lets a later version change the algorithm without ambiguity.
 - **Binary** values (keys, signatures) are base64url without padding.
-- Submitted JSON SHOULD be parsed as I-JSON (RFC 7493). Duplicate object keys MUST be rejected by the submit service *(open item, §12)*.
+- Submitted bytes MUST be parsed as I-JSON (RFC 7493), refusing with `ijson` anything that ordinary JSON parsing would accept but silently change:
+  - duplicate object keys;
+  - lone surrogates;
+  - control characters in strings;
+  - integers outside ±(2^53−1);
+  - nesting deeper than 64;
+  - trailing characters.
+
+  Nothing is recorded for bytes that fail to parse, because there is no tuple to record.
 
 ## 3. Tuple
 
@@ -41,6 +49,7 @@ A tuple carrying private facts SHOULD include a top-level `salt` of at least 128
 | `accepts.did` | yes | The verb that activates it. |
 | `requires` | yes | Activation conditions: field path to type. The types are `string`, `number`, `integer`, `boolean`, `date` (`YYYY-MM-DD`, a real calendar date), `object` and `array`. |
 | `cites` | no | Slot name to `{frequency, status?, optional?, once?}`: the receipts a tuple must cite, by id, under `tuple.cites.<slot>` (§9). At most 16 slots. |
+| `on` | no | `{frequency, status?}`: the process **reacts** to receipts on air (§10.1). `frequency` is a pattern or a list of up to 16 patterns. Requires a `cites.trigger` slot. |
 | `steps` | yes | An ordered list of `{id, check, if_not, reason}`. `check` is an expression, and `if_not` is `"not"` or `"doubt"`. Step ids are unique. |
 | `grants` | no | Name to expression. Evaluated only when the status is `ok`. |
 | `if_ok`, `if_doubt`, `if_not` | yes | The consequence text for each outcome, agreed when the law is published. |
@@ -86,6 +95,7 @@ Input: a process or `null`, the tuple, and:
 - `by` (a string or null, at most 256 characters);
 - `prev` (receipt ids);
 - `spent` (receipt ids the ledger reports as already consumed, §9);
+- `depth` (0 for a submission; a reaction carries its trigger's depth + 1, at most 64);
 - a content-addressed **store** of signed receipts and details, and the **key ring** that cited receipts must be signed by.
 
 1. **Frequency.** The frequency is `tuple.this` if it is a valid frequency string. Otherwise it is `_unaddressed`.
@@ -120,7 +130,7 @@ Input: a process or `null`, the tuple, and:
 ```json
 { "logline": "receipt@1", "frequency": "...", "status": "registered|ok|doubt|not", "activated": true,
   "process": "id" | null, "process_hash": "sha256:..." | null, "input_hash": "sha256:...",
-  "detail_hash": "sha256:...", "when": "...", "by": "..." | null, "prev": ["sha256:..."], "spent": ["sha256:..."], "public": { } }
+  "detail_hash": "sha256:...", "when": "...", "by": "..." | null, "prev": ["sha256:..."], "spent": ["sha256:..."], "depth": 0, "public": { } }
 ```
 
 `prev` is the union of the given `prev` and every resolved citation, sorted and without duplicates. `spent` is the input `spent`, sorted and without duplicates. The ledger's claim is recorded and signed, so a replay uses exactly what the machine saw. The **receipt id** is `hash(header)`. Because the header commits to `detail_hash`, the private detail is bound to the receipt without being published.
@@ -133,9 +143,21 @@ Input: a process or `null`, the tuple, and:
 
 The signed message is the UTF-8 bytes of `"logline-receipt-v1:" + id`. The **key id** is `hash({crv, kty, x})` of the public JWK, which is the RFC 7638 thumbprint input. Ed25519 is deterministic, so the conformance vectors pin signature bytes.
 
-### 7.4 Caching
+### 7.4 Idempotency
 
-`cacheKey = hash({process_hash, input_hash, bucket})`. The bucket is `""` when `time` is `none`, the date of `when` when it is `day`, and `when` itself when it is `exact`. A machine MAY return an earlier receipt with the same cache key instead of issuing a new one.
+```
+key = hash({ process_hash, input_hash, bucket, by, depth })
+```
+
+The bucket depends on the process's `time`:
+
+| `time` | Bucket |
+|---|---|
+| `none` | `""` |
+| `day` (the default) | the date of `when` |
+| `exact` | `when` itself |
+
+A ledger that has already issued a receipt under a key MUST return that receipt, marked as replayed, and MUST NOT issue another or run reactions again. A retried request therefore never decides twice and never consumes twice.
 
 ## 8. Verification
 
@@ -204,6 +226,27 @@ A forged ancestor fails its own `detail` or `id` check. The receipts that cite i
 - A late listener reads history from the ledger, then subscribes from the last id it saw.
 - Listeners never need to trust the channel: they verify each header (§8).
 
+### 10.1 Choreography
+
+A process with `on` listens to the radio. When a receipt whose header matches `on` is issued, the ledger submits a reaction to that process:
+
+```
+{ "did": process.accepts.did, "this": process.id, "cites": { "trigger": <receipt id> } }
+```
+
+- **`by`** is the trigger's `by`, so the reaction is on behalf of the same submitter.
+- **`depth`** is the trigger's depth plus 1.
+- **The reaction is an ordinary run.** It must activate under the usual rules and is replayable like any other receipt. Reactions that don't activate are still recorded as `registered`.
+- **Order.** The ledger processes reactions breadth first, in the order processes were published.
+
+The ledger MUST enforce three limits, and MUST report every halted reaction with its reason to the submitter:
+
+1. **At most once per pair.** A process reacts to a given receipt at most once.
+2. **Depth.** No reaction beyond `maxDepth` (reference default 8), reason `depth`.
+3. **Chain budget.** No more than `maxReactions` receipts caused by one submission (reference default 64), reason `chain_budget`.
+
+Together these limits guarantee that every submission terminates, even when processes listen to each other in a loop.
+
 ## 11. Keys
 
 A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
@@ -214,9 +257,8 @@ A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { 
 
 ## 13. Open items before freeze
 
-1. I-JSON parsing with duplicate-key rejection in the submit service.
-2. The fixed `registered` consequence text: should it be part of the spec or of the process?
-3. Choreography: when a listening process reacts automatically, is the triggering receipt passed as an implicit citation? *(M4)*
-4. Key rotation receipt format *(M2)*.
-5. Encryption envelope for private objects and erasure by key deletion *(M5)*.
-6. Trajectories across machines. A citation currently resolves only against one key ring, so citing another operator's receipts needs a ring with several issuers *(v2: federation)*.
+- The fixed `registered` consequence text: should it be part of the spec or of the process?
+- Should a reaction be able to carry `with` facts, derived deterministically from the trigger, or is citing the trigger always enough?
+- Key rotation receipt format *(M2)*.
+- Encryption envelope for private objects and erasure by key deletion *(M5)*.
+- Trajectories across machines. A citation currently resolves only against one key ring, so citing another operator's receipts needs a ring with several issuers *(v2: federation)*.

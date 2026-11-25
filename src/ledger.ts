@@ -2,11 +2,24 @@ import { canonicalize } from "./jcs.js";
 import { hashOf } from "./hash.js";
 import { KeyRing, MachineKey } from "./keys.js";
 import { Process, validateProcess } from "./process.js";
-import { issue, frequencyOf, Receipt, Detail, Store, Header } from "./receipt.js";
+import { issue, frequencyOf, cacheKey, Receipt, Detail, Store, Header } from "./receipt.js";
+import { parseStrict } from "./strict.js";
 import { verify, Verdict } from "./verify.js";
 import { tuned, Tuning } from "./radio.js";
 
 export interface Entry { seq: number; receipt: Receipt; detail: Detail; tuple: unknown; process: Process | null }
+export interface LedgerOptions {
+  clock?: () => string;
+  maxDepth?: number;      // longest chain of reactions after a submission
+  maxReactions?: number;  // most receipts one submission may cause, in total
+}
+export interface Halted { trigger: string; process: string; reason: "depth" | "chain_budget" }
+export interface SubmitResult {
+  receipt: Receipt; detail: Detail;
+  replayed: boolean;      // true: an identical submission already had this receipt; nothing new was issued
+  reactions: Receipt[];   // receipts the radio caused, in the order they were issued
+  halted: Halted[];       // reactions the machine refused to run, and why
+}
 export interface Bundle {
   logline: "bundle@1";
   head: string;
@@ -24,9 +37,18 @@ export class MemoryLedger implements Store {
   private processes = new Map<string, Process>();
   private consumed = new Set<string>();  // canonical [processId, slot, citedId]
   private listeners = new Set<{ tuning: Tuning; fn: (r: Receipt) => void }>();
+  private idempotent = new Map<string, string>();     // cacheKey -> receipt id
+  private reacted = new Set<string>();                // canonical [trigger id, process id]
   readonly keys: KeyRing;
+  private clock: () => string;
+  readonly maxDepth: number;
+  readonly maxReactions: number;
 
-  constructor(private key: MachineKey, private clock: () => string = () => new Date().toISOString().slice(0, 19) + "Z") {
+  constructor(private key: MachineKey, opts: LedgerOptions | (() => string) = {}) {
+    const o = typeof opts === "function" ? { clock: opts } : opts;
+    this.clock = o.clock ?? (() => new Date().toISOString().slice(0, 19) + "Z");
+    this.maxDepth = o.maxDepth ?? 8;
+    this.maxReactions = o.maxReactions ?? 64;
     this.keys = { [key.id]: { jwk: key.public } };
   }
 
@@ -43,26 +65,62 @@ export class MemoryLedger implements Store {
     return e ? { receipt: e.receipt, detail: e.detail } : null;
   }
 
-  /** Every submission gets a receipt. */
-  async submit(tuple: unknown, opts: { by?: string | null; when?: string } = {}): Promise<{ receipt: Receipt; detail: Detail }> {
+  /** Raw bytes from the network: parsed as I-JSON, then submitted. */
+  async submitText(text: string, opts: { by?: string | null; when?: string } = {}): Promise<SubmitResult> {
+    return this.submit(parseStrict(text), opts);
+  }
+
+  /**
+   * Every submission gets a receipt. Then the radio runs: each process tuned to
+   * the new receipt reacts once, with a tuple citing it as `trigger`, breadth
+   * first, until nothing more reacts or a limit halts the chain.
+   */
+  async submit(tuple: unknown, opts: { by?: string | null; when?: string } = {}): Promise<SubmitResult> {
     canonicalize(tuple);
-    tuple = structuredClone(tuple);
+    const first = await this.issueOne(structuredClone(tuple), opts.by ?? null, 0, opts.when);
+    const reactions: Receipt[] = [], halted: Halted[] = [];
+    if (first.replayed) return { ...first, reactions, halted };
+    const queue: Entry[] = [this.byId.get(first.receipt.id)!];
+    while (queue.length) {
+      const trigger = queue.shift()!;
+      for (const p of this.processes.values()) {
+        if (!p.on || !tuned({ frequency: p.on.frequency, status: p.on.status }, trigger.receipt.header)) continue;
+        const pair = canonicalize([trigger.receipt.id, p.id]);
+        if (this.reacted.has(pair)) continue;
+        this.reacted.add(pair);
+        const h = trigger.receipt.header;
+        if (h.depth + 1 > this.maxDepth) { halted.push({ trigger: trigger.receipt.id, process: p.id, reason: "depth" }); continue; }
+        if (reactions.length >= this.maxReactions) { halted.push({ trigger: trigger.receipt.id, process: p.id, reason: "chain_budget" }); continue; }
+        const r = await this.issueOne({ did: p.accepts.did, this: p.id, cites: { trigger: trigger.receipt.id } }, h.by, h.depth + 1);
+        reactions.push(r.receipt);
+        if (!r.replayed) queue.push(this.byId.get(r.receipt.id)!);
+      }
+    }
+    return { ...first, reactions, halted };
+  }
+
+  private async issueOne(tuple: unknown, by: string | null, depth: number, when?: string) {
     const process = this.processes.get(frequencyOf(tuple)) ?? null;
+    when ??= this.clock();
+    const idem = await cacheKey(process, await hashOf(tuple), when, by, depth);
+    const seen = this.idempotent.get(idem);
+    if (seen) { const e = this.byId.get(seen)!; return { receipt: structuredClone(e.receipt), detail: structuredClone(e.detail), replayed: true }; }
     const cites = tuple !== null && typeof tuple === "object" && !Array.isArray(tuple) ? (tuple as any).cites : undefined;
     const spent: string[] = [];
     for (const [slot, rule] of Object.entries(process?.cites ?? {})) {
       const id = cites?.[slot];
       if (rule.once && typeof id === "string" && this.consumed.has(canonicalize([process!.id, slot, id]))) spent.push(id);
     }
-    const { receipt, detail } = await issue(this.key, process, tuple, { when: opts.when ?? this.clock(), by: opts.by ?? null, store: this, keys: this.keys, spent });
+    const { receipt, detail } = await issue(this.key, process, tuple, { when, by, depth, store: this, keys: this.keys, spent });
     if (receipt.header.status === "ok")
       for (const [slot, rule] of Object.entries(process?.cites ?? {}))
         if (rule.once && typeof cites?.[slot] === "string") this.consumed.add(canonicalize([process!.id, slot, cites[slot]]));
     const entry: Entry = { seq: this.entries.length + 1, receipt, detail, tuple, process: process ? structuredClone(process) : null };
     this.entries.push(entry);
     this.byId.set(receipt.id, entry);
+    this.idempotent.set(idem, receipt.id);
     for (const l of this.listeners) if (tuned(l.tuning, receipt.header)) l.fn(structuredClone(receipt));
-    return { receipt: structuredClone(receipt), detail: structuredClone(detail) };
+    return { receipt: structuredClone(receipt), detail: structuredClone(detail), replayed: false };
   }
 
   /** The radio. Replays history after `afterSeq` (if given), then delivers live. Returns unsubscribe. */

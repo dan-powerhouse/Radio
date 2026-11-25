@@ -50,7 +50,7 @@ export async function verify(receipt: unknown, keys: KeyRing, ev: Evidence = {})
   if (ev.tuple !== undefined && ev.process !== undefined) {
     let same = false;
     try {
-      const again = await run(ev.process, ev.tuple, { when: r.header.when, by: r.header.by, prev: r.header.prev, spent: r.header.spent, store: ev.store, keys });
+      const again = await run(ev.process, ev.tuple, { when: r.header.when, by: r.header.by, prev: r.header.prev, spent: r.header.spent, depth: r.header.depth, store: ev.store, keys });
       same = canonicalize(again.header) === canonicalize(r.header) && again.id === r.id && (ev.detail === undefined || canonicalize(again.detail) === canonicalize(ev.detail));
     } catch { same = false; }
     add("replay", same, "running the tuple on the process again gives the same receipt");

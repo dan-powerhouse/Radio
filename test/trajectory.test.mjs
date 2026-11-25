@@ -43,9 +43,14 @@ test("certificate before finishing is refused", async () => {
   assert.deepEqual(detail.findings.filter((f) => f.result === "not").map((f) => f.step), ["all_lessons"]);
 });
 test("a second certificate from the same trajectory is refused", async () => {
-  const { ledger, lessons } = await course();
-  const { receipt } = await ledger.submit({ did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101" }, cites: { last: lessons[4].id } }, { by: "p:ana" });
-  assert.equal(receipt.header.status, "registered");
+  const { ledger, lessons, cert } = await course();
+  // the identical request is the same submission: the existing certificate comes back
+  const same = await ledger.submit({ did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101" }, cites: { last: lessons[4].id } }, { by: "p:ana" });
+  assert.equal(same.replayed, true); assert.equal(same.receipt.id, cert.id);
+  // any other request citing the same last lesson finds it already consumed
+  const other = await ledger.submit({ did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101", name: "Ana" }, cites: { last: lessons[4].id } }, { by: "p:ana" });
+  assert.equal(other.receipt.header.status, "registered");
+  assert.match(other.detail.unmet[0], /already been used/);
 });
 test("a forged ancestor breaks the bundle at that ancestor", async () => {
   const { ledger, cert } = await course();

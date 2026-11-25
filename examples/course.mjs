@@ -11,10 +11,11 @@ const clock = () => new Date((t += 3600_000)).toISOString().slice(0, 19) + "Z";
 const ledger = new L.MemoryLedger(key, clock);
 await ledger.publish(load("course.lesson@1.json"));
 await ledger.publish(load("course.certificate.logline-101@1.json"));
+await ledger.publish(load("alumni.logline-101@1.json")); // reacts on its own to certificates
 
 // The radio: a teacher listens to everything on course.*; Ana listens for herself.
-ledger.listen({ frequency: "course.*" }, (r) =>
-  console.log(`  📻 ${r.header.frequency.padEnd(34)} ${r.header.status.padEnd(10)} by ${r.header.by}  ${r.id.slice(7, 19)}  public=${JSON.stringify(r.header.public)}`));
+ledger.listen({}, (r) =>
+  console.log(`  📻 ${r.header.depth ? "↳ reaction " : ""}${r.header.frequency.padEnd(34)} ${r.header.status.padEnd(10)} by ${r.header.by}  ${r.id.slice(7, 19)}  public=${JSON.stringify(r.header.public)}`));
 
 const ana = "p:ana", bob = "p:bob";
 const lesson = (n, score, previous) => ({ who: "learner", did: "complete", this: "course.lesson@1",
@@ -45,16 +46,23 @@ show(await ledger.submit(lesson(6, 99, last.id), { by: bob }));
 say("Bob asks for a certificate citing Ana's lesson 5.");
 show(await ledger.submit({ who: "learner", did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101" }, cites: { last: last.id } }, { by: bob }));
 
-say("Ana asks for her certificate, citing lesson 5.");
-const cert = show(await ledger.submit({ who: "learner", did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101" }, cites: { last: last.id } }, { by: ana }));
+say("Ana asks for her certificate, citing lesson 5. The alumni register hears it on the radio and reacts.");
+const certTuple = { who: "learner", did: "certify", this: "course.certificate.logline-101@1", with: { course: "logline-101" }, cites: { last: last.id } };
+const certResult = await ledger.submit(certTuple, { by: ana, when: "2026-11-25T23:00:00Z" });
+const cert = show(certResult);
+const alumni = certResult.reactions[0];
+
+say("Ana's connection drops and her app resends the same request.");
+const again = await ledger.submit(certTuple, { by: ana, when: "2026-11-25T23:00:00Z" });
+console.log(`  → replayed=${again.replayed}: same receipt ${again.receipt.id === cert.id ? "returned" : "NOT returned"}, no new receipt, no second alumni enrollment.`);
 
 say("Someone sends free-form text to the school.");
 show(await ledger.submit({ did: "please", this: "course.lesson@1", with: "I finished everything, trust me" }, { by: "p:carol" }));
 
-say("Ana's trajectory behind the certificate:");
-for (const h of ledger.trajectory(cert.id)) console.log(`  ${h.frequency.padEnd(34)} ${h.status.padEnd(4)} ${JSON.stringify(h.public)}  prev=${h.prev.map((p) => p.slice(7, 15)).join(",") || "∅"}`);
+say("The trajectory behind Ana's alumni enrollment:");
+for (const h of ledger.trajectory(alumni.id)) console.log(`  ${h.frequency.padEnd(34)} ${h.status.padEnd(4)} ${JSON.stringify(h.public)}  prev=${h.prev.map((p) => p.slice(7, 15)).join(",") || "∅"}`);
 
-const bundle = ledger.bundle(cert.id);
+const bundle = ledger.bundle(alumni.id);
 const v = await L.verifyBundle(bundle, ledger.keys);
 say(`Offline verification of the bundle: ${v.valid ? "VALID" : "INVALID"} — ${v.entries.length} receipts re-run by hash.`);
 

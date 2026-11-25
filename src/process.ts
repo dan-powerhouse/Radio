@@ -16,6 +16,7 @@ export interface Process {
   accepts: { did: string };
   requires: Record<string, FieldType>; // activation conditions on the free tuple
   cites?: Record<string, CiteSlot>;   // receipts the tuple must cite by id, under tuple.cites.<slot>
+  on?: { frequency: string | string[]; status?: ("registered" | "ok" | "doubt" | "not")[] }; // react to receipts on air (needs cites.trigger)
   steps: Step[];
   grants?: Record<string, unknown>;    // evaluated only when every step is ok
   if_ok: string; if_doubt: string; if_not: string;
@@ -40,7 +41,7 @@ const str = (v: unknown, path: string, max = 2000) => { if (typeof v !== "string
 export function validateProcess(p: unknown): asserts p is Process {
   if (!isObj(p)) fail("$", "a process is a JSON object");
   const q = p as Record<string, unknown>;
-  const known = new Set(["logline", "id", "issuer", "accepts", "requires", "steps", "grants", "if_ok", "if_doubt", "if_not", "broadcast", "time", "limits", "cites"]);
+  const known = new Set(["logline", "id", "issuer", "accepts", "requires", "steps", "grants", "if_ok", "if_doubt", "if_not", "broadcast", "time", "limits", "cites", "on"]);
   for (const k of Object.keys(q)) if (!known.has(k)) fail(k, "unknown field");
   if (q.logline !== "process@1") fail("logline", 'must be "process@1"');
   if (typeof q.id !== "string" || !FREQUENCY_RE.test(q.id) || q.id === UNADDRESSED) fail("id", "must match " + FREQUENCY_RE);
@@ -66,6 +67,17 @@ export function validateProcess(p: unknown): asserts p is Process {
         fail(`cites.${slot}.status`, "must be a list of statuses");
       for (const k of ["optional", "once"]) if (cc[k] !== undefined && typeof cc[k] !== "boolean") fail(`cites.${slot}.${k}`, "must be a boolean");
     }
+  }
+  if (q.on !== undefined) {
+    if (!isObj(q.on)) fail("on", "must be an object");
+    const on = q.on as Record<string, unknown>;
+    for (const k of Object.keys(on)) if (!["frequency", "status"].includes(k)) fail(`on.${k}`, "unknown field");
+    const fs = Array.isArray(on.frequency) ? on.frequency : [on.frequency];
+    if (!fs.length || fs.length > MAX_CITES) fail("on.frequency", `one to ${MAX_CITES} frequencies`);
+    for (const f of fs) if (typeof f !== "string" || !FREQUENCY_RE.test(f.endsWith(".*") ? f.slice(0, -2) : f)) fail("on.frequency", `bad frequency ${JSON.stringify(f)}`);
+    if (on.status !== undefined && (!Array.isArray(on.status) || !on.status.every((x) => ["registered", "ok", "doubt", "not"].includes(x as string))))
+      fail("on.status", "must be a list of statuses");
+    if (!isObj(q.cites) || !isObj((q.cites as Record<string, unknown>).trigger)) fail("on", "a reacting process must declare cites.trigger");
   }
   if (!Array.isArray(q.steps)) fail("steps", "must be a list");
   const ids = new Set<string>();

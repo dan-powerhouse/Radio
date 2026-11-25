@@ -14,7 +14,7 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 | `SPEC.md` | LogLine Receipt v1, draft for freeze |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/ledger.ts` | Reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
-| `processes/` | The first process: a course of 5 lessons, ending in a certificate |
+| `processes/` | The first process: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
 | `bin/logline.mjs` | CLI: `logline verify-bundle bundle.json [--keys keys.json]` |
 | `vectors/` | Conformance vectors. JCS cases come from RFC 8785; receipt and citation goldens are signed with a test-only key |
@@ -31,6 +31,13 @@ npm run example   # the course, start to certificate
 
 - `course.lesson@1`: each lesson **cites the previous lesson's receipt**. The rules check that it's the same learner, the same course and the next lesson, with a score of at least 70. The receipt's grants carry `completed`, which the next lesson builds on. A cited lesson can be consumed only once, so a trajectory can't fork. A failed attempt consumes nothing, so it can be retried.
 - `course.certificate.logline-101@1` **cites the last lesson**. Its rules require 5 completed lessons by the same learner. The certificate's bundle holds the whole trajectory, and every receipt in it is re-run by hash when it's verified.
+- `alumni.logline-101@1` **listens to the radio**. When a certificate comes out `ok`, it reacts with a receipt of its own that cites the certificate. Nobody submits anything.
+
+## The machine
+
+- **Choreography.** Processes with `on` react to receipts on air. Loops are stopped by three limits: one reaction per trigger and process, a maximum depth, and a budget per submission. Halted reactions are reported.
+- **Idempotency.** The same submission from the same person in the same time window returns the receipt that already exists. A retry never decides twice and never consumes twice.
+- **Strict input.** `submitText` parses I-JSON and refuses duplicate keys, lone surrogates and integers that would be silently rounded.
 
 ## Use
 

@@ -1,0 +1,26 @@
+{
+  "logline": "process@1",
+  "id": "alumni.logline-101@1",
+  "issuer": "LogLine School",
+  "on": { "frequency": "course.certificate.logline-101@1", "status": ["ok"] },
+  "accepts": { "did": "enroll" },
+  "requires": {},
+  "cites": {
+    "trigger": { "frequency": "course.certificate.logline-101@1", "status": ["ok"], "once": true }
+  },
+  "steps": [
+    { "id": "certified",
+      "check": { "==": [{ "var": "$cites.trigger.detail.grants.certificate" }, "LogLine 101"] },
+      "if_not": "not", "reason": "Only a LogLine 101 certificate enrolls you as an alumnus." }
+  ],
+  "grants": {
+    "alumni_of": "LogLine 101",
+    "since": { "var": "$cites.trigger.detail.grants.awarded_on" },
+    "certificate": { "var": "$cites.trigger.id" }
+  },
+  "if_ok": "Enrolled in the LogLine 101 alumni register.",
+  "if_doubt": "Held for review.",
+  "if_not": "Not enrolled.",
+  "broadcast": ["detail.grants.alumni_of"],
+  "time": "none"
+}
