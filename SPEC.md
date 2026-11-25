@@ -249,7 +249,7 @@ Together these limits guarantee that every submission terminates, even when proc
 
 ## 11. Keys
 
-A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
+A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. The document MAY carry other fields; the reference server adds `limits` and the ledger `head`. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
 
 ## 12. Conformance
 
