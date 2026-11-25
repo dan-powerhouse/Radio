@@ -10,7 +10,7 @@ Scale is a property of the boundary, not the number of services. Avoid global se
 
 ## Working agreement
 
-- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 synchronized the already tested checkpoint and roadmap ([GitHub #2](https://github.com/dan-powerhouse/Radio/pull/2), merged). PR-01 is architect-approved in SPEC §15.8 ([GitHub #3](https://github.com/dan-powerhouse/Radio/pull/3), merged); target runtime implementation remains pending.
+- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 synchronized the already tested checkpoint and roadmap ([GitHub #2](https://github.com/dan-powerhouse/Radio/pull/2), merged). PR-01 is architect-approved in SPEC §15.8 ([GitHub #3](https://github.com/dan-powerhouse/Radio/pull/3), merged); PR-02 is merged as [GitHub #4](https://github.com/dan-powerhouse/Radio/pull/4); M0 is complete. Target runtime is being implemented in M1.
 - Use one branch per PR, one reviewable purpose, tests alongside implementation, and a short PR description: intent, invariant, changed files, tests/results, compatibility, unresolved issues. Prefer subtracting code. No speculative framework or mandatory new dependency.
 - For semantic changes, update the relevant part of SPEC in the same PR before implementation. Resolve explicit decisions with the architect first. Version incompatibilities and retain historical vectors; do not change tests just to pass. A failing baseline is investigated, not silently waived.
 - Every code PR runs build and `npm test`; if a stage is blocked, run the remaining stages independently and report exact results. Add a targeted regression or conformance test for each new invariant. Infrastructure PRs require actual service tests, not only doubles. Never substitute a mock for an acceptance gate.
@@ -43,7 +43,7 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 - Acceptance: agreed examples for zero/one/multiple matches, malformed versus valid unmatched input, reordered JSON, publication changes and overlapping types. Expected outcomes specified before code.
 
 ### PR-02 — RUN, instance and receipt contract
-- [x] Drafted in SPEC §15.9 (review pending): one-or-more RUNs, first RUN constituting an instance, later RUN eligibility, causal references, object/result binding, versioned receipt and bundle.
+- [x] Merged as GitHub #4 (approved to proceed), SPEC §15.9: one-or-more RUNs, first RUN constituting an instance, later RUN eligibility, causal references, object/result binding, versioned receipt and bundle.
 - Decision gate: instance identity, successor selection and dependencies (not necessarily linear), retry semantics, scope of `once` and idempotency, response cardinality, signed context and proof of registry/spent claims; which status constitutes an instance or effect. No shadow authoritative state.
 - Acceptance: agreed worked example from first input to at least two distinct instances, continuation, refusal, retry and replay. Historical v1 receipt interpretation preserved.
 
@@ -52,7 +52,7 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 Exit: a local pure machine recognizes an expression and evaluates the selected RUN under a published type, or records without activation. It does not need a database, LLM or network.
 
 ### PR-03 — Process Type validation and immutable publication
-- [ ] Depends on PR-01/02. Extend the law parser/validator and reference publication using existing canonicalization/hash helpers. Keep v1 handling explicit. Bound law size/complexity per contract.
+- [ ] Implemented on the PR-03 review branch: strict Process Type parser, static expression validation, local immutable publication and registry snapshots (SPEC §15.10). Review/merge pending. Runtime scanner and RUN evaluation are not included.
 - Acceptance: valid single/multiple RUN definitions, rejected unknown or malformed fields, stable hash under key reordering, immutable publication and amendment, no execution of arbitrary code.
 
 ### PR-04 — Deterministic scanner

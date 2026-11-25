@@ -271,15 +271,15 @@ A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { 
 
 Each request may carry `LogLine-Version: 1`; omission means `1` for compatibility. Unsupported versions return HTTP 400 with `error: "version"`, `supported` and `requested`. There is no session handshake. Discovery is cacheable for 60 seconds and does not include the head. Public receipt and process resources addressed by hash may be cached for one year as immutable; private detail and bundle responses MUST NOT be stored in shared caches (the reference sends `private, no-store`). Mutable history and head, errors, and submissions are `no-store`. The local server retains synchronous choreography and resumable SSE.
 
-## 15. RADIO target architecture — design requirements, not yet a wire specification
+## 15. RADIO target architecture — approved kernel contract, staged implementation
 
 ### 15.1 Formation model
 
 RADIO forms verifiable trajectories. A free I-JSON expression is submitted through an independent MCP or API request. A human or LLM translator, including MAP where applicable, can turn natural language into that expression. The machine does not interpret natural language. Authenticated identity is derived from the verified credential, not from `who` or any other claimed tuple field. Supabase OAuth is the hosted identity authority; it is distinct from the machine's receipt-signing authority.
 
-A published **Process Type** is an immutable, content-addressed JSON law. It specifies recognition conditions, interpretation and requirements for tuple fields, and one or more RUNs with their functions expressed in JSON. The machine's deterministic **scanner** recognizes applicable published types. The first RUN of a recognized and eligible type can constitute an instance; subsequent RUNs advance that instance subject to the type's published conditions and ancestry. A valid expression that activates no type is recorded rather than discarded. Malformed I-JSON is not an expression (§2). Each executed RUN produces a signed receipt; a registration without activation must also have a receipt. The recognition and registration contract is approved in §15.8; the RUN and receipt contract is proposed in §15.9.
+A published **Process Type** is an immutable, content-addressed JSON law. It specifies recognition conditions, interpretation and requirements for tuple fields, and one or more RUNs with their functions expressed in JSON. The machine's deterministic **scanner** recognizes applicable published types. The first RUN of a recognized and eligible type can constitute an instance; subsequent RUNs advance that instance subject to the type's published conditions and ancestry. A valid expression that activates no type is recorded rather than discarded. Malformed I-JSON is not an expression (§2). Each executed RUN produces a signed receipt; a registration without activation must also have a receipt. The recognition and registration contract is approved in §15.8; the RUN and receipt contract is approved in §15.9.
 
-The **receipt** is the constituted digital object, not a secondary log for effects internal to the protocol. Its content address, law reference, input, authenticated attribution, result and relevant ancestry support independent verification given the necessary evidence and trusted keys. The proposed versioned envelope for type, instance, RUN and registry recognition is in §15.9. A trajectory is the causal composition of receipts; state is a projection under a published law, not a competing authoritative mutable object. Consumption restrictions and shared uniqueness must be checked at the authoritative transaction boundary. A trajectory need not be linear unless its law requires this.
+The **receipt** is the constituted digital object, not a secondary log for effects internal to the protocol. Its content address, law reference, input, authenticated attribution, result and relevant ancestry support independent verification given the necessary evidence and trusted keys. The versioned envelope for type, instance, RUN and registry recognition is specified in §15.9. A trajectory is the causal composition of receipts; state is a projection under a published law, not a competing authoritative mutable object. Consumption restrictions and shared uniqueness must be checked at the authoritative transaction boundary. A trajectory need not be linear unless its law requires this.
 
 ### 15.2 Communication and continuity
 
@@ -313,8 +313,8 @@ The external alumni fixture (`examples/alumni.external.logline-101@1.json`) has 
 
 ### 15.6 Open decisions before a new normative version
 
-- Recognition and registry semantics are approved in §15.8. The complete Process Type and RUN schema, instance identity and receipt encoding remain subject to §15.9 review.
-- Instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope (§15.9 proposal).
+- Recognition and registry semantics are approved in §15.8. The Process Type and RUN schema, instance identity and receipt encoding are specified in §15.9.
+- Instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope (§15.9; implementation pending).
 - Whether the optional Skill wrapper is adopted, and if so the association between instructions and immutable law versions. MAP wire contract has not been supplied.
 - Root-only response shape and removal or retention of reserved outbox/reaction jobs; any automatic internal RUN advancement must be explicitly specified.
 - Hosted history recovery under concurrent commits, client-specific authorization and revocation, trust and community scope, citation bundle input and protection against fabricated or spent citations.
@@ -332,11 +332,11 @@ PATT native Transformer state, trusted execution and metered resource enforcemen
 
 ### 15.8 PR-01 — Process Type and scanner contract
 
-Status: **approved by the architect on 2026-11-25; not implemented**. This is the target recognition contract, normative for the next protocol version when it is frozen. It does not change §§1–14 or freeze a receipt envelope. PR-02 completes the remaining semantics.
+Status: **approved 2026-11-25; Process Type validation and local reference publication implemented in PR-03; scanner pending PR-04**. This is the target recognition contract, normative for the next protocol version when it is frozen. It does not change §§1–14 or freeze a receipt envelope. PR-02 completes the remaining semantics.
 
 #### 15.8.1 Law and publication
 
-A new law uses `logline: "process-type@1"`, distinct from `process@1`. Its proposed top-level fields are `logline`, `id`, `issuer`, `recognize`, and `runs`. `id` is a versioned frequency following the existing identifier rules (§4); `_unaddressed` is reserved. `issuer` is descriptive, not an authentication claim. `recognize` is one expression in the existing JSON expression language (§5); `runs` is a non-empty ordered array of RUN definitions, with the first entry defining instantiation. The RUN body, identifiers, entry and successor eligibility are reserved for PR-02; this is not yet a complete publishable schema. Unknown fields are rejected, rather than treated as executable extensions. Skills are not part of the law or scanner.
+A new law uses `logline: "process-type@1"`, distinct from `process@1`. Its proposed top-level fields are `logline`, `id`, `issuer`, `recognize`, and `runs`. `id` is a versioned frequency following the existing identifier rules (§4); `_unaddressed` is reserved. `issuer` is descriptive, not an authentication claim. `recognize` is one expression in the existing JSON expression language (§5); `runs` is a non-empty ordered array of RUN definitions, with the first entry defining instantiation. The RUN body, identifiers, entry and successor eligibility are defined in §15.9. Unknown fields are rejected, rather than treated as executable extensions. Skills are not part of the law or scanner.
 
 The law address is `hash(law)` (§2), including all RUN definitions. Reordering object keys does not change its identity; reordering the RUN array does. Publication is an authenticated, authorized operation; a previously published id cannot be rebound to different bytes or a different hash. An amendment has a new id and content address. A repeated publication of identical canonical content is idempotent. A law removed from the active recognition set remains retrievable for historical verification. No arbitrary code, network access or natural-language interpretation participates in recognition.
 
@@ -388,9 +388,9 @@ Use two illustrative recognition predicates, with RUN bodies omitted: Blue recog
 
 Approved decisions: single-winner ambiguity (rather than fan-out), `_unaddressed` registration frequency, fail-closed indeterminate handling, immutable snapshot selection and the recognition budget profile. PR-02 must finish the RUN/instance and receipt contract before implementation begins.
 
-### 15.9 PR-02 — Proposed RUN, instance and receipt contract
+### 15.9 PR-02 — RUN, instance and receipt contract
 
-Status: **for architect review; not implemented**. This completes the proposed kernel contract for the next version without changing `process@1`, `receipt@1`, or historical v1 vectors. It uses the approved recognition semantics in §15.8. The first RUN constitutes the instance; there is no authoritative mutable process object, scheduler or internal reaction loop.
+Status: **approved to proceed and merged as GitHub #4; RUN execution and receipt@2 not implemented**. This completes the kernel contract for the next version without changing `process@1`, `receipt@1`, or historical v1 vectors. It uses the approved recognition semantics in §15.8. The first RUN constitutes the instance; there is no authoritative mutable process object, scheduler or internal reaction loop.
 
 #### 15.9.1 Law and RUN definitions
 
@@ -486,4 +486,15 @@ Illustrative law `blue@1`: recognition is the Blue predicate from §15.8.5, with
 
 For non-linear acceptance, a separate law has `open`, parallel eligible `left` and `right`, and `join` with `after:["left","right"]`. Either branch can arrive first; `join` cannot activate until both authentic same-instance successes are provided. An unsuccessful branch can be attempted again with a new submission nonce. A receipt from another law or instance cannot substitute a required parent. A separate once-citation case must verify slot-specific conflict, rollback and no cross-slot false positives.
 
-Decisions requested: one successful receipt per `(instance, RUN)`, finite DAG in the first Process Type profile, continuation transport separate from free tuple, root receipt as instance id, explicit submission nonce, law-scoped once consumption, and the versioned envelope/context/bundle contract. These are proposals for review. The next code PR must not implement a different contract silently. No external executor, PATT, orchestration worker, new service or arbitrary code language is introduced.
+Accepted initial profile: one successful receipt per `(instance, RUN)`, finite DAG in the first Process Type profile, continuation transport separate from free tuple, root receipt as instance id, explicit submission nonce, law-scoped once consumption, and the versioned envelope/context/bundle contract. These are the initial implementation contract. Code PRs must not implement a different contract silently. No external executor, PATT, orchestration worker, new service or arbitrary code language is introduced.
+
+
+### 15.10 PR-03 — Reference publication profile
+
+The runtime-neutral reference library exposes `parseProcessType(text)`, `validateProcessType(value)`, `validateRegistrySnapshot(value)` and `ProcessTypeRegistry`. They implement the law structure and reference publication portion of §§15.8–15.9 only. Scanner, RUN evaluation, receipt@2, durable persistence, and hosted authorization are separate gates.
+
+- The publication boundary accepts strict JSON text, bounded at 65,536 UTF-8 bytes both before parsing and in canonical form, at most 16,384 JSON value nodes, and at most 64 JSON nesting levels. These are initial reference admission limits, not measured hosted capacity. Integer JSON values outside the safe integer range are rejected. Invalid law structure uses `process_type_invalid` with a field path; strict encoding errors retain their encoding error.
+- Static expression validation traverses every branch, rejects nonoperators and invalid arities, and permits only literal nonempty paths for `var` and `has`. Recognition cannot read machine paths. RUN machine paths refer to the declared direct predecessors and citation slots, and the four scalar machine roots in §15.9.1. Missing actual values are still a runtime question. Static validity does not prove a predicate returns a boolean or a RUN will succeed.
+- A local registry is owned by a trusted caller, not directly exposed to an untrusted network client. Publication of the same id and canonical content returns the original hash, including after retirement; it does not implicitly reactivate a retired law. Different content under a published id fails with `process_exists`. Amendment uses a new id. Retirement removes the law from subsequent captures but keeps it retrievable by hash. Retirement of an unknown id fails with `process_missing`.
+- Snapshot capture takes the current active hash set synchronously, sorts it, then hashes the immutable copy; a later publication or retirement cannot affect a captured snapshot. Captured snapshots remain retrievable by hash for the lifetime of the reference registry. Returned law/snapshot values are defensive copies. Snapshot shape validation does not itself prove the integrity or availability of all laws; PR-04 must validate each referenced law before scanning. The reference registry is memory-only; historical durability and authorization are M2/M3 work.
+- No scanner is invoked and no receipt, instance, resource effect or participant reaction is produced by publishing a type. No SQL evaluation, Skill-script execution or new hosted service is introduced.
