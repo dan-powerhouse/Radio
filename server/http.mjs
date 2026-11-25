@@ -1,0 +1,202 @@
+// HTTP for a machine opened with openMachine. Node's http module, no dependencies.
+//
+//   GET  /.well-known/logline.json      published keys, limits, ledger head
+//   GET  /processes                     published processes {id, hash}
+//   GET  /processes/:hash               a process (the law is public)
+//   POST /processes                     publish a process            (admin)
+//   POST /submit                        submit a tuple (I-JSON body) → receipt, detail, reactions, halted
+//   GET  /receipts/:id                  the public header             {seq, receipt}
+//   GET  /receipts/:id/detail           detail + tuple                (its submitter, or admin)
+//   GET  /receipts/:id/bundle           receipt + trajectory, offline-verifiable (its submitter, or admin)
+//   GET  /history?<tuning>&after=&limit=  past receipts, paged by seq
+//   GET  /radio?<tuning>&after=         the radio as Server-Sent Events; resumes from Last-Event-ID
+//   GET  /me                            who the bearer token is, and its on-air pseudonym
+//
+// <tuning>: frequency, status, by, process_hash (comma lists), activated=true|false; by=me is your pseudonym.
+import http from "node:http";
+import * as L from "../dist/index.js";
+
+const HASH = /^sha256:[0-9a-f]{64}$/;
+const DEFAULTS = { maxBody: 64 * 1024, ratePerMinute: 60, burst: 30, heartbeatMs: 15_000, maxBuffered: 1 << 20 };
+
+class HttpError extends Error { constructor(status, code, message, headers = {}) { super(message); this.status = status; this.code = code; this.headers = headers; } }
+
+/** Token bucket per caller (account, or IP when anonymous). */
+function limiter({ ratePerMinute, burst }) {
+  const buckets = new Map();
+  return (who) => {
+    const now = Date.now(), rate = ratePerMinute / 60_000;
+    const b = buckets.get(who) ?? { tokens: burst, at: now };
+    b.tokens = Math.min(burst, b.tokens + (now - b.at) * rate); b.at = now;
+    buckets.set(who, b);
+    if (b.tokens < 1) return Math.ceil((1 - b.tokens) / rate / 1000);
+    b.tokens -= 1;
+    if (buckets.size > 10_000) for (const [k, v] of buckets) if (v.tokens >= burst) buckets.delete(k);
+    return 0;
+  };
+}
+
+export function createServer(machine, options = {}) {
+  const o = { ...DEFAULTS, ...options };
+  const { ledger } = machine;
+  const limit = limiter(o);
+  let queue = Promise.resolve();
+  /** Writes run one at a time: idempotency and consumption are check-then-act. */
+  const serial = (fn) => { const p = queue.then(fn, fn); queue = p.catch(() => {}); return p; };
+  const streams = new Set();
+
+  async function caller(req) {
+    const m = /^Bearer (\S+)$/.exec(req.headers.authorization ?? "");
+    if (!m) return null;
+    const a = machine.accounts.find(m[1]);
+    if (!a) throw new HttpError(401, "token", "unknown bearer token");
+    return { ...a, by: await machine.pseudonym(a.account) };
+  }
+
+  async function body(req) {
+    const chunks = []; let size = 0;
+    for await (const c of req) {
+      size += c.length;
+      if (size > o.maxBody) throw new HttpError(413, "too_large", `the body is over ${o.maxBody} bytes`);
+      chunks.push(c);
+    }
+    const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: false });
+    try { return text.decode(Buffer.concat(chunks)); } catch { throw new HttpError(400, "ijson", "the body is not valid UTF-8"); }
+  }
+
+  function tuning(q, who) {
+    const t = {};
+    const list = (k) => { const v = q.get(k); if (v === null) return; const xs = v.split(",").filter(Boolean); if (xs.length > 32) throw new HttpError(400, "tuning", `${k}: at most 32 values`); return xs; };
+    for (const k of ["frequency", "status", "process_hash"]) { const v = list(k); if (v) t[k] = v; }
+    const by = list("by");
+    if (by) t.by = by.map((b) => { if (b !== "me") return b; if (!who) throw new HttpError(401, "token", "by=me needs a bearer token"); return who.by; });
+    const a = q.get("activated");
+    if (a !== null) { if (a !== "true" && a !== "false") throw new HttpError(400, "tuning", "activated is true or false"); t.activated = a === "true"; }
+    return t;
+  }
+  const seqParam = (v, name) => { if (v === null || v === "") return undefined; if (!/^\d{1,12}$/.test(v)) throw new HttpError(400, "tuning", `${name} is a sequence number`); return Number(v); };
+
+  function mayRead(who, entries) {
+    if (!who) throw new HttpError(401, "token", "private: sign in as the submitter");
+    if (who.admin) return;
+    if (entries.some((e) => e.receipt.header.by !== who.by)) throw new HttpError(403, "forbidden", "only the submitter (or an admin) may read this");
+  }
+
+  const routes = [
+    ["GET", /^\/$/, () => ({ logline: "machine@1", see: "/.well-known/logline.json" })],
+    ["GET", /^\/\.well-known\/logline\.json$/, () => ({
+      logline: "machine@1",
+      keys: ledger.keys,
+      limits: { maxDepth: ledger.maxDepth, maxReactions: ledger.maxReactions, maxBody: o.maxBody },
+      head: machine.head(),
+    })],
+    ["GET", /^\/me$/, async (req) => {
+      const who = await caller(req);
+      if (!who) throw new HttpError(401, "token", "no bearer token");
+      return { account: who.account, admin: who.admin, by: who.by };
+    }],
+    ["GET", /^\/processes$/, () => ledger.published().map(({ id, hash }) => ({ id, hash }))],
+    ["GET", /^\/processes\/(sha256:[0-9a-f]{64})$/, (req, m) => ledger.processByHash(m[1]) ?? notFound("no process has that hash")],
+    ["POST", /^\/processes$/, async (req) => {
+      const who = await caller(req);
+      if (!who?.admin) throw new HttpError(who ? 403 : 401, "forbidden", "publishing a process needs an admin token");
+      const process = L.parseStrict(await body(req));
+      const hash = await serial(() => ledger.publish(process));
+      return [201, { id: process.id, hash }];
+    }],
+    ["POST", /^\/submit$/, async (req) => {
+      const who = await caller(req);
+      const text = await body(req);
+      const r = await serial(() => ledger.submitText(text, { by: who?.by ?? null }));
+      return [r.replayed ? 200 : 201, r];
+    }],
+    ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})$/, (req, m) => {
+      const e = ledger.entry(m[1]) ?? notFound("no receipt has that id");
+      return { seq: e.seq, receipt: e.receipt };
+    }],
+    ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})\/detail$/, async (req, m) => {
+      const e = ledger.entry(m[1]) ?? notFound("no receipt has that id");
+      mayRead(await caller(req), [e]);
+      return { detail: e.detail, tuple: e.tuple };
+    }],
+    ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})\/bundle$/, async (req, m) => {
+      if (!ledger.entry(m[1])) notFound("no receipt has that id");
+      const b = ledger.bundle(m[1]);
+      mayRead(await caller(req), b.entries);
+      return b;
+    }],
+    ["GET", /^\/history$/, async (req, m, q) => {
+      const who = await caller(req);
+      const after = seqParam(q.get("after"), "after") ?? 0;
+      const lim = Math.min(seqParam(q.get("limit"), "limit") ?? 100, 1000);
+      const items = ledger.page(tuning(q, who), after, lim);
+      return { items, next: items.length === lim ? items[items.length - 1].seq : null };
+    }],
+    ["GET", /^\/radio$/, async (req, m, q, res) => {
+      const who = await caller(req);
+      const t = tuning(q, who);
+      const after = seqParam(req.headers["last-event-id"] ?? null, "Last-Event-ID") ?? seqParam(q.get("after"), "after");
+      res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no", ...cors });
+      res.write(": tuned\n\n");
+      const stream = { res, stop: null };
+      const send = (receipt, seq) => {
+        // A listener that can't keep up is dropped; it resumes with Last-Event-ID.
+        if (res.writableLength > o.maxBuffered) return close();
+        res.write(`id: ${seq}\nevent: receipt\ndata: ${JSON.stringify({ seq, receipt })}\n\n`);
+      };
+      const beat = setInterval(() => res.write(": ping\n\n"), o.heartbeatMs);
+      const close = () => { clearInterval(beat); stream.stop?.(); streams.delete(stream); res.end(); };
+      stream.stop = ledger.listen(t, send, after);
+      stream.close = close;
+      streams.add(stream);
+      req.on("close", close);
+      return undefined; // streaming: the handler owns the response
+    }],
+  ];
+  const notFound = (msg) => { throw new HttpError(404, "not_found", msg); };
+  const cors = { "access-control-allow-origin": "*" };
+
+  const server = http.createServer(async (req, res) => {
+    const send = (status, value, headers = {}) => {
+      const text = JSON.stringify(value);
+      res.writeHead(status, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...cors, ...headers });
+      res.end(text + "\n");
+    };
+    try {
+      const url = new URL(req.url, "http://machine");
+      if (req.method === "OPTIONS") {
+        res.writeHead(204, { ...cors, "access-control-allow-methods": "GET, POST", "access-control-allow-headers": "authorization, content-type, last-event-id", "access-control-max-age": "86400" });
+        return res.end();
+      }
+      const matches = routes.filter(([, re]) => re.test(url.pathname));
+      if (!matches.length) throw new HttpError(404, "not_found", "no such route");
+      const route = matches.find(([method]) => method === req.method);
+      if (!route) throw new HttpError(405, "method", `use ${matches.map(([m]) => m).join(" or ")}`, { allow: matches.map(([m]) => m).join(", ") });
+      if (req.method === "POST") {
+        if (machine.broken()) throw new HttpError(503, "unavailable", "the ledger stopped accepting writes after a storage error");
+      }
+      if (req.method === "POST" && url.pathname === "/submit") {
+        const who = await caller(req);
+        const wait = limit(who ? "a:" + who.account : "ip:" + req.socket.remoteAddress);
+        if (wait) throw new HttpError(429, "rate_limited", `too many submissions; retry in ${wait}s`, { "retry-after": String(wait) });
+      }
+      const out = await route[2](req, url.pathname.match(route[1]), url.searchParams, res);
+      if (out === undefined) return;
+      const [status, value] = Array.isArray(out) && typeof out[0] === "number" ? out : [200, out];
+      send(status, value);
+    } catch (e) {
+      if (res.headersSent) { res.destroy(); return; }
+      if (e instanceof HttpError) return send(e.status, { error: e.code, message: e.message }, e.headers);
+      if (e instanceof L.LoglineError) {
+        const status = e.code === "unavailable" ? 503 : e.code === "process_exists" ? 409 : 400;
+        return send(status, { error: e.code, message: e.message });
+      }
+      console.error(e);
+      send(500, { error: "internal", message: "internal error" });
+    }
+  });
+  server.on("close", () => { for (const s of [...streams]) s.close(); });
+  /** Stop: end every radio stream so close() can finish. */
+  server.shutdown = () => new Promise((resolve) => { for (const s of [...streams]) s.close(); server.close(() => resolve()); server.closeIdleConnections?.(); });
+  return server;
+}
