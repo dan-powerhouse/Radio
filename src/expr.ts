@@ -48,9 +48,7 @@ export function lookup(root: unknown, path: string): unknown {
 
 function resolve(path: unknown, scope: Scope): unknown {
   if (typeof path !== "string" || path === "") throw new LoglineError("eval_syntax", "var takes a non-empty path string");
-  return path.startsWith("$")
-    ? (Object.prototype.hasOwnProperty.call(scope.machine, path.slice(1)) ? scope.machine[path.slice(1)] : undefined)
-    : lookup(scope.tuple, path);
+  return path.startsWith("$") ? lookup(scope.machine, path.slice(1)) : lookup(scope.tuple, path);
 }
 
 const eq = (a: unknown, b: unknown) =>

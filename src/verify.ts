@@ -2,12 +2,12 @@ import { hashOf, HASH_RE } from "./hash.js";
 import { canonicalize } from "./jcs.js";
 import { KeyRing, verifyId } from "./keys.js";
 import { Process } from "./process.js";
-import { run, Receipt, Detail, WHEN_RE } from "./receipt.js";
+import { run, Receipt, Detail, Store, WHEN_RE } from "./receipt.js";
 
 export type CheckCode = "shape" | "id" | "key" | "key_window" | "signature" | "detail" | "input" | "process" | "replay";
 export interface Check { code: CheckCode; result: "pass" | "fail" | "skipped"; note: string }
 export interface Verdict { valid: boolean; checks: Check[] }
-export interface Evidence { detail?: Detail; tuple?: unknown; process?: Process | null }
+export interface Evidence { detail?: Detail; tuple?: unknown; process?: Process | null; store?: Store }
 
 const isObj = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
 
@@ -50,7 +50,7 @@ export async function verify(receipt: unknown, keys: KeyRing, ev: Evidence = {})
   if (ev.tuple !== undefined && ev.process !== undefined) {
     let same = false;
     try {
-      const again = await run(ev.process, ev.tuple, { when: r.header.when, by: r.header.by, prev: r.header.prev });
+      const again = await run(ev.process, ev.tuple, { when: r.header.when, by: r.header.by, prev: r.header.prev, spent: r.header.spent, store: ev.store, keys });
       same = canonicalize(again.header) === canonicalize(r.header) && again.id === r.id && (ev.detail === undefined || canonicalize(again.detail) === canonicalize(ev.detail));
     } catch { same = false; }
     add("replay", same, "running the tuple on the process again gives the same receipt");

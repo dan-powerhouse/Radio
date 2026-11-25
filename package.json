@@ -5,15 +5,28 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "SPEC.md", "vectors"],
+  "files": [
+    "dist",
+    "bin",
+    "SPEC.md",
+    "vectors",
+    "processes"
+  ],
   "scripts": {
     "build": "tsc -p .",
     "vectors": "npm run build && node scripts/make-vectors.mjs",
     "test:node": "node --test test/*.test.mjs",
     "test:bun": "bun test test/",
     "test:browser": "node scripts/browser-conformance.mjs",
-    "test": "npm run build && npm run test:node && npm run test:bun && npm run test:browser"
+    "test": "npm run build && npm run test:node && npm run test:bun && npm run test:browser",
+    "example": "npm run build && node examples/course.mjs",
+    "zip": "node scripts/zip.mjs"
   },
-  "license": "UNDECIDED",
-  "engines": { "node": ">=20" }
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "logline": "bin/logline.mjs"
+  }
 }

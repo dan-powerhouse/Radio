@@ -58,10 +58,32 @@ const cases = [
   ["budget-exhausted", looping, budgetT, { when }],
   ["prev-sorted-deduped", visa, ok, { when, prev: [P2, P1, P2] }]
 ];
+// Trajectory: lesson 1 → lesson 2 (cites 1) → certificate-like spent case.
+const lessonP = JSON.parse(readFileSync(new URL("../processes/course.lesson@1.json", import.meta.url)));
+const keys = { [key.id]: { jwk: key.public } };
+const store = new Map();
+const S = { receipt: async (id) => store.get(id) ?? null };
+const l1t = { who: "learner", did: "complete", this: "course.lesson@1", with: { course: "logline-101", lesson: 1, score: 88 } };
+const l1 = await L.issue(key, lessonP, l1t, { when: "2026-11-25T10:00:00Z", by: "p:ana" });
+store.set(l1.receipt.id, l1);
+const l2t = { ...l1t, with: { ...l1t.with, lesson: 2, score: 91 }, cites: { previous: l1.receipt.id } };
+const citeCases = [
+  ["cite-lesson1", lessonP, l1t, { when: "2026-11-25T10:00:00Z", by: "p:ana" }, []],
+  ["cite-lesson2-cites-lesson1", lessonP, l2t, { when: "2026-11-25T11:00:00Z", by: "p:ana" }, [l1]],
+  ["cite-someone-elses", lessonP, l2t, { when: "2026-11-25T11:00:00Z", by: "p:bob" }, [l1]],
+  ["cite-spent", lessonP, l2t, { when: "2026-11-25T12:00:00Z", by: "p:ana", spent: [l1.receipt.id] }, [l1]],
+  ["cite-missing", lessonP, l2t, { when: "2026-11-25T11:00:00Z", by: "p:ana" }, []],
+];
 const out = { about: "Receipt goldens. Inputs: process, tuple, options. Signed with vectors/test-key.json.", key_id: key.id, public_jwk: key.public, cases: [] };
 for (const [name, process, tuple, options] of cases) {
   const { receipt, detail } = await L.issue(key, process, tuple, options);
   out.cases.push({ name, process, tuple, options,
+    expected: { header_jcs: L.canonicalize(receipt.header), id: receipt.id, detail_jcs: L.canonicalize(detail), signature: receipt.sig.value } });
+}
+for (const [name, process, tuple, options, cited] of citeCases) {
+  const local = new Map(cited.map((c) => [c.receipt.id, c]));
+  const { receipt, detail } = await L.issue(key, process, tuple, { ...options, keys, store: { receipt: async (id) => local.get(id) ?? null } });
+  out.cases.push({ name, process, tuple, options, cited,
     expected: { header_jcs: L.canonicalize(receipt.header), id: receipt.id, detail_jcs: L.canonicalize(detail), signature: receipt.sig.value } });
 }
 writeFileSync(new URL("../vectors/receipts.json", import.meta.url), JSON.stringify(out, null, 2) + "\n");

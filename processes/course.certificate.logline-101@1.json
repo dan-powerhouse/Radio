@@ -1,0 +1,32 @@
+{
+  "logline": "process@1",
+  "id": "course.certificate.logline-101@1",
+  "issuer": "LogLine School",
+  "accepts": { "did": "certify" },
+  "requires": { "with.course": "string" },
+  "cites": {
+    "last": { "frequency": "course.lesson@1", "status": ["ok"], "once": true }
+  },
+  "steps": [
+    { "id": "this_course",
+      "check": { "and": [{ "==": [{ "var": "with.course" }, "logline-101"] }, { "==": [{ "var": "$cites.last.detail.grants.course" }, "logline-101"] }] },
+      "if_not": "not", "reason": "This certificate is for logline-101, and the cited lesson must belong to it." },
+    { "id": "same_learner",
+      "check": { "==": [{ "var": "$by" }, { "var": "$cites.last.header.by" }] },
+      "if_not": "not", "reason": "The cited lessons were completed by someone else." },
+    { "id": "all_lessons",
+      "check": { ">=": [{ "var": "$cites.last.detail.grants.completed" }, 5] },
+      "if_not": "not", "reason": "logline-101 has 5 lessons. Cite the receipt of lesson 5." }
+  ],
+  "grants": {
+    "certificate": "LogLine 101",
+    "lessons": { "var": "$cites.last.detail.grants.completed" },
+    "trajectory_head": { "var": "$cites.last.id" },
+    "awarded_on": { "var": "$today" }
+  },
+  "if_ok": "Certificate awarded. Verify it, with its whole trajectory of lessons, from the bundle.",
+  "if_doubt": "Held for a teacher's review.",
+  "if_not": "No certificate. The findings say why.",
+  "broadcast": ["detail.grants.certificate", "detail.grants.awarded_on"],
+  "time": "none"
+}

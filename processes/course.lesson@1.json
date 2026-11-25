@@ -1,0 +1,38 @@
+{
+  "logline": "process@1",
+  "id": "course.lesson@1",
+  "issuer": "LogLine School",
+  "accepts": { "did": "complete" },
+  "requires": {
+    "with.course": "string",
+    "with.lesson": "integer",
+    "with.score": "number"
+  },
+  "cites": {
+    "previous": { "frequency": "course.lesson@1", "status": ["ok"], "optional": true, "once": true }
+  },
+  "steps": [
+    { "id": "same_course",
+      "check": { "if": [{ "has": "$cites.previous" }, { "==": [{ "var": "with.course" }, { "var": "$cites.previous.detail.grants.course" }] }, true] },
+      "if_not": "not", "reason": "The cited lesson belongs to a different course." },
+    { "id": "same_learner",
+      "check": { "if": [{ "has": "$cites.previous" }, { "==": [{ "var": "$by" }, { "var": "$cites.previous.header.by" }] }, true] },
+      "if_not": "not", "reason": "The cited lesson was completed by someone else." },
+    { "id": "next_in_order",
+      "check": { "==": [{ "var": "with.lesson" }, { "if": [{ "has": "$cites.previous" }, { "+": [{ "var": "$cites.previous.detail.grants.completed" }, 1] }, 1] }] },
+      "if_not": "not", "reason": "Lessons are taken in order: cite your last completed lesson and submit the next one (lesson 1 cites nothing)." },
+    { "id": "passed",
+      "check": { ">=": [{ "var": "with.score" }, 70] },
+      "if_not": "not", "reason": "A lesson needs a score of at least 70. Retry it citing the same previous lesson." }
+  ],
+  "grants": {
+    "course": { "var": "with.course" },
+    "completed": { "var": "with.lesson" },
+    "best_score": { "var": "with.score" }
+  },
+  "if_ok": "Lesson completed. Cite this receipt when you submit the next lesson.",
+  "if_doubt": "Held for a teacher's review.",
+  "if_not": "Not completed. The findings say why; nothing was consumed.",
+  "broadcast": ["detail.grants.course", "detail.grants.completed"],
+  "time": "exact"
+}

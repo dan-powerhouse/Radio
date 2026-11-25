@@ -3,12 +3,19 @@ import { LoglineError } from "./errors.js";
 export type FieldType = "string" | "number" | "integer" | "boolean" | "date" | "object" | "array";
 export type Failure = "not" | "doubt";
 export interface Step { id: string; check: unknown; if_not: Failure; reason: string }
+export interface CiteSlot {
+  frequency: string;                  // exact, or a prefix pattern ending ".*"
+  status?: ("registered" | "ok" | "doubt" | "not")[];
+  optional?: boolean;                 // default false: the cite is an activation condition
+  once?: boolean;                     // a cited receipt may be consumed by one ok receipt of this process, in this slot
+}
 export interface Process {
   logline: "process@1";
   id: string;                         // also the process's frequency
   issuer: string;
   accepts: { did: string };
   requires: Record<string, FieldType>; // activation conditions on the free tuple
+  cites?: Record<string, CiteSlot>;   // receipts the tuple must cite by id, under tuple.cites.<slot>
   steps: Step[];
   grants?: Record<string, unknown>;    // evaluated only when every step is ok
   if_ok: string; if_doubt: string; if_not: string;
@@ -21,6 +28,7 @@ export const FREQUENCY_RE = /^[a-z0-9][a-z0-9._:@-]{0,127}$/;
 export const UNADDRESSED = "_unaddressed";
 export const DEFAULT_OPS = 10_000;
 export const MAX_OPS = 1_000_000;
+export const MAX_CITES = 16;
 const TYPES = new Set(["string", "number", "integer", "boolean", "date", "object", "array"]);
 const PATH_RE = /^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/;
 
@@ -32,7 +40,7 @@ const str = (v: unknown, path: string, max = 2000) => { if (typeof v !== "string
 export function validateProcess(p: unknown): asserts p is Process {
   if (!isObj(p)) fail("$", "a process is a JSON object");
   const q = p as Record<string, unknown>;
-  const known = new Set(["logline", "id", "issuer", "accepts", "requires", "steps", "grants", "if_ok", "if_doubt", "if_not", "broadcast", "time", "limits"]);
+  const known = new Set(["logline", "id", "issuer", "accepts", "requires", "steps", "grants", "if_ok", "if_doubt", "if_not", "broadcast", "time", "limits", "cites"]);
   for (const k of Object.keys(q)) if (!known.has(k)) fail(k, "unknown field");
   if (q.logline !== "process@1") fail("logline", 'must be "process@1"');
   if (typeof q.id !== "string" || !FREQUENCY_RE.test(q.id) || q.id === UNADDRESSED) fail("id", "must match " + FREQUENCY_RE);
@@ -42,6 +50,22 @@ export function validateProcess(p: unknown): asserts p is Process {
   for (const [path, t] of Object.entries(q.requires as object)) {
     if (!PATH_RE.test(path)) fail(`requires.${path}`, "bad field path");
     if (!TYPES.has(t as string)) fail(`requires.${path}`, `unknown type ${JSON.stringify(t)}`);
+  }
+  if (q.cites !== undefined) {
+    if (!isObj(q.cites)) fail("cites", "must be an object");
+    const slots = Object.entries(q.cites as object);
+    if (slots.length > MAX_CITES) fail("cites", `at most ${MAX_CITES} slots`);
+    for (const [slot, c] of slots) {
+      if (!/^[A-Za-z0-9_-]{1,64}$/.test(slot)) fail(`cites.${slot}`, "bad slot name");
+      if (!isObj(c)) fail(`cites.${slot}`, "must be an object");
+      const cc = c as Record<string, unknown>;
+      for (const k of Object.keys(cc)) if (!["frequency", "status", "optional", "once"].includes(k)) fail(`cites.${slot}.${k}`, "unknown field");
+      const f = cc.frequency;
+      if (typeof f !== "string" || !FREQUENCY_RE.test(f.endsWith(".*") ? f.slice(0, -2) : f)) fail(`cites.${slot}.frequency`, "bad frequency");
+      if (cc.status !== undefined && (!Array.isArray(cc.status) || !cc.status.every((x) => ["registered", "ok", "doubt", "not"].includes(x as string))))
+        fail(`cites.${slot}.status`, "must be a list of statuses");
+      for (const k of ["optional", "once"]) if (cc[k] !== undefined && typeof cc[k] !== "boolean") fail(`cites.${slot}.${k}`, "must be a boolean");
+    }
   }
   if (!Array.isArray(q.steps)) fail("steps", "must be a list");
   const ids = new Set<string>();

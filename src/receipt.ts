@@ -3,7 +3,8 @@ import { hashOf, HASH_RE } from "./hash.js";
 import { canonicalize } from "./jcs.js";
 import { evaluate, isDate, lookup, Budget } from "./expr.js";
 import { Process, validateProcess, FREQUENCY_RE, UNADDRESSED, DEFAULT_OPS, FieldType } from "./process.js";
-import { MachineKey, signId } from "./keys.js";
+import { MachineKey, signId, KeyRing } from "./keys.js";
+import { inauthentic } from "./authentic.js";
 
 export type Status = "registered" | "ok" | "doubt" | "not";
 export interface Finding { step: string; result: "ok" | "not" | "doubt"; reason?: string; error?: string }
@@ -20,7 +21,8 @@ export interface Header {
   detail_hash: string;
   when: string;
   by: string | null;      // submitter as attested by the machine (a pseudonym in production)
-  prev: string[];         // receipt ids that caused this one, sorted, unique
+  prev: string[];         // receipt ids this one cites or was caused by, sorted, unique
+  spent: string[];        // cited ids the ledger reported as already consumed (sorted); an input, recorded
   public: Record<string, unknown>; // the process's `broadcast` fields
 }
 /** Private part, stored by its hash. */
@@ -32,7 +34,17 @@ export interface Detail {
   grants: Record<string, unknown> | null;
 }
 export interface Receipt { header: Header; id: string; sig: { alg: "Ed25519"; key: string; value: string } }
-export interface RunOptions { when: string; by?: string | null; prev?: string[] }
+/** Content-addressed lookup of signed receipts and their details. */
+export interface Store { receipt(id: string): Promise<{ receipt: Receipt; detail?: Detail } | null> }
+export interface Cited { id: string; header: Header; detail: Detail }
+export interface RunOptions {
+  when: string;
+  by?: string | null;
+  prev?: string[];
+  store?: Store;      // needed when the process cites receipts
+  keys?: KeyRing;     // whose signatures a cited receipt must carry
+  spent?: string[];   // ledger state: cited ids already consumed in a `once` slot of this process
+}
 
 export const WHEN_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const isObj = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -61,13 +73,39 @@ export function activationGaps(process: Process, tuple: unknown): string[] {
   return gaps;
 }
 
+const freqMatch = (pattern: string, f: string) => pattern.endsWith(".*") ? f.startsWith(pattern.slice(0, -1)) : pattern === f;
+
+/** Resolve and check the receipts a tuple cites. Every problem is an unmet activation condition. */
+export async function resolveCites(process: Process, tuple: unknown, opts: RunOptions): Promise<{ gaps: string[]; cited: Record<string, Cited> }> {
+  const gaps: string[] = [], cited: Record<string, Cited> = {};
+  const given = isObj(tuple) && isObj(tuple.cites) ? tuple.cites : {};
+  const spent = new Set(opts.spent ?? []);
+  for (const [slot, rule] of Object.entries(process.cites ?? {})) {
+    const id = given[slot];
+    const at = `cites.${slot}`;
+    if (id === undefined) { if (!rule.optional) gaps.push(`${at} is missing: cite a receipt on ${rule.frequency}`); continue; }
+    if (typeof id !== "string" || !HASH_RE.test(id)) { gaps.push(`${at} is not a receipt id`); continue; }
+    const found = opts.store ? await opts.store.receipt(id) : null;
+    if (!found) { gaps.push(`${at}: receipt ${id} was not found`); continue; }
+    const bad = await inauthentic(found.receipt, opts.keys ?? {});
+    if (bad) { gaps.push(`${at}: receipt ${id} is not authentic: ${bad}`); continue; }
+    const h = found.receipt.header;
+    if (!found.detail || (await hashOf(found.detail)) !== h.detail_hash) { gaps.push(`${at}: the detail of ${id} is not available`); continue; }
+    if (!freqMatch(rule.frequency, h.frequency)) { gaps.push(`${at}: receipt is on ${h.frequency}, not ${rule.frequency}`); continue; }
+    if (rule.status && !rule.status.includes(h.status)) { gaps.push(`${at}: receipt status is ${h.status}, needs ${rule.status.join(" or ")}`); continue; }
+    if (rule.once && spent.has(id)) { gaps.push(`${at}: receipt ${id} has already been used by this process`); continue; }
+    cited[slot] = { id, header: h, detail: found.detail };
+  }
+  return { gaps, cited };
+}
+
 export const frequencyOf = (tuple: unknown) =>
   isObj(tuple) && typeof tuple.this === "string" && FREQUENCY_RE.test(tuple.this) && tuple.this !== UNADDRESSED ? tuple.this : UNADDRESSED;
 
 function checkOptions(o: RunOptions) {
   if (typeof o.when !== "string" || !WHEN_RE.test(o.when) || Number.isNaN(Date.parse(o.when))) throw new LoglineError("run_when", "when must be YYYY-MM-DDTHH:MM:SSZ");
   if (o.by != null && (typeof o.by !== "string" || o.by.length > 256)) throw new LoglineError("run_by", "by must be a string up to 256 characters");
-  for (const p of o.prev ?? []) if (typeof p !== "string" || !HASH_RE.test(p)) throw new LoglineError("run_prev", "prev entries must be receipt ids");
+  for (const p of [...(o.prev ?? []), ...(o.spent ?? [])]) if (typeof p !== "string" || !HASH_RE.test(p)) throw new LoglineError("run_prev", "prev and spent entries must be receipt ids");
 }
 
 /**
@@ -79,9 +117,14 @@ export async function run(process: Process | null, tuple: unknown, opts: RunOpti
   checkOptions(opts);
   canonicalize(tuple); // must be JSON
   if (process) validateProcess(process);
-  const gaps = process ? activationGaps(process, tuple) : [`no process is published on frequency "${frequencyOf(tuple)}"`];
+  let gaps: string[], cited: Record<string, Cited> = {};
+  if (process) {
+    gaps = activationGaps(process, tuple);
+    const r = await resolveCites(process, tuple, opts);
+    gaps.push(...r.gaps); cited = r.cited;
+  } else gaps = [`no process is published on frequency "${frequencyOf(tuple)}"`];
   const activated = gaps.length === 0;
-  const scope = { tuple, machine: { today: opts.when.slice(0, 10), when: opts.when } };
+  const scope = { tuple, machine: { today: opts.when.slice(0, 10), when: opts.when, by: opts.by ?? null, cites: cited } };
   const budget: Budget = { left: process?.limits?.ops ?? DEFAULT_OPS };
   let findings: Finding[] = [];
   let grants: Record<string, unknown> | null = null;
@@ -130,7 +173,8 @@ export async function run(process: Process | null, tuple: unknown, opts: RunOpti
     detail_hash: await hashOf(detail),
     when: opts.when,
     by: opts.by ?? null,
-    prev: [...new Set(opts.prev ?? [])].sort(),
+    prev: [...new Set([...(opts.prev ?? []), ...Object.values(cited).map((c) => c.id)])].sort(),
+    spent: [...new Set(opts.spent ?? [])].sort(),
     public: pub,
   };
   return { header, detail, id: await hashOf(header) };

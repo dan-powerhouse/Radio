@@ -40,6 +40,7 @@ A tuple carrying private facts SHOULD include a top-level `salt` of at least 128
 | `issuer` | yes | Who publishes this law. |
 | `accepts.did` | yes | The verb that activates it. |
 | `requires` | yes | Activation conditions: field path to type. The types are `string`, `number`, `integer`, `boolean`, `date` (`YYYY-MM-DD`, a real calendar date), `object` and `array`. |
+| `cites` | no | Slot name to `{frequency, status?, optional?, once?}`: the receipts a tuple must cite, by id, under `tuple.cites.<slot>` (§9). At most 16 slots. |
 | `steps` | yes | An ordered list of `{id, check, if_not, reason}`. `check` is an expression, and `if_not` is `"not"` or `"doubt"`. Step ids are unique. |
 | `grants` | no | Name to expression. Evaluated only when the status is `ok`. |
 | `if_ok`, `if_doubt`, `if_not` | yes | The consequence text for each outcome, agreed when the law is published. |
@@ -55,7 +56,7 @@ An expression is a JSON literal, an array of expressions (evaluated element by e
 
 | Operator | Arguments | Result |
 |---|---|---|
-| `var` | path | The value at a dotted path in the tuple. `$today` (`YYYY-MM-DD` of `when`) and `$when` read machine values. A missing path is an `eval_missing` error. |
+| `var` | path | The value at a dotted path in the tuple. Paths starting `$` read machine values: `$today` (the `YYYY-MM-DD` of `when`), `$when`, `$by`, and `$cites.<slot>.id`, `.header.…` and `.detail.…` for each resolved citation. A missing path is an `eval_missing` error. |
 | `has` | path | `true` if the path exists. |
 | `and`, `or` | any number | Evaluated left to right, stopping early. An operand counts as true only if it is exactly `true`. |
 | `if` | cond, then, else | Lazy. |
@@ -79,13 +80,20 @@ An expression is a JSON literal, an array of expressions (evaluated element by e
 
 ## 6. The machine
 
-Input: a process or `null`, the tuple, and `when` (`YYYY-MM-DDTHH:MM:SSZ`), `by` (string or null, at most 256 characters) and `prev` (receipt ids).
+Input: a process or `null`, the tuple, and:
+
+- `when` (`YYYY-MM-DDTHH:MM:SSZ`);
+- `by` (a string or null, at most 256 characters);
+- `prev` (receipt ids);
+- `spent` (receipt ids the ledger reports as already consumed, §9);
+- a content-addressed **store** of signed receipts and details, and the **key ring** that cited receipts must be signed by.
 
 1. **Frequency.** The frequency is `tuple.this` if it is a valid frequency string. Otherwise it is `_unaddressed`.
 2. **Activation.** With no process, the submission is unmet: `no process is published on frequency "<f>"`. Otherwise every condition below must hold. Each one that fails adds a human-readable entry to `unmet`.
    - `tuple.this == process.id`
    - `tuple.did == process.accepts.did`
    - every `requires` path is present with its type
+   - every citation resolves (§9)
 3. **Not activated** gives status `registered`. No step runs, `findings` is empty and `grants` is null.
 4. **Activated:** each step is evaluated in order against the same budget.
    - The result is exactly `true`: the finding is `ok`.
@@ -112,10 +120,10 @@ Input: a process or `null`, the tuple, and `when` (`YYYY-MM-DDTHH:MM:SSZ`), `by`
 ```json
 { "logline": "receipt@1", "frequency": "...", "status": "registered|ok|doubt|not", "activated": true,
   "process": "id" | null, "process_hash": "sha256:..." | null, "input_hash": "sha256:...",
-  "detail_hash": "sha256:...", "when": "...", "by": "..." | null, "prev": ["sha256:..."], "public": { } }
+  "detail_hash": "sha256:...", "when": "...", "by": "..." | null, "prev": ["sha256:..."], "spent": ["sha256:..."], "public": { } }
 ```
 
-`prev` is sorted and has no duplicates. The **receipt id** is `hash(header)`. Because the header commits to `detail_hash`, the private detail is bound to the receipt without being published.
+`prev` is the union of the given `prev` and every resolved citation, sorted and without duplicates. `spent` is the input `spent`, sorted and without duplicates. The ledger's claim is recorded and signed, so a replay uses exactly what the machine saw. The **receipt id** is `hash(header)`. Because the header commits to `detail_hash`, the private detail is bound to the receipt without being published.
 
 ### 7.3 Signature
 
@@ -143,11 +151,52 @@ A verifier needs the receipt and the published key ring. The detail, tuple and p
 | `detail` | `hash(detail) == detail_hash` |
 | `input` | `hash(tuple) == input_hash` |
 | `process` | `hash(process) == process_hash`, or `null == process_hash` when no process was given. |
-| `replay` | Re-running gives an identical header, id and detail. |
+| `replay` | Re-running gives an identical header, id and detail. The verifier supplies the same store for cited receipts and its own key ring. |
 
 The receipt is **valid** when no check fails and `id`, `key` and `signature` pass. A listener holding only the header can therefore prove it is authentic. Proving that the decision is correct also needs the content.
 
-## 9. Radio
+## 9. Citations and trajectories
+
+A receipt can be the input of another run. The tuple names it by id, and the machine fetches it by hash. Chaining runs this way gives a **trajectory**: a directed acyclic graph of receipts, linked through `prev`, in which each receipt carries the state the next one builds on (for example, `grants.completed`).
+
+**Resolution.** For each slot in `process.cites`, the machine reads `tuple.cites.<slot>`. A slot is met only if every condition below holds; each failure is an unmet activation condition.
+
+- The value is missing and the slot is `optional`: the slot is skipped. Missing and not optional: unmet.
+- The value is a receipt id, and the store holds that receipt.
+- The cited receipt is authentic under the key ring: its id is the hash of its header, its key is published and its signature is valid.
+- Its detail is available and matches `detail_hash`.
+- Its frequency matches the slot's `frequency` (exact, or a prefix ending `.*`).
+- Its status is in the slot's `status`, when that is given.
+- With `once`, its id is not in `spent`.
+
+Each resolved citation is exposed to expressions as `$cites.<slot>` and added to `prev`.
+
+**Consumption (`once`).** The ledger, not the pure function, keeps track of consumption.
+
+- A cited id is consumed in `(process.id, slot)` only by a receipt of that process whose status is `ok`. A failed attempt consumes nothing, so it can be retried with the same citation.
+- Before issuing a receipt, the ledger passes the consumed ids it finds as `spent`.
+- `spent` is signed into the header, so the decision replays exactly.
+
+This rule stops a trajectory from forking: the same lesson can't be continued twice.
+
+**Bundles.** A bundle collects everything needed to verify a receipt and its whole trajectory offline:
+
+```json
+{ "logline": "bundle@1", "head": "<receipt id>", "keys": { }, "entries": [{ "receipt": { }, "detail": { }, "tuple": { }, "process": { } }] }
+```
+
+The entries are the head and every ancestor reachable through `prev` that the ledger holds, with ancestors first.
+
+A bundle is **valid** when two things hold:
+
+- it contains the head;
+- every check (§8) of every entry passes, with citations resolved only from the bundle itself.
+
+The keys inside a bundle are a convenience. A verifier SHOULD use the issuer's published key ring.
+
+A forged ancestor fails its own `detail` or `id` check. The receipts that cite it then fail `replay`, so the damage is located exactly.
+
+## 10. Radio
 
 - Every receipt is broadcast as its signed header (§7.3) on its `frequency`. Nothing else goes on air: no tuple fields, and no detail beyond `public`.
 - **Tuning** is a filter over header fields. Given fields combine with AND, and a list matches any of its entries. A frequency ending in `.*` matches that prefix. The fields are `frequency`, `status`, `by`, `process_hash` and `activated`.
@@ -155,18 +204,19 @@ The receipt is **valid** when no check fails and `id`, `key` and `signature` pas
 - A late listener reads history from the ledger, then subscribes from the last id it saw.
 - Listeners never need to trust the channel: they verify each header (§8).
 
-## 10. Keys
+## 11. Keys
 
 A machine publishes its key ring at `/.well-known/logline.json` as `{ "keys": { "<key id>": { "jwk": {...}, "not_before": "...", "not_after": "..." } } }`. Rotation is itself a receipt on frequency `logline.keys`, signed by the outgoing key *(M2)*.
 
-## 11. Conformance
+## 12. Conformance
 
 `vectors/jcs.json` contains canonicalization cases transcribed from RFC 8785 and worked by hand. `vectors/receipts.json` contains receipt goldens signed by `vectors/test-key.json`, a key published on purpose for testing that must never be trusted. An implementation conforms when it reproduces every header, detail, id and signature byte for byte, and verifies each receipt with every check passing.
 
-## 12. Open items before freeze
+## 13. Open items before freeze
 
 1. I-JSON parsing with duplicate-key rejection in the submit service.
 2. The fixed `registered` consequence text: should it be part of the spec or of the process?
-3. `prev` semantics for choreography: does it cover the trigger only, or the trigger plus evidence receipts? *(M4)*
+3. Choreography: when a listening process reacts automatically, is the triggering receipt passed as an implicit citation? *(M4)*
 4. Key rotation receipt format *(M2)*.
 5. Encryption envelope for private objects and erasure by key deletion *(M5)*.
+6. Trajectories across machines. A citation currently resolves only against one key ring, so citing another operator's receipts needs a ring with several issuers *(v2: federation)*.
