@@ -45,7 +45,7 @@ export function parseStrict(text: string, maxDepth = 64): unknown {
     i += m![0].length;
     const n = Number(m![0]);
     if (!Number.isFinite(n)) err("number out of range");
-    if (!m![2] && !m![3] && !Number.isSafeInteger(n)) err("integer outside ±(2^53−1) would be rounded");
+    if (Number.isInteger(n) && !Number.isSafeInteger(n)) err("integer outside ±(2^53−1) would be rounded");
     return n;
   };
   const string = (): string => {
@@ -57,7 +57,9 @@ export function parseStrict(text: string, maxDepth = 64): unknown {
     }
     if (text[i] !== '"') err("unterminated string");
     i++;
-    const s = JSON.parse(text.slice(start, i)) as string;
+    let s: string;
+    try { s = JSON.parse(text.slice(start, i)) as string; }
+    catch { return err("invalid JSON string escape"); }
     for (let j = 0; j < s.length; j++) {
       const h = s.charCodeAt(j);
       if (h >= 0xd800 && h <= 0xdbff) { const l = s.charCodeAt(j + 1); if (!(l >= 0xdc00 && l <= 0xdfff)) err("lone surrogate"); j++; }

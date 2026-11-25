@@ -52,7 +52,7 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 Exit: a local pure machine recognizes an expression and evaluates the selected RUN under a published type, or records without activation. It does not need a database, LLM or network.
 
 ### PR-03 — Process Type validation and immutable publication
-- [ ] Implemented on the PR-03 review branch: strict Process Type parser, static expression validation, local immutable publication and registry snapshots (SPEC §15.10). Review/merge pending. Runtime scanner and RUN evaluation are not included.
+- [ ] Implemented on the PR-03 review branch: strict Process Type parser, static expression validation, local immutable publication and registry snapshots (SPEC §15.10). Review/merge pending. Runtime scanner and RUN evaluation are not included. Added independent portable vectors, historical pin/crypto audit, cross-runtime adversarial evidence checks and targeted mutations. Existing PostgreSQL v1 preview now has actual forced-race and rollback tests; hosted gates remain pending.
 - Acceptance: valid single/multiple RUN definitions, rejected unknown or malformed fields, stable hash under key reordering, immutable publication and amendment, no execution of arbitrary code.
 
 ### PR-04 — Deterministic scanner
@@ -161,4 +161,4 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 
 `00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
 
-Preparation of PR-12, PR-17 protocol research and PR-19 format comparison may overlap earlier work; their implementation/merge gates still apply. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review PR-02 in SPEC §15.9; only after approval begin PR-03 implementation. PR-01 is architect-approved.
+Preparation of PR-12, PR-17 protocol research and PR-19 format comparison may overlap earlier work; their implementation/merge gates still apply. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review and merge PR-03 (GitHub #5), then implement PR-04 under the existing recognition contract. M0 is complete.

@@ -64,12 +64,14 @@ const LAZY: Record<string, Op> = {
   and: (xs, s, b, d) => { for (const x of xs) if (evaluate(x, s, b, d + 1) !== true) return false; return true; },
   or: (xs, s, b, d) => { for (const x of xs) if (evaluate(x, s, b, d + 1) === true) return true; return false; },
   if: (xs, s, b, d) => { arity(3, "if", xs); return evaluate(xs[0], s, b, d + 1) === true ? evaluate(xs[1], s, b, d + 1) : evaluate(xs[2], s, b, d + 1); },
-  var: ([p], s) => {
+  var: (args, s) => {
+    arity(1, "var", args);
+    const p = args[0];
     const v = resolve(p, s);
     if (v === undefined) throw new LoglineError("eval_missing", `missing field ${String(p)}`);
     return v;
   },
-  has: ([p], s) => resolve(p, s) !== undefined,
+  has: (args, s) => { arity(1, "has", args); return resolve(args[0], s) !== undefined; },
 };
 const EAGER: Record<string, (a: unknown[]) => unknown> = {
   "==": (a) => { arity(2, "==", a); return eq(a[0], a[1]); },
@@ -113,7 +115,7 @@ export function evaluate(e: unknown, scope: Scope, budget: Budget, depth = 0): u
   if (--budget.left < 0) throw new LoglineError("eval_budget", "operation budget exhausted");
   const raw = (e as Record<string, unknown>)[op];
   const args = Array.isArray(raw) ? raw : [raw];
-  if (op in LAZY) return LAZY[op](args, scope, budget, depth);
-  if (op in EAGER) return EAGER[op](args.map((x) => evaluate(x, scope, budget, depth + 1)));
+  if (Object.prototype.hasOwnProperty.call(LAZY, op)) return LAZY[op](args, scope, budget, depth);
+  if (Object.prototype.hasOwnProperty.call(EAGER, op)) return EAGER[op](args.map((x) => evaluate(x, scope, budget, depth + 1)));
   throw new LoglineError("eval_operator", `unknown operator ${JSON.stringify(op)}`);
 }

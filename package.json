@@ -25,7 +25,8 @@
     "serve": "npm run build && node bin/logline-server.mjs serve --publish processes",
     "zip": "node scripts/zip.mjs",
     "stage:edge": "npm run build && node scripts/stage-edge.mjs",
-    "test:postgres": "npm run stage:edge && node test/postgres.integration.mjs"
+    "test:postgres": "npm run stage:edge && node test/postgres.integration.mjs",
+    "test:mutations": "npm run build && node scripts/test-mutations.mjs"
   },
   "license": "MIT",
   "engines": {
@@ -34,5 +35,9 @@
   "bin": {
     "logline": "bin/logline.mjs",
     "logline-server": "bin/logline-server.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.56.0",
+    "typescript": "5.9.3"
   }
 }

@@ -61,6 +61,17 @@ For a **disposable local Supabase database only**, after applying the migration 
 LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run test:postgres
 ```
 
+For a **fresh disposable stock PostgreSQL 16 database**, the test-only fixture below installs the minimal roles and claim-accessor functions needed by the migration. Never apply this fixture to an actual Supabase project. Use a local database URL and a fresh, isolated database/cluster; no production connections.
+
+```sh
+psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -f test/postgres-auth-fixture.sql
+psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -f supabase/migrations/0001_radio.sql
+LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL="$LOCAL_TEST_DB" npm run test:postgres
+```
+
+The actual PostgreSQL tests force both once contenders to reach commit with the same unspent observation, assert the retry and no tentative receipt/outbox, inject a failure after receipt insertion, verify that every touched table rolls back, then retry successfully. CAS collision and rejected publication must leave no orphan bytes. The RLS and transactional checks run against PostgreSQL; the claim-accessor fixture does not validate Supabase Auth, OAuth, PostgREST, Edge execution or WebSocket delivery. Those remain separate M3/M4 gates.
+
+
 This integration runner makes real concurrent psql requests, creates an isolated randomly named test law and checks RLS and transactional invariants. Test data persists; use a throwaway DB. This runner was syntax-checked but not executed in the provided environment (no psql, Postgres or Supabase CLI). It is not a full Supabase end-to-end test.
 
 For a future approved local Edge test, set secrets using local tooling: `LOGLINE_ENABLE_PREVIEW=true`, `LOGLINE_MACHINE_JWK` (private Ed25519 JWK), `LOGLINE_PSEUDONYM_SECRET` (at least 32 random bytes in unpadded base64url), `SUPABASE_URL`, a service key (`LOGLINE_SERVICE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`), and a publishable key (`LOGLINE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY`). Never use the vector test key. If testing anonymous calls or modern signing keys, the gateway's legacy JWT check must be disabled for those functions and the function's own bearer validation retained. No project-specific config or secrets are included. Check platform limits and plan availability before deployment.

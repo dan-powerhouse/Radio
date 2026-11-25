@@ -30,8 +30,8 @@ It does **not** prove:
 - Submitted bytes MUST be parsed as I-JSON (RFC 7493), refusing with `ijson` anything that ordinary JSON parsing would accept but silently change:
   - duplicate object keys;
   - lone surrogates;
-  - control characters in strings;
-  - integers outside ±(2^53−1);
+  - unescaped control characters and malformed escapes in strings;
+  - integers outside ±(2^53−1), including integer-valued parsed numbers written with a decimal point or exponent;
   - nesting deeper than 64;
   - trailing characters.
 
@@ -88,6 +88,8 @@ An expression is a JSON literal, an array of expressions (evaluated element by e
 **Determinism.** Evaluation reads no clock, network or randomness. Time enters only through `when`.
 
 **Bounds.** Each operator application costs one unit of `limits.ops`. Exhaustion raises `eval_budget`. Nesting deeper than 64 raises `eval_depth`.
+
+Operator lookup and value lookup MUST use own properties, not inherited host-language properties. In particular, var and has each take exactly one argument; extra arguments are not ignored.
 
 **Errors** are `eval_syntax`, `eval_operator`, `eval_type`, `eval_missing`, `eval_range`, `eval_budget` and `eval_depth`.
 

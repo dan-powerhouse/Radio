@@ -149,3 +149,29 @@ test("snapshot shape rejects unknown fields, invalid budgets and unordered hashe
     { ...snapshot, types: ["sha256:bad"] }, { ...snapshot, extra: true }])
     assert.throws(() => validateRegistrySnapshot(v), { code: "process_type_invalid" });
 });
+
+test("publication byte limit is inclusive and counts UTF-8, not UTF-16 units", () => {
+  const value = law();
+  value.recognize = { "==": ["é", "é"] };
+  const text = JSON.stringify(value);
+  const bytes = new TextEncoder().encode(text).length;
+  assert.ok(bytes > text.length);
+  const exact = text + " ".repeat(MAX_LAW_BYTES - bytes);
+  assert.equal(new TextEncoder().encode(exact).length, MAX_LAW_BYTES);
+  assert.deepEqual(parseProcessType(exact), value);
+  assert.throws(() => parseProcessType(exact + " "), { code: "process_type_invalid" });
+});
+
+test("failed publication has no side effect on the active registry or historical evidence", async () => {
+  const registry = new ProcessTypeRegistry();
+  const published = await publish(registry, law());
+  const before = await registry.snapshot();
+  const rejected = { ...law("invalid@1"), recognize: { if: [true, true, { unknown: 0 }] } };
+  const rejectedHash = await hashOf(rejected);
+  await assert.rejects(publish(registry, rejected), { code: "process_type_invalid" });
+  await assert.rejects(registry.publish('{"id":"bad","id":"bad"}'), { code: "ijson" });
+  assert.deepEqual(await registry.snapshot(), before);
+  assert.equal(registry.law(rejectedHash), null);
+  assert.deepEqual(registry.law(published), law());
+  assert.deepEqual(registry.snapshotByHash(before.hash), before.snapshot);
+});

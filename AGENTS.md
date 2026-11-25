@@ -23,9 +23,10 @@ RADIO is a Third Layer application: a universal protocol for the formation of ve
 ```sh
 npm run build
 npm test
+npm run test:mutations
 npm run example
 ```
 
-`npm test` runs Node, Bun and browser conformance in sequence. If a runtime is unavailable, report it and run the remaining stages separately where possible. `npm run vectors` regenerates goldens only for an explicitly justified semantic change; do not overwrite compatibility evidence. `npm run stage:edge` builds and stages the same evaluator for Edge Functions. `npm run test:postgres` requires an explicitly designated disposable database (see hosted README). Never run it against production. Report exact results, including skipped, failing or blocked checks. Do not treat test doubles as proof of the real service.
+`npm test` runs Node, Bun and browser conformance in sequence. If a runtime is unavailable, report it and run the remaining stages separately where possible. `npm run vectors` regenerates goldens only for an explicitly justified semantic change; do not overwrite compatibility evidence. `npm run stage:edge` builds and stages the same evaluator for Edge Functions. `npm run test:postgres` requires an explicitly designated disposable database (see hosted README). Never run it against production. Report exact results, including skipped, failing or blocked checks. Do not treat test doubles as proof of the real service. Run targeted mutations for parser, evaluator, publication and verification changes; a runner error or missing mutant anchor is a failed gate, not a detected regression. Keep legacy golden bytes pinned, separate independent expected values from generated goldens, and report cross-runtime conformance, real integration and simulated contract tests separately. Use pinned development tools from the lockfile.
 
 Keep the documentation small: update the relevant canonical section, not a new competing handoff or phase-specific specification. Use version control for history.
