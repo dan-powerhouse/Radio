@@ -11,6 +11,7 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 
 | Path | What |
 |---|---|
+| `HANDOFF.md` | Where this is going (stateless, Supabase), auth, and the design principles. Read it first |
 | `SPEC.md` | LogLine Receipt v1, draft for freeze |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/ledger.ts` | Reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
