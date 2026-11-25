@@ -1,0 +1,9 @@
+{
+  "WARNING": "TEST VECTORS ONLY. Public on purpose. Never trust receipts signed by this key.",
+  "jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk",
+    "d": "SxNnpPbOy96oFVBxyZu794bMBxFbvCdD0LrjeNXwc5A"
+  }
+}

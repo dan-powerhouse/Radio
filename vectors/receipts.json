@@ -1,0 +1,1220 @@
+{
+  "about": "Receipt goldens. Inputs: process, tuple, options. Signed with vectors/test-key.json.",
+  "key_id": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+  "public_jwk": {
+    "kty": "OKP",
+    "crv": "Ed25519",
+    "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk"
+  },
+  "cases": [
+    {
+      "name": "ok",
+      "process": {
+        "logline": "process@1",
+        "id": "visa.tourist@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "passport_validity",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "with.travel.arrival"
+                    },
+                    {
+                      "var": "with.passport.expiry"
+                    }
+                  ]
+                },
+                180
+              ]
+            },
+            "if_not": "not",
+            "reason": "The passport must be valid for 180 days after arrival."
+          },
+          {
+            "id": "arrival_in_future",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "$today"
+                    },
+                    {
+                      "var": "with.travel.arrival"
+                    }
+                  ]
+                },
+                1
+              ]
+            },
+            "if_not": "not",
+            "reason": "Arrival must be after the date of application."
+          },
+          {
+            "id": "stay_limit",
+            "check": {
+              "<=": [
+                {
+                  "var": "with.travel.stay_days"
+                },
+                90
+              ]
+            },
+            "if_not": "not",
+            "reason": "A tourist stay cannot exceed 90 days."
+          },
+          {
+            "id": "purpose",
+            "check": {
+              "in": [
+                {
+                  "var": "with.travel.purpose"
+                },
+                [
+                  "tourism",
+                  "family visit",
+                  "business meeting"
+                ]
+              ]
+            },
+            "if_not": "not",
+            "reason": "The purpose is not covered by a tourist visa."
+          },
+          {
+            "id": "sufficient_funds",
+            "check": {
+              ">=": [
+                {
+                  "var": "with.means.funds_usd"
+                },
+                {
+                  "*": [
+                    {
+                      "var": "with.travel.stay_days"
+                    },
+                    80
+                  ]
+                }
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "Funds are below 80 USD per day of stay."
+          },
+          {
+            "id": "return_ticket",
+            "check": {
+              "==": [
+                {
+                  "var": "with.travel.return_ticket"
+                },
+                true
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "No return ticket was declared."
+          },
+          {
+            "id": "no_previous_overstay",
+            "check": {
+              "==": [
+                {
+                  "var": "with.history.previous_overstay"
+                },
+                false
+              ]
+            },
+            "if_not": "not",
+            "reason": "A previous overstay was declared."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [
+          "detail.grants.valid_until"
+        ],
+        "time": "day"
+      },
+      "tuple": {
+        "who": "applicant",
+        "did": "apply",
+        "this": "visa.tourist@1",
+        "salt": "q3hGq1K0d5nR7xW2fYc8Aa",
+        "with": {
+          "passport": {
+            "number": "UT4829173",
+            "expiry": "2031-06-30"
+          },
+          "travel": {
+            "arrival": "2027-02-10",
+            "stay_days": 21,
+            "purpose": "tourism",
+            "return_ticket": true
+          },
+          "means": {
+            "funds_usd": 4200
+          },
+          "history": {
+            "previous_overstay": false
+          }
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z",
+        "by": "p:demo-ana"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-ana\",\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:90b15ea4fff921cb2765254f070dec5e557849fb155a291a56e2f7dd39195675",
+        "detail_jcs": "{\"consequence\":\"Entry permitted within the granted window.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":{\"entries\":\"single\",\"max_stay_days\":21,\"valid_from\":\"2027-02-10\",\"valid_until\":\"2027-05-11\"},\"logline\":\"detail@1\",\"unmet\":null}",
+        "signature": "rn4UsZ3XH-95TfXFTMiZ9fti0ZSL4NTfX4HOwqB6JES40xL3gSsQf9Zv9sy1HbnPS62hCVnJ-7M8e8U8Ghs9AA"
+      }
+    },
+    {
+      "name": "not",
+      "process": {
+        "logline": "process@1",
+        "id": "visa.tourist@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "passport_validity",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "with.travel.arrival"
+                    },
+                    {
+                      "var": "with.passport.expiry"
+                    }
+                  ]
+                },
+                180
+              ]
+            },
+            "if_not": "not",
+            "reason": "The passport must be valid for 180 days after arrival."
+          },
+          {
+            "id": "arrival_in_future",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "$today"
+                    },
+                    {
+                      "var": "with.travel.arrival"
+                    }
+                  ]
+                },
+                1
+              ]
+            },
+            "if_not": "not",
+            "reason": "Arrival must be after the date of application."
+          },
+          {
+            "id": "stay_limit",
+            "check": {
+              "<=": [
+                {
+                  "var": "with.travel.stay_days"
+                },
+                90
+              ]
+            },
+            "if_not": "not",
+            "reason": "A tourist stay cannot exceed 90 days."
+          },
+          {
+            "id": "purpose",
+            "check": {
+              "in": [
+                {
+                  "var": "with.travel.purpose"
+                },
+                [
+                  "tourism",
+                  "family visit",
+                  "business meeting"
+                ]
+              ]
+            },
+            "if_not": "not",
+            "reason": "The purpose is not covered by a tourist visa."
+          },
+          {
+            "id": "sufficient_funds",
+            "check": {
+              ">=": [
+                {
+                  "var": "with.means.funds_usd"
+                },
+                {
+                  "*": [
+                    {
+                      "var": "with.travel.stay_days"
+                    },
+                    80
+                  ]
+                }
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "Funds are below 80 USD per day of stay."
+          },
+          {
+            "id": "return_ticket",
+            "check": {
+              "==": [
+                {
+                  "var": "with.travel.return_ticket"
+                },
+                true
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "No return ticket was declared."
+          },
+          {
+            "id": "no_previous_overstay",
+            "check": {
+              "==": [
+                {
+                  "var": "with.history.previous_overstay"
+                },
+                false
+              ]
+            },
+            "if_not": "not",
+            "reason": "A previous overstay was declared."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [
+          "detail.grants.valid_until"
+        ],
+        "time": "day"
+      },
+      "tuple": {
+        "who": "applicant",
+        "did": "apply",
+        "this": "visa.tourist@1",
+        "salt": "Zp0bW1xR4yLk9cVt2mNs3Q",
+        "with": {
+          "passport": {
+            "number": "TK0917364",
+            "expiry": "2027-05-01"
+          },
+          "travel": {
+            "arrival": "2027-03-01",
+            "stay_days": 14,
+            "purpose": "business meeting",
+            "return_ticket": true
+          },
+          "means": {
+            "funds_usd": 6000
+          },
+          "history": {
+            "previous_overstay": false
+          }
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z",
+        "by": "p:demo-kenji"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-kenji\",\"detail_hash\":\"sha256:f36d2e750a73bcc4b8d598b9a1ef122f6a9f6a6bb3edf95e3294a94a169a650a\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:003b7e6e12c48aab375b0b66229436095e4daf62b64435b8a297592ef3db74d2\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"status\":\"not\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:bc5341b9c0830593f5267ba7d2273f427f1c82f90d357f858c3c77623bf45950",
+        "detail_jcs": "{\"consequence\":\"Refused. The findings state why.\",\"findings\":[{\"reason\":\"The passport must be valid for 180 days after arrival.\",\"result\":\"not\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
+        "signature": "Xj3m0hYhGp89vl_ROW_kTfK4r6xg5tvPlPxJxw1dHpGsGSRki7dGWAoznq073c-HPdvDA0wLxTqQ1yZaxCttDg"
+      }
+    },
+    {
+      "name": "doubt",
+      "process": {
+        "logline": "process@1",
+        "id": "visa.tourist@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "passport_validity",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "with.travel.arrival"
+                    },
+                    {
+                      "var": "with.passport.expiry"
+                    }
+                  ]
+                },
+                180
+              ]
+            },
+            "if_not": "not",
+            "reason": "The passport must be valid for 180 days after arrival."
+          },
+          {
+            "id": "arrival_in_future",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "$today"
+                    },
+                    {
+                      "var": "with.travel.arrival"
+                    }
+                  ]
+                },
+                1
+              ]
+            },
+            "if_not": "not",
+            "reason": "Arrival must be after the date of application."
+          },
+          {
+            "id": "stay_limit",
+            "check": {
+              "<=": [
+                {
+                  "var": "with.travel.stay_days"
+                },
+                90
+              ]
+            },
+            "if_not": "not",
+            "reason": "A tourist stay cannot exceed 90 days."
+          },
+          {
+            "id": "purpose",
+            "check": {
+              "in": [
+                {
+                  "var": "with.travel.purpose"
+                },
+                [
+                  "tourism",
+                  "family visit",
+                  "business meeting"
+                ]
+              ]
+            },
+            "if_not": "not",
+            "reason": "The purpose is not covered by a tourist visa."
+          },
+          {
+            "id": "sufficient_funds",
+            "check": {
+              ">=": [
+                {
+                  "var": "with.means.funds_usd"
+                },
+                {
+                  "*": [
+                    {
+                      "var": "with.travel.stay_days"
+                    },
+                    80
+                  ]
+                }
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "Funds are below 80 USD per day of stay."
+          },
+          {
+            "id": "return_ticket",
+            "check": {
+              "==": [
+                {
+                  "var": "with.travel.return_ticket"
+                },
+                true
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "No return ticket was declared."
+          },
+          {
+            "id": "no_previous_overstay",
+            "check": {
+              "==": [
+                {
+                  "var": "with.history.previous_overstay"
+                },
+                false
+              ]
+            },
+            "if_not": "not",
+            "reason": "A previous overstay was declared."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [
+          "detail.grants.valid_until"
+        ],
+        "time": "day"
+      },
+      "tuple": {
+        "who": "applicant",
+        "did": "apply",
+        "this": "visa.tourist@1",
+        "salt": "Hc7uYw2Gk1pQ0rTz5vBn8E",
+        "with": {
+          "passport": {
+            "number": "FR5531208",
+            "expiry": "2033-01-14"
+          },
+          "travel": {
+            "arrival": "2027-04-05",
+            "stay_days": 30,
+            "purpose": "family visit",
+            "return_ticket": false
+          },
+          "means": {
+            "funds_usd": 900
+          },
+          "history": {
+            "previous_overstay": false
+          }
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z",
+        "by": "p:demo-lea"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":true,\"by\":\"p:demo-lea\",\"detail_hash\":\"sha256:d785fd4fefb13cb4851a577dcf10f9ac0ff769e513bf53522b36b16e2a5ccca9\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d54c57b80286157514e333191f9f797022e7360a872ae3159d4f1f538d35af1c\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:aa6577aa3b6377388a12266c0c3e361bd916cd5d93158fe950c1ace929718d09",
+        "detail_jcs": "{\"consequence\":\"Referred to an officer. No entry permission yet.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"reason\":\"Funds are below 80 USD per day of stay.\",\"result\":\"doubt\",\"step\":\"sufficient_funds\"},{\"reason\":\"No return ticket was declared.\",\"result\":\"doubt\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
+        "signature": "FEggImRhPApT7bH9nCs8UW0Run2FEuZvAZoSEgTuHw8WTnhfIZSc7aSuSh3AZjF59y4ARUK-1f-jLuuJP9STBw"
+      }
+    },
+    {
+      "name": "registered-free-form",
+      "process": {
+        "logline": "process@1",
+        "id": "visa.tourist@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "passport_validity",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "with.travel.arrival"
+                    },
+                    {
+                      "var": "with.passport.expiry"
+                    }
+                  ]
+                },
+                180
+              ]
+            },
+            "if_not": "not",
+            "reason": "The passport must be valid for 180 days after arrival."
+          },
+          {
+            "id": "arrival_in_future",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "$today"
+                    },
+                    {
+                      "var": "with.travel.arrival"
+                    }
+                  ]
+                },
+                1
+              ]
+            },
+            "if_not": "not",
+            "reason": "Arrival must be after the date of application."
+          },
+          {
+            "id": "stay_limit",
+            "check": {
+              "<=": [
+                {
+                  "var": "with.travel.stay_days"
+                },
+                90
+              ]
+            },
+            "if_not": "not",
+            "reason": "A tourist stay cannot exceed 90 days."
+          },
+          {
+            "id": "purpose",
+            "check": {
+              "in": [
+                {
+                  "var": "with.travel.purpose"
+                },
+                [
+                  "tourism",
+                  "family visit",
+                  "business meeting"
+                ]
+              ]
+            },
+            "if_not": "not",
+            "reason": "The purpose is not covered by a tourist visa."
+          },
+          {
+            "id": "sufficient_funds",
+            "check": {
+              ">=": [
+                {
+                  "var": "with.means.funds_usd"
+                },
+                {
+                  "*": [
+                    {
+                      "var": "with.travel.stay_days"
+                    },
+                    80
+                  ]
+                }
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "Funds are below 80 USD per day of stay."
+          },
+          {
+            "id": "return_ticket",
+            "check": {
+              "==": [
+                {
+                  "var": "with.travel.return_ticket"
+                },
+                true
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "No return ticket was declared."
+          },
+          {
+            "id": "no_previous_overstay",
+            "check": {
+              "==": [
+                {
+                  "var": "with.history.previous_overstay"
+                },
+                false
+              ]
+            },
+            "if_not": "not",
+            "reason": "A previous overstay was declared."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [
+          "detail.grants.valid_until"
+        ],
+        "time": "day"
+      },
+      "tuple": {
+        "who": "Marta Silva",
+        "did": "request",
+        "this": "visa.tourist@1",
+        "with": {
+          "passport": "UT1234567",
+          "trip": "two weeks in March",
+          "money": "enough"
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z",
+        "by": "p:demo-marta"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":false,\"by\":\"p:demo-marta\",\"detail_hash\":\"sha256:32c06fed84a6a2d74f427afbdf4d0352e4aa03a06ca851e176c7f789e79c4538\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:008fe834f5e2a504a180bc9fd1ee7abf6c159ad12d91ad1818ede62b93de26d6\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{},\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:5a4aee736a4fd08b0cf9880ce7f43305bbb825bd0c2cc574970e05f2cbd7b62c",
+        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"did is \\\"request\\\"; this process accepts \\\"apply\\\"\",\"with.passport.number is missing (string)\",\"with.passport.expiry is missing (date)\",\"with.travel.arrival is missing (date)\",\"with.travel.stay_days is missing (integer)\",\"with.travel.purpose is missing (string)\",\"with.travel.return_ticket is missing (boolean)\",\"with.means.funds_usd is missing (number)\",\"with.history.previous_overstay is missing (boolean)\"]}",
+        "signature": "ibBNb7onvG8HuJKhTcjrSDwHFlllmtACkXymepPaladk3TCCsajgcZp7K5LKckUnX4c-_NxPq2KuMiBeEtt2Cg"
+      }
+    },
+    {
+      "name": "registered-no-process",
+      "process": null,
+      "tuple": {
+        "did": "hello",
+        "this": "Not A Frequency!"
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":false,\"by\":null,\"detail_hash\":\"sha256:68a1c6c8151ca85c83094e68bacf7a7fcb03040690b8f6d176880132e37be2ce\",\"frequency\":\"_unaddressed\",\"input_hash\":\"sha256:823b9146a65a37b7627a6eac5f65473896dc479cbeb7f112ecf5f4b9ba965929\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":null,\"process_hash\":null,\"public\":{},\"status\":\"registered\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:8f568ce2e8c64c83fd98e52dfea04453752a6f6039e88904dcc6ddf4ef82606d",
+        "detail_jcs": "{\"consequence\":\"Recorded. The process did not run and nothing was decided. Meet the unmet conditions to activate it.\",\"findings\":[],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":[\"no process is published on frequency \\\"_unaddressed\\\"\"]}",
+        "signature": "buWm_wfywgxaC8TzmWUizbPJmScT4EjBK0KvxT7UQB8tByDc_a9xeWb7M6HWDsMrKRG69Jdo_cqZAeUua_vgAw"
+      }
+    },
+    {
+      "name": "budget-exhausted",
+      "process": {
+        "logline": "process@1",
+        "id": "budget.demo@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "expensive",
+            "check": {
+              ">=": [
+                {
+                  "+": [
+                    1,
+                    {
+                      "+": [
+                        1,
+                        {
+                          "+": [
+                            1,
+                            {
+                              "+": [
+                                1,
+                                {
+                                  "+": [
+                                    1,
+                                    {
+                                      "+": [
+                                        1,
+                                        {
+                                          "+": [
+                                            1,
+                                            {
+                                              "+": [
+                                                1,
+                                                {
+                                                  "+": [
+                                                    1,
+                                                    {
+                                                      "+": [
+                                                        1,
+                                                        {
+                                                          "+": [
+                                                            1,
+                                                            {
+                                                              "+": [
+                                                                1,
+                                                                {
+                                                                  "+": [
+                                                                    1,
+                                                                    {
+                                                                      "+": [
+                                                                        1,
+                                                                        {
+                                                                          "+": [
+                                                                            1,
+                                                                            {
+                                                                              "+": [
+                                                                                1,
+                                                                                {
+                                                                                  "+": [
+                                                                                    1,
+                                                                                    {
+                                                                                      "+": [
+                                                                                        1,
+                                                                                        {
+                                                                                          "+": [
+                                                                                            1,
+                                                                                            {
+                                                                                              "+": [
+                                                                                                1,
+                                                                                                {
+                                                                                                  "+": [
+                                                                                                    1,
+                                                                                                    {
+                                                                                                      "+": [
+                                                                                                        1,
+                                                                                                        {
+                                                                                                          "+": [
+                                                                                                            1,
+                                                                                                            {
+                                                                                                              "+": [
+                                                                                                                1,
+                                                                                                                {
+                                                                                                                  "+": [
+                                                                                                                    1,
+                                                                                                                    1
+                                                                                                                  ]
+                                                                                                                }
+                                                                                                              ]
+                                                                                                            }
+                                                                                                          ]
+                                                                                                        }
+                                                                                                      ]
+                                                                                                    }
+                                                                                                  ]
+                                                                                                }
+                                                                                              ]
+                                                                                            }
+                                                                                          ]
+                                                                                        }
+                                                                                      ]
+                                                                                    }
+                                                                                  ]
+                                                                                }
+                                                                              ]
+                                                                            }
+                                                                          ]
+                                                                        }
+                                                                      ]
+                                                                    }
+                                                                  ]
+                                                                }
+                                                              ]
+                                                            }
+                                                          ]
+                                                        }
+                                                      ]
+                                                    }
+                                                  ]
+                                                }
+                                              ]
+                                            }
+                                          ]
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                0
+              ]
+            },
+            "if_not": "not",
+            "reason": "Expensive check."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [],
+        "time": "day",
+        "limits": {
+          "ops": 20
+        }
+      },
+      "tuple": {
+        "who": "applicant",
+        "did": "apply",
+        "this": "budget.demo@1",
+        "salt": "q3hGq1K0d5nR7xW2fYc8Aa",
+        "with": {
+          "passport": {
+            "number": "UT4829173",
+            "expiry": "2031-06-30"
+          },
+          "travel": {
+            "arrival": "2027-02-10",
+            "stay_days": 21,
+            "purpose": "tourism",
+            "return_ticket": true
+          },
+          "means": {
+            "funds_usd": 4200
+          },
+          "history": {
+            "previous_overstay": false
+          }
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z"
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":true,\"by\":null,\"detail_hash\":\"sha256:e868f6da597945040909ad112186391616295a6746c56f1bf3c351a287f88b17\",\"frequency\":\"budget.demo@1\",\"input_hash\":\"sha256:8f511d370b1b2644343698d373c2e97c08659537e9113d896e73a0de9a0d402d\",\"logline\":\"receipt@1\",\"prev\":[],\"process\":\"budget.demo@1\",\"process_hash\":\"sha256:987044090be71576f89105f7473dadfb4cee9b81a6ac9d291d49efdd68e54bb5\",\"public\":{},\"status\":\"doubt\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:dc922b6605b14be36abb5c04b78d8576ca9f3c3758a8525b25222d948e03e541",
+        "detail_jcs": "{\"consequence\":\"Referred to an officer. No entry permission yet.\",\"findings\":[{\"error\":\"eval_budget: operation budget exhausted\",\"reason\":\"Expensive check.\",\"result\":\"doubt\",\"step\":\"expensive\"}],\"grants\":null,\"logline\":\"detail@1\",\"unmet\":null}",
+        "signature": "s-03pp3oIT9Y84HSGwY6Rwjk4W4fbZglJV_W7SGuyz_lk29B8Z_00LDQ0h1Dzf6bUFQn8t22U3J2KiE9nb79Bw"
+      }
+    },
+    {
+      "name": "prev-sorted-deduped",
+      "process": {
+        "logline": "process@1",
+        "id": "visa.tourist@1",
+        "issuer": "Example Consulate (conformance fixture)",
+        "accepts": {
+          "did": "apply"
+        },
+        "requires": {
+          "with.passport.number": "string",
+          "with.passport.expiry": "date",
+          "with.travel.arrival": "date",
+          "with.travel.stay_days": "integer",
+          "with.travel.purpose": "string",
+          "with.travel.return_ticket": "boolean",
+          "with.means.funds_usd": "number",
+          "with.history.previous_overstay": "boolean"
+        },
+        "steps": [
+          {
+            "id": "passport_validity",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "with.travel.arrival"
+                    },
+                    {
+                      "var": "with.passport.expiry"
+                    }
+                  ]
+                },
+                180
+              ]
+            },
+            "if_not": "not",
+            "reason": "The passport must be valid for 180 days after arrival."
+          },
+          {
+            "id": "arrival_in_future",
+            "check": {
+              ">=": [
+                {
+                  "days_between": [
+                    {
+                      "var": "$today"
+                    },
+                    {
+                      "var": "with.travel.arrival"
+                    }
+                  ]
+                },
+                1
+              ]
+            },
+            "if_not": "not",
+            "reason": "Arrival must be after the date of application."
+          },
+          {
+            "id": "stay_limit",
+            "check": {
+              "<=": [
+                {
+                  "var": "with.travel.stay_days"
+                },
+                90
+              ]
+            },
+            "if_not": "not",
+            "reason": "A tourist stay cannot exceed 90 days."
+          },
+          {
+            "id": "purpose",
+            "check": {
+              "in": [
+                {
+                  "var": "with.travel.purpose"
+                },
+                [
+                  "tourism",
+                  "family visit",
+                  "business meeting"
+                ]
+              ]
+            },
+            "if_not": "not",
+            "reason": "The purpose is not covered by a tourist visa."
+          },
+          {
+            "id": "sufficient_funds",
+            "check": {
+              ">=": [
+                {
+                  "var": "with.means.funds_usd"
+                },
+                {
+                  "*": [
+                    {
+                      "var": "with.travel.stay_days"
+                    },
+                    80
+                  ]
+                }
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "Funds are below 80 USD per day of stay."
+          },
+          {
+            "id": "return_ticket",
+            "check": {
+              "==": [
+                {
+                  "var": "with.travel.return_ticket"
+                },
+                true
+              ]
+            },
+            "if_not": "doubt",
+            "reason": "No return ticket was declared."
+          },
+          {
+            "id": "no_previous_overstay",
+            "check": {
+              "==": [
+                {
+                  "var": "with.history.previous_overstay"
+                },
+                false
+              ]
+            },
+            "if_not": "not",
+            "reason": "A previous overstay was declared."
+          }
+        ],
+        "grants": {
+          "entries": "single",
+          "valid_from": {
+            "var": "with.travel.arrival"
+          },
+          "valid_until": {
+            "add_days": [
+              {
+                "var": "with.travel.arrival"
+              },
+              90
+            ]
+          },
+          "max_stay_days": {
+            "var": "with.travel.stay_days"
+          }
+        },
+        "if_ok": "Entry permitted within the granted window.",
+        "if_doubt": "Referred to an officer. No entry permission yet.",
+        "if_not": "Refused. The findings state why.",
+        "broadcast": [
+          "detail.grants.valid_until"
+        ],
+        "time": "day"
+      },
+      "tuple": {
+        "who": "applicant",
+        "did": "apply",
+        "this": "visa.tourist@1",
+        "salt": "q3hGq1K0d5nR7xW2fYc8Aa",
+        "with": {
+          "passport": {
+            "number": "UT4829173",
+            "expiry": "2031-06-30"
+          },
+          "travel": {
+            "arrival": "2027-02-10",
+            "stay_days": 21,
+            "purpose": "tourism",
+            "return_ticket": true
+          },
+          "means": {
+            "funds_usd": 4200
+          },
+          "history": {
+            "previous_overstay": false
+          }
+        }
+      },
+      "options": {
+        "when": "2026-11-25T12:00:00Z",
+        "prev": [
+          "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+          "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+          "sha256:2222222222222222222222222222222222222222222222222222222222222222"
+        ]
+      },
+      "expected": {
+        "header_jcs": "{\"activated\":true,\"by\":null,\"detail_hash\":\"sha256:fd347fe2f5f8fd189a7089d474503cb087fa72663fac2793900df298aa0658db\",\"frequency\":\"visa.tourist@1\",\"input_hash\":\"sha256:d52faed4e40e7e0bf891bf5bc68a756594e7510a2362e03a068ad952b5a694fa\",\"logline\":\"receipt@1\",\"prev\":[\"sha256:1111111111111111111111111111111111111111111111111111111111111111\",\"sha256:2222222222222222222222222222222222222222222222222222222222222222\"],\"process\":\"visa.tourist@1\",\"process_hash\":\"sha256:e45dd6df7be7452be97afc2bb89ba63eae5d1582ac7f8020ee590679f481205c\",\"public\":{\"detail.grants.valid_until\":\"2027-05-11\"},\"status\":\"ok\",\"when\":\"2026-11-25T12:00:00Z\"}",
+        "id": "sha256:cf126d43ba68ec67d5adaf140b31d89b2c1abb5a2600fae6366f693506541bcc",
+        "detail_jcs": "{\"consequence\":\"Entry permitted within the granted window.\",\"findings\":[{\"result\":\"ok\",\"step\":\"passport_validity\"},{\"result\":\"ok\",\"step\":\"arrival_in_future\"},{\"result\":\"ok\",\"step\":\"stay_limit\"},{\"result\":\"ok\",\"step\":\"purpose\"},{\"result\":\"ok\",\"step\":\"sufficient_funds\"},{\"result\":\"ok\",\"step\":\"return_ticket\"},{\"result\":\"ok\",\"step\":\"no_previous_overstay\"}],\"grants\":{\"entries\":\"single\",\"max_stay_days\":21,\"valid_from\":\"2027-02-10\",\"valid_until\":\"2027-05-11\"},\"logline\":\"detail@1\",\"unmet\":null}",
+        "signature": "2i_hnQwvmAfTNQkgDA-HV7DIhNhWEusYq4Yq6yJlflsFwJEiCqy_exoqgxCmLuvdIkQ7LLExRNV75Z-DVuuTCA"
+      }
+    }
+  ]
+}

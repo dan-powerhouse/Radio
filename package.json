@@ -1,0 +1,19 @@
+{
+  "name": "@logline/receipt",
+  "version": "0.1.0",
+  "description": "LogLine Receipt v1: run a JSON tuple on a JSON process and get a signed, verifiable receipt.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "SPEC.md", "vectors"],
+  "scripts": {
+    "build": "tsc -p .",
+    "vectors": "npm run build && node scripts/make-vectors.mjs",
+    "test:node": "node --test test/*.test.mjs",
+    "test:bun": "bun test test/",
+    "test:browser": "node scripts/browser-conformance.mjs",
+    "test": "npm run build && npm run test:node && npm run test:bun && npm run test:browser"
+  },
+  "license": "UNDECIDED",
+  "engines": { "node": ">=20" }
+}
