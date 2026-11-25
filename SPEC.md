@@ -387,3 +387,103 @@ Use two illustrative recognition predicates, with RUN bodies omitted: Blue recog
 | Supply a different law under the same hash | Integrity failure; no false registration verdict. |
 
 Approved decisions: single-winner ambiguity (rather than fan-out), `_unaddressed` registration frequency, fail-closed indeterminate handling, immutable snapshot selection and the recognition budget profile. PR-02 must finish the RUN/instance and receipt contract before implementation begins.
+
+### 15.9 PR-02 — Proposed RUN, instance and receipt contract
+
+Status: **for architect review; not implemented**. This completes the proposed kernel contract for the next version without changing `process@1`, `receipt@1`, or historical v1 vectors. It uses the approved recognition semantics in §15.8. The first RUN constitutes the instance; there is no authoritative mutable process object, scheduler or internal reaction loop.
+
+#### 15.9.1 Law and RUN definitions
+
+The `process-type@1` law in §15.8.1 contains `runs`, an ordered non-empty array of up to 64 RUNs. The first entry is the only entry RUN. The order fixes law identity, not a mandatory linear execution order. Each RUN has the following fields (unknown fields rejected):
+
+| Field | Contract |
+|---|---|
+| `id` | Required unique name matching `^[A-Za-z0-9_-]{1,64}$`. |
+| `requires` | Required map of tuple paths to field types (§4); may be empty. |
+| `after` | Required list of unique predecessor RUN ids. Empty for entry; non-empty for successors. References earlier array entries only. |
+| `cites` | Optional map of named receipt requirements (§9), maximum 16 slots, as refined below. |
+| `steps` | Required ordered checks with stable step ids, `check`, `if_not`, `reason` (§4). May be empty. |
+| `grants` | Optional map of named result expressions (§6); the result object is the receipt's constituted content, not a separate entity. |
+| `if_ok`, `if_doubt`, `if_not` | Required consequence strings, as in §4. |
+| `broadcast` | Optional approved `detail.*`/`tuple.*` paths (§6); private by default. |
+| `limits` | Optional `ops`, default 10,000, max 1,000,000 for evaluation. |
+
+`accepts`, `on` and `time` are not RUN fields: recognition is §15.8; participants react externally; retries use an explicit submission key below. The same expression evaluator implements recognition and RUN checks. All expressions must be structurally valid at publication, including unvisited branches. RUNs may read tuple paths and only `$when`, `$today`, `$by`, `$instance`, `$parents.<run-id>.id/header/detail`, `$cites.<slot>.id/header/detail`; no host state, arbitrary code, or network. `$instance` is null for entry and the root receipt id for continuation. `$parents` is empty for entry. All paths and values are own JSON properties. Static validation must reject reserved or unknown machine roots; dynamic missing paths use the existing evaluator's error semantics. Resource/byte admission limits must be enforced in addition to operation counts. The existing evaluator's expression and ordering semantics remain authoritative, with version-specific fixes explicitly documented and tested.
+
+This is a finite acyclic law graph, not a workflow executor. A RUN may have multiple parents or multiple eligible successors; each RUN may successfully constitute its result at most once per instance. Repetition is expressed by a new instance or a new trajectory linked through citations. No automatic transition follows a successful RUN. A participant must submit an independent next input. This is a deliberately small proposed v1 profile for Process Types, not a claim that all possible workflows are acyclic.
+
+#### 15.9.2 Submission and continuity
+
+A request carries `tuple` (any I-JSON value), `submission` (caller-generated, unpredictable 128-bit-or-longer base64url nonce, at most 128 characters), and optionally `continue: {instance, run, parents}`. These are transport fields, not reserved meanings of the free LogLine tuple. `parents` is a map from predecessor RUN id to receipt id. The version is explicit at the transport boundary. Unknown request fields or malformed envelopes are protocol errors, not accepted expressions. Authentication is mandatory for target submissions; `by` is derived from the authenticated principal. The local test adapter may supply a verified test identity but never infer it from the tuple. Delegation remains subject to §15.6 and §15.7.
+
+- An initial request has no `continue`. The machine captures the current immutable registry snapshot, scans (§15.8), and attempts the unique matched law's first RUN, if any. The participant does not choose the initial law through the transport.
+- A continuation request never enters the initial scanner. It identifies the root receipt by content address, the RUN by id, and its exact causal parents. The root must be an authentic `receipt@2`, an `ok` entry RUN of the same logical machine, with its original law and registry evidence available. Load that exact law, even if it is no longer active for new instances. Retirement is not revocation of existing obligations; applicable authorization/revocation checks remain mandatory. The successor must exist, must not be the entry RUN, and `parents` must have exactly the keys in `after`. Each parent must be an authentic `ok` receipt of the same law, instance and specified RUN. The entry receipt's effective instance id is its own receipt id. No guessed latest parent, session state, implicit actor continuity or fallback to the scanner is permitted.
+- The machine checks that the current actor is allowed to participate; previous receipts can express authority but prior authorship is not automatically inherited. A law may require equality to a previous `by`, or explicitly authorize a different actor, through its checks and citations. Credentials, visibility of a receipt and authorization to use its private detail are distinct. The host must authorize evidence access before evaluating or disclosing it; trusted machine-internal verification may resolve private evidence without exposing it to the caller.
+- Missing/incorrect parents, unavailable citations, already completed RUN or spent claim prevent activation and produce `registered` with an explanation when safe. Missing root, wrong law/RUN or unauthorized access cannot instantiate an alternative process. Unauthorized/missing private evidence must use indistinguishable diagnostics where needed to avoid an existence oracle. A corrupt authoritative object or unavailable registry infrastructure is a request failure, not a fabricated refusal. A continuation request that cannot resolve a trustworthy law uses `_unaddressed` and null selected law/RUN in the receipt, with the requested context hash committed. A well-formed continuation whose known law refuses activation is registered on its law's frequency.
+
+#### 15.9.3 Evaluation, constitution and uniqueness
+
+A single admitted submission constitutes at most one root receipt; the result can be `registered`, `not`, `doubt` or `ok`. Recognition and causal eligibility come before RUN evaluation. Evaluate `requires` and `cites` deterministically in UTF-16 key order, with no implicit `who`, `did`, or `this` routing. If activation fails, no step runs, `findings` is empty, and `grants` is null. For activated RUNs retain §6 finding precedence (`not` before `doubt`, else `ok`), grant evaluation only on `ok`, and error handling. A non-ok receipt is evidence of a submission/attempt, not a successful constituted effect. Only an `ok` entry RUN forms an instance. An `ok` successor constitutes one result object in that instance; its success is not overwritten by a subsequent attempt.
+
+The instance id is the id of the successful entry receipt. The entry receipt header has `instance: null`; its effective instance identity is computed after hashing. This avoids circular hashing and a second instance-id allocation mechanism. Non-ok entry receipts have no instance. Later receipts bind the root id; no authoritative mutable instance record is required. The type's projection may be calculated from the set of successful RUN receipts and their causal edges. An index is a constraint or acceleration, not an alternate state truth.
+
+For an admitted request, reserve or recover the idempotency key `hash({by, submission})`, scoped to the logical machine. Bind it to `request_hash = hash({tuple, continue: continuation-or-null})`. A retry of the same key and request returns the original receipt, even after registry, clock, law or state changes. A reused key with different request hash fails `submission_conflict`; it never executes. New attempts, including after `registered`, `not`, or `doubt`, require a new nonce. Changing a nonce intentionally requests a new attempt; identical initial input with a different nonce may create another instance. The nonce is not authority and must not be derived from the caller's identity or stored as an access token.
+
+For successors, success claims are unique by `(instance, run)`; the ledger, not the evaluator, enforces that uniqueness atomically with the receipt commit. A race loser re-evaluates against the committed success claim and registers the already-completed RUN, rather than emitting a second `ok`. The `once` citation rule retains the v1 scope concept but uses `(law_hash, slot, cited_receipt_id)` within the logical machine, across all RUNs of that law; shared slot names deliberately share a consumption scope. A later amendment is a distinct law and does not by itself prevent the same receipt being consumed there. Types requiring wider conservation must use a single authoritative consuming law, or await an explicit cross-law consumption contract; do not claim global money-like uniqueness. Optional citation slots may be omitted; an explicitly supplied bad citation is unmet. Each resolved citation must be authentic, match the requested id, pass frequency/status constraints, and have matching detail. No caller can supply `spent` or assert a successful parent on the authority's behalf. A claim is committed only on `ok`; unsuccessful attempts consume nothing. A submission claim, all CAS objects, receipt, success claims and once claims commit together. On failure nothing is broadcast. If a conflicting claim appears, discard tentative output and re-evaluate with updated authoritative observations under the original admitted request, law and time. A response is not delivered as committed until persistence succeeds.
+
+#### 15.9.4 Versioned receipt and replay evidence
+
+Retain the outer envelope `{header,id,sig}` and Ed25519 key identities (§7.3). The target header is `receipt@2` and the signature domain is UTF-8 `logline-receipt-v2:` plus `id`. Old signatures remain v1; dispatch strictly by version, not by trying both domains. Proposed required fields:
+
+```json
+{
+  "logline": "receipt@2",
+  "frequency": "blue@1",
+  "status": "ok",
+  "activated": true,
+  "process": "blue@1",
+  "process_hash": "sha256:...",
+  "registry_hash": "sha256:...",
+  "run": "open",
+  "instance": null,
+  "input_hash": "sha256:...",
+  "context_hash": "sha256:...",
+  "detail_hash": "sha256:...",
+  "when": "2026-11-25T00:00:00Z",
+  "by": "p:...",
+  "prev": [],
+  "public": {}
+}
+```
+
+The example hashes and pseudonym are placeholders, not a signed vector. `process`, `process_hash`, `run`, and `instance` are nullable as required by disposition; initial registration without a unique match has null law and RUN. `registry_hash` always commits to the admission snapshot for initial recognition, or the root's snapshot for a resolved continuation; for an unresolved continuation it commits to the current admission snapshot. A verifier must validate field relationships and exact header shape, not only a signature. The `id` is `hash(header)`. `prev` is the sorted unique union of actually resolved causal root, parents and citations (no arbitrary caller-supplied previous ids); no self-reference. Failed/unresolved references remain in the hash-bound context, not authenticated causal edges. Key windows, identity rules and privacy remain §11 and §15.1–3. No `depth` because the target machine does not react; no public `spent` or internal account UUID.
+
+`detail@2` has the v1 consequence, findings, unmet and grants fields plus a stable `reason` code (null on `ok`) and `recognition` (initial scan outcome with matching hashes and diagnostics, null for continuation). The exact private `context@1` CAS object contains `submission`, `request_hash`, `continue` (null or the exact request), `spent` (sorted unique pairs `{slot,id}` under the selected law), `completed` (null or the conflicting successful receipt id), and `resolved` (root/parent/citation ids actually resolved, by role). It binds all relevant ledger observations and the explicit request without publishing them. For every reference that influences replay, a bundle must distinguish available authentic objects from authoritative negative observations; replay uses exactly the recorded availability and conflict observations and rejects mismatches, rather than accepting any extra object as if present at admission. Negative observations are machine attestations, not mathematical proof of global absence. Failure reason codes and exact diagnostic ordering must be frozen with the conformance vectors in PR-05; they cannot depend on database messages or host exceptions. Reject unknown fields in the new version and canonicalize all maps/sets as specified. Public data is exclusively the law-declared projection plus header fields; the detail and context remain private subject to authorization.
+
+A `bundle@2` includes a head receipt id, `keys` (convenience only), and a map `objects` from content hash to canonical JSON object containing the receipt headers, signed envelopes, tuples, details, contexts, registry snapshots and all laws and causal evidence necessary for replay. Signed receipt envelopes are addressed in the bundle by `receipt.id` (hash of header), all other objects by hash of their full content; verify this typed distinction and reject collisions or duplicate keys. Historical v1 ancestors may be included under their unchanged versioned rules. Full verification must use an independently trusted key ring, resolve every causal ancestor, validate all required evidence hashes, reject cycles, and replay recognition (entry only), activation and RUN using the signed time, identity and recorded context. Return separate authenticity, replay and trajectory completeness verdicts. Missing evidence may permit an authenticity-only verdict but never a successful full replay claim. An offline bundle does not prove ledger-wide completeness, current authorization, absence of alternative issued receipts or actual external effects. For resource consumption and success exclusivity, trust the authoritative transaction boundary or additional independent evidence of consistency. Receipt verification does not confer permission to retrieve private CAS objects.
+
+#### 15.9.5 Worked trajectory and acceptance (not executed target tests)
+
+Illustrative law `blue@1`: recognition is the Blue predicate from §15.8.5, with entry RUN `open` requiring `with.subject: string`, granting `subject` and authenticated `owner`; successor RUN `review` has `after:["open"]`, requires `with.score: integer`, checks `score >= 70`, and explicitly checks `$by == $parents.open.detail.grants.owner` for this example, propagating the authenticated owner in its grants; successor RUN `finish` has `after:["review"]` and checks `$by == $parents.review.detail.grants.owner`. It may read or propagate only the verified evidence declared by the contract. The following symbolic receipts are not real hashes:
+
+| Submission | Expected result |
+|---|---|
+| Alice opens subject A with nonce N1 | `ok` receipt A1; A1 is the instance id. |
+| Alice opens subject B with nonce N2 | `ok` receipt B1, distinct instance. |
+| Retry N1 after registry amendment | Returns byte-identical A1; no new instance. |
+| Reuse N1 with a different tuple | `submission_conflict`; no receipt. |
+| Alice reviews A1 with parent B1 | `registered`; cross-instance parent forbidden. |
+| Bob reviews A1 with valid parent A1 | `not` under this example's authority check; no success claim. |
+| Alice reviews A1, score 50 | `not`; no success claim. |
+| Alice reviews A1, score 80, new nonce | `ok` receipt A2; root A1 and parent A1 in `prev` once. |
+| Two competing eligible reviews of B1 | Exactly one `ok` for B1/review; other `registered`. |
+| Alice finishes A1 citing A2 | `ok` receipt A3; `prev` includes A1 and A2. |
+| Retry successful finish, same key | Original A3; no repeat effect. |
+| New finish nonce after A3 | `registered`; no second successful finish. |
+| Amend or retire Blue before continuation | A1 continues under its exact original law, subject to valid authorization. |
+| Replace listener/runtime and replay A3 bundle | Same decisions from signed history and original law; no session dependency. |
+| Tamper with root, law, registry, parent, context or grant | Full verification fails. |
+
+For non-linear acceptance, a separate law has `open`, parallel eligible `left` and `right`, and `join` with `after:["left","right"]`. Either branch can arrive first; `join` cannot activate until both authentic same-instance successes are provided. An unsuccessful branch can be attempted again with a new submission nonce. A receipt from another law or instance cannot substitute a required parent. A separate once-citation case must verify slot-specific conflict, rollback and no cross-slot false positives.
+
+Decisions requested: one successful receipt per `(instance, RUN)`, finite DAG in the first Process Type profile, continuation transport separate from free tuple, root receipt as instance id, explicit submission nonce, law-scoped once consumption, and the versioned envelope/context/bundle contract. These are proposals for review. The next code PR must not implement a different contract silently. No external executor, PATT, orchestration worker, new service or arbitrary code language is introduced.

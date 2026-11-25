@@ -10,7 +10,7 @@ Scale is a property of the boundary, not the number of services. Avoid global se
 
 ## Working agreement
 
-- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 is documentation-only. PR-01 is architect-approved in SPEC §15.8; runtime implementation and remote merge are separate.
+- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 synchronized the already tested checkpoint and roadmap ([GitHub #2](https://github.com/dan-powerhouse/Radio/pull/2), merged). PR-01 is architect-approved in SPEC §15.8 ([GitHub #3](https://github.com/dan-powerhouse/Radio/pull/3), merged); target runtime implementation remains pending.
 - Use one branch per PR, one reviewable purpose, tests alongside implementation, and a short PR description: intent, invariant, changed files, tests/results, compatibility, unresolved issues. Prefer subtracting code. No speculative framework or mandatory new dependency.
 - For semantic changes, update the relevant part of SPEC in the same PR before implementation. Resolve explicit decisions with the architect first. Version incompatibilities and retain historical vectors; do not change tests just to pass. A failing baseline is investigated, not silently waived.
 - Every code PR runs build and `npm test`; if a stage is blocked, run the remaining stages independently and report exact results. Add a targeted regression or conformance test for each new invariant. Infrastructure PRs require actual service tests, not only doubles. Never substitute a mock for an acceptance gate.
@@ -34,16 +34,16 @@ Scale is a property of the boundary, not the number of services. Avoid global se
 Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior and compatibility boundary are explicit. No new runtime code in this milestone.
 
 ### PR-00 — Roadmap and baseline
-- [ ] Dependencies: none. Deliverable: this roadmap, links from README and AGENTS, baseline commands and exact results. No semantic changes.
+- [x] Merged as GitHub #2: synchronized the previously developed baseline (including hosted preview and external-listener regression tests) and this roadmap. No new scanner/RUN semantics in this import.
 - Acceptance: all existing source, tests and vectors unchanged; verify archive and baseline build/test results.
 
 ### PR-01 — Process Type and recognition contract
-- [x] Architect-approved (2026-11-25): canonical JSON law version, registry identity/publication/amendment, scanner input and deterministic bounded match contract in SPEC §15.8.
+- [x] Architect-approved (2026-11-25) and merged as GitHub #3: canonical JSON law version, registry identity/publication/amendment, scanner input and deterministic bounded match contract in SPEC §15.8.
 - Decision gate: overlapping matches (no implicit winner), no-match receipt cardinality/frequency, recognition versus activation, errors and total scanner budget, immutable registry snapshot used for replay, version separation from `process@1`.
 - Acceptance: agreed examples for zero/one/multiple matches, malformed versus valid unmatched input, reordered JSON, publication changes and overlapping types. Expected outcomes specified before code.
 
 ### PR-02 — RUN, instance and receipt contract
-- [ ] Depends on PR-01. Define one-or-more RUNs, first RUN constituting an instance, later RUN eligibility, causal references, object/result binding, versioned receipt and bundle.
+- [x] Drafted in SPEC §15.9 (review pending): one-or-more RUNs, first RUN constituting an instance, later RUN eligibility, causal references, object/result binding, versioned receipt and bundle.
 - Decision gate: instance identity, successor selection and dependencies (not necessarily linear), retry semantics, scope of `once` and idempotency, response cardinality, signed context and proof of registry/spent claims; which status constitutes an instance or effect. No shadow authoritative state.
 - Acceptance: agreed worked example from first input to at least two distinct instances, continuation, refusal, retry and replay. Historical v1 receipt interpretation preserved.
 
@@ -161,4 +161,4 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 
 `00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
 
-Preparation of PR-12, PR-17 protocol research and PR-19 format comparison may overlap earlier work; their implementation/merge gates still apply. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: approve this sequence and settle PR-01 decisions, then record normative semantics in SPEC.
+Preparation of PR-12, PR-17 protocol research and PR-19 format comparison may overlap earlier work; their implementation/merge gates still apply. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review PR-02 in SPEC §15.9; only after approval begin PR-03 implementation. PR-01 is architect-approved.
