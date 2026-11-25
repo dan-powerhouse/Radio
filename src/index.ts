@@ -14,3 +14,5 @@ export { parseStrict } from "./strict.js";
 export * from './hosted.js';
 
 export * from "./process-type.js";
+
+export * from "./scanner.js";

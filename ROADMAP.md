@@ -30,12 +30,12 @@ If materialization exposes an actual deficiency in the frozen contract, record i
 | Area | Existing baseline | Gap |
 |---|---|---|
 | Encoding/crypto | `src/jcs.ts`, `strict.ts`, `hash.ts`, `keys.ts`, `authentic.ts` | Explicit compatibility with new envelope; known pre-checkpoint v1 ordering defect (SPEC §15.5) |
-| Evaluation | `src/process.ts`, `expr.ts`, `receipt.ts`, `verify.ts` | v1 explicitly addressed single law; no target scanner/multi-RUN |
+| Evaluation | `src/process.ts`, `expr.ts`, `receipt.ts`, `verify.ts`, `scanner.ts` | v1 explicitly addressed single law; target scanner implemented, multi-RUN pending |
 | Local reference | `src/ledger.ts`, `server/`, CLI | v1 synchronous `on`; target externally initiated continuation |
 | Hosted preview | migration, `submit`, `publish`, shared ledger/PostgREST adapter; real disposable PostgreSQL 16/17 transaction and RLS tests | v1 only; target schema and real Supabase Auth/Edge/PostgREST/Realtime integration pending |
 | Identity/client | `src/hosted.ts`, native OAuth discovery | real OAuth consent, scoped delegation and revocation |
 | Radio | local SSE, hosted receipt publication configuration | actual WebSocket and gap-free catch-up |
-| Examples/tests | course, external alumni fixture, frozen v1 vectors, portable Process Type/registry/expression/JSON vectors, cross-runtime tests and targeted mutations; CI/CD workflows prepared | scanner/RUN/trajectory vectors, first verified GitHub Actions run and hosted full path |
+| Examples/tests | course, external alumni fixture, frozen v1 vectors, portable Process Type/registry/expression/JSON vectors, cross-runtime tests and targeted mutations; CI/CD workflows prepared | RUN/trajectory vectors and hosted full path; PR-03 GitHub Actions passed both jobs |
 
 ## M0 — The Contract
 
@@ -69,7 +69,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 - Acceptance: valid single/multiple RUN definitions, rejected unknown or malformed fields, stable hash under key reordering, immutable publication and amendment, no execution of arbitrary code.
 
 ### PR-04 — Deterministic scanner
-- [ ] Depends on PR-03. Pure recognition over the specified registry snapshot using the same expression machinery; no NLP, SQL rule engine or agent decision.
+- [ ] Depends on PR-03. Implemented on the dependent PR-04 branch: pure recognition over the specified registry snapshot using the same expression machinery; no NLP, SQL rule engine or agent decision. 51 portable vectors, 6 additional reference tests and 10 targeted scanner mutations. Review/merge pending.
 - Acceptance: zero/one/multiple matches per approved contract; snapshot/version changes; deterministic ordering and bounded work; valid scalars/arrays/objects and adversarial keys. No hidden preference based on arrival order.
 
 ### PR-05 — RUN evaluator and signed result
@@ -184,4 +184,4 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 
 `00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 09A -> 09B [1.0 FREEZE] -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
 
-The two new review gates (09A/09B) preserve every existing numbered PR and acceptance criterion. No native implementation overlaps Cycle I. After the approved freeze, native work can overlap where its dependencies allow. CI/CD ties the materialization to frozen conformance evidence. Measure native limits as components become testable in Cycle II, not only in PR-21. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review and merge PR-03 (GitHub #5), then implement PR-04 under the existing recognition contract. M0 is complete.
+The two new review gates (09A/09B) preserve every existing numbered PR and acceptance criterion. No native implementation overlaps Cycle I. After the approved freeze, native work can overlap where its dependencies allow. CI/CD ties the materialization to frozen conformance evidence. Measure native limits as components become testable in Cycle II, not only in PR-21. PR-19 may close as an explicit documented decision not to adopt a wrapper. No estimated delivery dates without measured work. Next: review and merge PR-03 (GitHub #5), then review and merge the dependent PR-04 scanner before PR-05. M0 is complete.

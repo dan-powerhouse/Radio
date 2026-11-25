@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner, multi-RUN execution, and receipt@2 remain pending.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04; multi-RUN execution and receipt@2 remain pending.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -20,6 +20,7 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 | `CLAUDE.md` | Imports the same instructions for Claude Code |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/process-type.ts` | Process Type validation, immutable reference publication and snapshot capture; no execution or hosted authorization |
+| `src/scanner.ts` | Pure deterministic recognition, verified registry evidence and shared operation budget; no authority or RUN execution |
 | `src/ledger.ts` | Reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
 | `processes/` | The first process: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
@@ -27,7 +28,7 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 | `src/hosted.ts` | Direct Supabase client: native OAuth discovery, ephemeral writes, RLS reads and local verification |
 | `server/` | Optional local HTTP reference: a durable, hash-chained ledger file. Not on the hosted request path |
 | `bin/logline-server.mjs` | `logline-server serve`, `account`, `head` |
-| `vectors/` | Frozen v1 goldens plus independent expression, strict JSON, Process Type and registry vectors |
+| `vectors/` | Frozen v1 goldens plus independent expression, strict JSON, Process Type, registry and recognition vectors |
 | `supabase/` | Hosted target: Auth, transactional ledger, native radio and ephemeral functions; preview, not deployed |
 
 ```bash
@@ -42,7 +43,7 @@ npm run example   # the course, start to certificate
 
 ## Cloud-first delivery
 
-The GitHub-hosted RADIO CI workflow runs on pull requests and pushes to main. Two required jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling and Supabase CLI; all are development dependencies.
+The GitHub-hosted RADIO CI workflow runs on pull requests targeting main or a RADIO review branch, and pushes to main. Two required jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling and Supabase CLI; all are development dependencies.
 
 A passing kernel job packages the exact tracked migration/function sources and tested compiled core, including the Git commit and SHA-256 manifest. Staging CD invokes the same CI on the explicitly confirmed main revision, waits for both jobs, downloads that run's artifact, checks the revision and manifest, and then uses Supabase CLI. Staging plan/apply are manual; apply is disabled until the hosted contract and project are approved. There is no automatic production deployment. See [hosted setup](supabase/README.md) for the staging gate and eventual production release.
 
@@ -53,13 +54,13 @@ Do not equate a green test count with a working hosted service.
 | Layer | Evidence | Limitation |
 |---|---|---|
 | Historical vectors | 69 JCS/key/receipt checks across Node, Bun and Chromium; historical files pinned by SHA-256; native crypto independently audits receipt hashes, signatures and expected statuses | The original receipt goldens were generated by RADIO, so they preserve established behavior, not independent proof of all RUN semantics |
-| New portable vectors | 48 expression, 23 strict JSON, 24 Process Type and 16 registry scenario checks in all three runtimes | Covers only the implemented contract, not the scanner or receipt@2 |
+| New portable vectors | 48 expression, 23 strict JSON, 24 Process Type, 16 registry scenario and 51 scanner checks in all three runtimes | Covers only the implemented contract, not RUN execution or receipt@2 |
 | Adversarial verification | 9 cross-runtime probes of changed evidence, signatures, keys and missing replay context | A valid signature alone is not a successful replay |
 | Reference behavior | Existing and new Node/Bun tests, including real local HTTP/SSE, restart, retries, corruption and publication boundaries | Hosted adapter tests with doubles are contract tests, not service integration |
 | Targeted mutations | npm run test:mutations: each deliberate regression must fail its named test in an isolated copy | Selected faults, not exhaustive mutation coverage |
 | Actual PostgreSQL | npm run test:postgres: separate real transaction, concurrency, rollback, CAS and RLS tests | Requires an explicitly disposable DB; local claim fixture is not Supabase Auth, and SQL tests do not test OAuth, Edge, PostgREST or Realtime |
 
-The new expected values are hand-derived from SPEC; Process Type canonical bytes and hashes were computed independently on an ASCII/simple-JSON subset with Python json/hashlib, and the native crypto audit checks their content addresses. The regular test command never generates or updates goldens. The historical generator is not an oracle and must not overwrite compatibility evidence during ordinary development.
+The new expected values are hand-derived from SPEC; Process Type and scanner canonical bytes and hashes were computed independently on an ASCII/simple-JSON subset with Python json/hashlib, and the native crypto audit checks their content addresses. The regular test command never generates or updates goldens. The historical generator is not an oracle and must not overwrite compatibility evidence during ordinary development.
 
 The three runtimes used for the latest reference verification were Node 22.23.5, Bun 1.4.5 and Chromium 141 (Playwright 1.56.0); TypeScript 5.9.3 and Playwright are pinned development dependencies. See the hosted README for the PostgreSQL-only compatibility fixture and the outstanding hosted gates.
 
