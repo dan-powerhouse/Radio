@@ -47,6 +47,11 @@ Exit: reviewed target semantic contract in the single SPEC; existing v1 behavior
 - Decision gate: instance identity, successor selection and dependencies (not necessarily linear), retry semantics, scope of `once` and idempotency, response cardinality, signed context and proof of registry/spent claims; which status constitutes an instance or effect. No shadow authoritative state.
 - Acceptance: agreed worked example from first input to at least two distinct instances, continuation, refusal, retry and replay. Historical v1 receipt interpretation preserved.
 
+### Cross-cutting delivery gate (before PR-04)
+- CI/CD is part of the existing PR-03 verification checkpoint, not a new kernel milestone. GitHub-hosted CI runs all current executable tests, verifies package identity and exercises the real PostgreSQL migration path on every PR and main push; required status checks must be enabled in repository settings before relying on enforcement.
+- Staging uses an explicit main revision and the artifact produced by the same CI run. Plan mode previews migrations; apply requires approval of the staging project and hosted API (M3), scoped credentials and environment protection. M3/M4/M5 add actual hosted Auth/Edge/PostgREST/Realtime/MCP checks; M6 adds the production promotion gate. A green reference CI is not authorization to deploy the v1 preview.
+- No project creation, automatic production deployment, persistent self-hosted runner or additional application server. Release provenance is commit + package hashes within the trusted GitHub artifact channel, not an independent signature.
+
 ## M1 — The Machine
 
 Exit: a local pure machine recognizes an expression and evaluates the selected RUN under a published type, or records without activation. It does not need a database, LLM or network.

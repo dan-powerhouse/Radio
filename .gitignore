@@ -4,3 +4,7 @@ dist
 release
 data
 supabase/functions/_shared/core/
+
+# Supabase CLI local state
+supabase/.temp/
+supabase/.branches/

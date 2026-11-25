@@ -40,6 +40,12 @@ npm run example   # the course, start to certificate
 
 `dist/` is prebuilt in the release zip, so `node examples/course.mjs` and `node bin/logline.mjs` work without a build.
 
+## Cloud-first delivery
+
+The GitHub-hosted RADIO CI workflow runs on pull requests and pushes to main. Two required jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling and Supabase CLI; all are development dependencies.
+
+A passing kernel job packages the exact tracked migration/function sources and tested compiled core, including the Git commit and SHA-256 manifest. Staging CD invokes the same CI on the explicitly confirmed main revision, waits for both jobs, downloads that run's artifact, checks the revision and manifest, and then uses Supabase CLI. Staging plan/apply are manual; apply is disabled until the hosted contract and project are approved. There is no automatic production deployment. See [hosted setup](supabase/README.md) for the staging gate and eventual production release.
+
 ## Evidence and conformance
 
 Do not equate a green test count with a working hosted service.
