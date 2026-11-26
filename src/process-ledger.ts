@@ -1,3 +1,5 @@
+import { BundleV2, putBundleObject, MAX_BUNDLE_BYTES, MAX_BUNDLE_RECEIPTS } from "./bundle-v2.js";
+import { utf8 } from "./bytes.js";
 import { canonicalize } from "./jcs.js";
 import { hashOf } from "./hash.js";
 import { LoglineError } from "./errors.js";
@@ -140,6 +142,33 @@ export class ProcessLedger {
       seen.add(x); stack.push(...e.receipt.header.prev);
     }
     return this.#entries.filter(e=>seen.has(e.receipt.id)).map(e=>clone(e.receipt.header));
+  }
+  /** Trusted local export. The host must authorize disclosure of every object. */
+  async bundle(id:string):Promise<BundleV2>{
+    this.#readable();
+    const objects:Record<string,unknown>=Object.create(null),seen=new Set<string>(),pending=[id];
+    while(pending.length){
+      const ref=pending.pop()!;if(seen.has(ref))continue;
+      if(seen.size>=MAX_BUNDLE_RECEIPTS)return err("bundle_limit","receipt limit");
+      seen.add(ref);
+      const e=this.entry(ref);if(!e)return err("evidence_invalid","missing bundle receipt");
+      const h=e.receipt.header,c=e.context;
+      await putBundleObject(objects,ref,e.receipt,true);
+      await putBundleObject(objects,h.input_hash,e.tuple);
+      await putBundleObject(objects,h.detail_hash,e.detail);
+      await putBundleObject(objects,h.context_hash,c);
+      const snapshot=this.snapshotByHash(h.registry_hash);
+      if(!snapshot)return err("evidence_invalid","missing bundle snapshot");
+      await putBundleObject(objects,h.registry_hash,snapshot);
+      for(const hash of snapshot.types){
+        const law=this.law(hash);if(!law)return err("evidence_invalid","missing bundle law");
+        await putBundleObject(objects,hash,law);
+      }
+      pending.push(...h.prev,...(c.completed?[c.completed]:[]));
+    }
+    const result:BundleV2={logline:"bundle@2",head:id,keys:this.keys,objects};
+    if(utf8(canonicalize(result)).length>MAX_BUNDLE_BYTES)return err("bundle_limit","bundle byte limit");
+    return result;
   }
   listen(tuning:Tuning,fn:(r:ReceiptV2,seq:number)=>void):()=>void {
     const l={tuning:clone(tuning),fn};this.#listeners.add(l);

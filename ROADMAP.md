@@ -89,7 +89,7 @@ Exit: multiple process instances progress independently, with receipts as the ob
 - Acceptance: competing claims produce only permitted effects; failed activation consumes nothing; replay returns the same result; failed persistence emits nothing and creates no phantom claim.
 
 ### PR-08 — Portable trajectory and independent verification
-- [ ] Depends on PR-07. Extend bundles and verification for new versions, ancestry, registry context and objects using existing CAS. Keep public header/private evidence split. Support a small example projection (e.g. course completion), not a generic analytics subsystem.
+- [ ] Depends on PR-07. Implemented on the PR-08 review branch (SPEC §15.16): bundle@2 export, strict portable verification with independent key trust, explicit authenticity/replay/closure verdicts, original registry and observed evidence, historical v1 citation verification, closure conflict detection, and a small course projection example. Review/merge pending. Preserve the private evidence boundary; no generic analytics or hosted route.
 - Acceptance: offline reproduction, tampered/missing evidence refusal, swapped law/RUN/instance failure, equal projection with distinct histories, explicit limits of individual verification versus ledger completeness.
 
 ### PR-09 — Local continuity demonstration
