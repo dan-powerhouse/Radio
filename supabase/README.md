@@ -8,8 +8,8 @@ The [RADIO Protocol 1.0 contract](../SPEC.md#1518-pr-09a--approved-coordinated-b
 | --- | --- | --- | --- |
 | M3 · Identity and stateless admission (§15.18.1–2) | Attested actor and HMAC pseudonym. The v1 preview authenticates an account. | Auth provides users, linked identities, MFA, OAuth, consent APIs, Code + PKCE, tokens and JWKS. | Configure Auth and a minimal consent surface. Verify issuer, subject, client and intended resource in PR-11–13. Persist the pseudonym binding and prove revocation with actual clients. |
 | M3 · Effective authority and private evidence (§15.18.1–3) | Reference resolves use and disclosure separately. PR-10 intersects an active principal, the verified client or explicit direct mandate, and receipt access. | PostgreSQL grants, RLS, row locks and a protected audit record. | PR-13 connects the admitted client and resource to Auth, proofs of current authority and the approved visibility policy. Test resource binding and direct Data API access before exposing participant routes. |
-| M3 · Immutable law and Registry (§15.8, §15.10) | Process Type validator, strict I-JSON, JCS, scanner and immutable admission snapshots. PR-10 persists bounded snapshots and their active pointer. | PostgreSQL unique keys, digest, transaction and row lock. | PR-11 reuses the validator at publication and supplies the admitted snapshot to the scanner. Retain historical snapshots for successors. |
-| M3 · CAS and atomic constitution (§15.9, §15.14–15) | Frozen evaluator and receipt creation. PR-10 adds CAS and authoritative submission, RUN and once claims. | PostgreSQL unique constraints, FKs, transaction and keyed locks. | PR-11 marshals observed reads, commits one candidate, re-evaluates on conflict and recovers ambiguous acknowledgements. Retain the admitted time and Registry across retries. |
+| M3 · Immutable law and Registry (§15.8, §15.10) | Process Type validator, strict I-JSON, JCS, scanner and immutable admission snapshots. PR-10 persists bounded snapshots and their active pointer. | PostgreSQL unique keys, digest, transaction and row lock. | The PR-11 adapter publishes with the existing validator and supplies the admitted snapshot to the scanner. It reads one historical law for a successor. |
+| M3 · CAS and atomic constitution (§15.9, §15.14–15) | Frozen evaluator and receipt creation. PR-10 adds CAS and authoritative submission, RUN and once claims. | PostgreSQL unique constraints, FKs, transaction and keyed locks. | The PR-11 adapter marshals observed reads and recovers ambiguous acknowledgments by nonce. Retry preserves the admitted time and Registry. |
 | M3 · Bounded ephemeral execution (§15.13, §15.18.6) | Scanner, RUN and signing are runtime-neutral TypeScript. | Edge Functions, WebCrypto and Edge Secrets. | Stage the existing code. Measure worker CPU, memory and bounded evidence reads at the frozen limits. Evaluate native middleware by responsibility. |
 | M4 · Committed radio and tuning (§15.18.4) | Reference receipts and tuning. The preview's Realtime publication is v1 only. | Database-originated Broadcast and private channels with Realtime Authorization. | PR-14 verifies emission after commit, payload size with framing and the maximum authorization lease against a noncooperative listener. |
 | M4 · Durable history (§15.18.4) | Reference recovery and a PostgreSQL late-commit snapshot probe. | PostgreSQL MVCC or another demonstrably closed commit window. Realtime Broadcast Replay can help recent recovery. | PR-15 chooses a cursor design and proves stable pages, late-commit coverage, reconnect and immutable checkpoints under concurrent writes. |
@@ -27,11 +27,21 @@ The additive `radio_v2` migration stores canonical text, validates content hashe
 
 - `radio_v2_publish` serializes changes to the Registry pointer. It is idempotent for already published bytes, including retired laws. A null body requests retirement.
 - `radio_v2_admit` authorizes submission and result disclosure before recovery. A new admission returns the immutable Registry address, attested time, pseudonym and policy revision. `radio_v2_registry`, `radio_v2_read` and `radio_v2_observe` provide scoped inputs and observations for the adapter.
-- `radio_v2_commit` rechecks the same authority and observations, including absent evidence and claims. It returns `committed`, `replayed`, `submission_conflict`, `retry` or an admission/resource failure. PR-11 maps these internal outcomes to the transport contract. The [SQL integration harness](../test/postgres-v2.integration.mjs) demonstrates the payload binding.
+- `radio_v2_commit` rechecks the same authority and observations, including absent evidence and claims. It returns `committed`, `replayed`, `submission_conflict`, `retry` or an admission/resource failure. The PR-11 adapter maps these internal outcomes to the transport contract. The [SQL integration harness](../test/postgres-v2.integration.mjs) demonstrates the payload binding.
 
 Only the trusted `service_role` can call these RPCs. The private tables have RLS and no participant grants. Operator-owned permission maps default to deny. They store arrays of operation names keyed by the verified OAuth client UUID or the explicit `direct` policy. Receipt resource grants use the receipt address as key. The Edge boundary will verify Supabase identity and OAuth resource claims and derive the stable HMAC pseudonym. PostgreSQL locks membership and grants during the commit. Public receipt storage contains the signed bytes and their ID. PR-14 will establish committed-only delivery. Existing v1 preview laws and receipts remain in their own schema. Any authorized historical v1 evidence integration needs an explicit materialization decision.
 
-The SQL tests run real PostgreSQL transactions with the frozen evaluator, a test identity fixture and overlapping writers. Provider OAuth, PostgREST and Edge invocation remain later native gates.
+The SQL tests run real PostgreSQL transactions with the frozen evaluator, a test identity fixture and overlapping writers.
+
+### PR-11 ephemeral Publish and Submit
+
+The Publish and Submit function entrypoints accept `LogLine-Version: 2` when `RADIO_ENABLE_V2=true`. Publish accepts raw Process Type JSON. Submit accepts the existing Submission envelope and returns the root-only SubmitResult. A fresh commit returns HTTP 201 and an authorized replay returns 200. Failures return the stable BoundaryFailure shape. The preview has its own `LOGLINE_ENABLE_PREVIEW` flag and v1 dispatch. Provision the machine JWK, pseudonym secret, service key, publishable key and Supabase URL only in the approved environment.
+
+This checkpoint accepts verified direct Auth sessions. The function validates the exact bearer against the project's Auth user endpoint and checks subject, issuer, authenticated audience, role, expiry and session ID. Set `RADIO_AUTH_ISSUER` to the exact Auth issuer when it differs from the Supabase URL plus `/auth/v1`. SQL enforces an explicitly admitted direct mandate and current disclosure authority. OAuth client tokens are gated until PR-12/13 establish client and resource binding. The Auth checks use neither user metadata nor app metadata for institutional grants.
+
+The adapter bounds request and RPC response bytes. It uses one full Registry read for entry recognition and narrow snapshot/law reads for continuations. Each invocation allows up to four candidate commits within a 60-second request deadline. Read and commit observations are refreshed after a conflict. The original admission time and Registry stay fixed. An ambiguous response triggers an authorized nonce lookup that waits for the submission lock. Replayed bytes are checked against the request, content hashes and machine signature before disclosure.
+
+The integration harness exercises the Edge entrypoints with real Supabase Edge Runtime, PostgREST and PostgreSQL. It verifies committed bytes against the frozen reference, forces a native once conflict, truncates a committed response, replaces the worker and tests revocation and resource failures. Its Auth endpoint is a fixture. A complete hosted Auth and gateway test remains a separate acceptance gate.
 
 ## Preserved v1 hosted preview
 
@@ -102,7 +112,7 @@ npm run stage:edge
 
 `stage:edge` copies the compiled runtime-neutral core into `_shared/core`. Generated code is ignored in git; there is only one evaluator source. The `hosted.test.mjs` test double tests actual evaluator and adapter behavior but is NOT proof of SQL concurrency, RLS, PostgREST or Deno runtime compatibility.
 
-For a **disposable local Supabase database only**, after applying both migrations using the local tooling, run:
+For a **disposable local Supabase database only**, after applying the migrations using the local tooling, run:
 
 ```sh
 LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:54322/postgres npm run test:postgres
@@ -114,7 +124,8 @@ For a **fresh disposable stock PostgreSQL 17 database**, the test-only fixture b
 psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -f test/postgres-auth-fixture.sql
 psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -1 \
   -f supabase/migrations/0001_radio.sql \
-  -f supabase/migrations/20261126062956_radio_v2_transactions.sql
+  -f supabase/migrations/20261126062956_radio_v2_transactions.sql \
+  -f supabase/migrations/20261126064700_radio_v2_edge_inputs.sql
 LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL="$LOCAL_TEST_DB" npm run test:postgres
 ```
 
@@ -122,6 +133,19 @@ The actual PostgreSQL tests force both once contenders to reach commit with the 
 
 
 This integration runner makes real concurrent psql requests, creates an isolated randomly named test law and checks RLS and transactional invariants. Test data persists; use a throwaway DB. The historical preview gate ran on PostgreSQL 16 and 17, and the v2 transaction gate targets PostgreSQL 17. The CI path applies the migrations through the pinned Supabase CLI and checks migration history. It is not a full Supabase end-to-end test.
+
+For `npm run test:edge`, use that fresh loopback database with the migrations and fixture above. Add the disposable PostgREST connection role, using a local authentication configuration that permits that connection:
+
+```sql
+create role authenticator login noinherit;
+grant anon, authenticated, service_role to authenticator;
+```
+
+Put PostgREST and Deno on PATH. The default runs the shared factory in standalone Deno. With the Supabase `edge-runtime` binary on PATH, set `RADIO_TEST_NATIVE_EDGE=yes` to run the real function entrypoints in fresh Edge workers.
+
+```sh
+RADIO_TEST_NATIVE_EDGE=yes LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL="$LOCAL_TEST_DB" npm run test:edge
+```
 
 For a future approved local Edge test, set secrets using local tooling: `LOGLINE_ENABLE_PREVIEW=true`, `LOGLINE_MACHINE_JWK` (private Ed25519 JWK), `LOGLINE_PSEUDONYM_SECRET` (at least 32 random bytes in unpadded base64url), `SUPABASE_URL`, a service key (`LOGLINE_SERVICE_KEY` or `SUPABASE_SERVICE_ROLE_KEY`), and a publishable key (`LOGLINE_PUBLISHABLE_KEY` or `SUPABASE_ANON_KEY`). Never use the vector test key. If testing anonymous calls or modern signing keys, the gateway's legacy JWT check must be disabled for those functions and the function's own bearer validation retained. No project-specific config or secrets are included. Check platform limits and plan availability before deployment.
 

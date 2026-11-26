@@ -1,13 +1,20 @@
 import * as L from "./core/index.js";
 import { HostedError } from "./ledger.mjs";
 
-export function database({ url, serviceKey, fetcher = fetch }) {
+export function postgrest({ url, serviceKey, fetcher = fetch }) {
   const rest = url.replace(/\/$/, "") + "/rest/v1/";
+  const headers = { apikey: serviceKey, "content-type": "application/json" };
+  // Legacy JWT-based service_role keys need Authorization. Secret keys rely on the gateway.
+  if (!serviceKey.startsWith("sb_secret_")) headers.authorization = `Bearer ${serviceKey}`;
+  return (path, body, signal) => fetcher(rest + path, {
+    headers, signal, ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) })
+  });
+}
+
+export function database(options) {
+  const send = postgrest(options);
   async function call(path, body) {
-    const headers = { apikey: serviceKey, "content-type": "application/json" };
-    // Legacy JWT-based service_role keys need Authorization; new secret keys do not.
-    if (!serviceKey.startsWith("sb_secret_")) headers.authorization = `Bearer ${serviceKey}`;
-    const r = await fetcher(rest + path, { headers, ...(body === undefined ? {} : { method: "POST", body: JSON.stringify(body) }) });
+    const r = await send(path, body);
     if (!r.ok) {
       const e = await r.json().catch(() => ({}));
       if (e.code === "23505" && path === "rpc/logline_publish") throw new HostedError(409, "process_exists", "a process is already published on that frequency");

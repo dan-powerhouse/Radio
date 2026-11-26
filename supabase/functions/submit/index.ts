@@ -1,3 +1,2 @@
-// Preview only. Do not deploy until hosted API and choreography are approved.
-import { fromEnvironment } from "../_shared/http.mjs";
-Deno.serve(await fromEnvironment("submit", (name: string) => Deno.env.get(name)));
+import { edgeHandler } from "../_shared/entry.mjs";
+Deno.serve(await edgeHandler("submit", (name: string) => Deno.env.get(name)));
