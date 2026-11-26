@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance is implemented in the review branch; PR-08 portable bundle export and independent replay, and PR-09 local continuity, are implemented in dependent review branches. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance (GitHub #11), PR-08 portable bundle export and independent replay (GitHub #12), and PR-09 local continuity (GitHub #13) are merged. The coordinated boundary review and protocol freeze remain pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -159,11 +159,11 @@ Not yet: key rotation, encrypted objects with erasure, an external anchor for th
 
 The library's ProcessLedger invokes the same request-scoped evaluator and adopts a signed receipt only after its record sink acknowledges it. For a real local file, import openProcessMachine from server/store.mjs. Use a new directory for the target-format reference, not an existing v1 directory. It reuses the hash-chained file and fsync path without starting a server. A Process exists through the successful entry receipt and its causal continuations, not a running worker. The trusted adapter supplies an attested by and a canRead authorization callback for evidence; this is not an OAuth or participant-facing endpoint. Do not expose the private ledger methods to untrusted clients. Close a writer before opening another for the same directory. See SPEC §15.14 for recovery, storage limits and outstanding gates.
 
-## Portable target trajectory (review)
+## Portable target trajectory
 
 Run the standalone course trajectory example with npm run example (after the historical example). ProcessLedger.bundle(id) returns private portable evidence; it is not an authorization API. Supply verifyBundleV2 with the raw JSON text and an independently obtained trusted key ring. A valid verdict requires authenticity, decision replay and recursive closure verification, not only a valid signature. Do not treat bundle.keys as a trust anchor or a successful replay as proof of global ledger completeness. See SPEC §15.16.
 
-## Local target continuity (review)
+## Local target continuity
 
 Use the same local reference server and CLI with an explicit target data directory; do not point these commands at an existing v1 directory. This is not the hosted deployment.
 
