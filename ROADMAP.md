@@ -93,7 +93,7 @@ Exit: multiple process instances progress independently, with receipts as the ob
 - Acceptance: offline reproduction, tampered/missing evidence refusal, swapped law/RUN/instance failure, equal projection with distinct histories, explicit limits of individual verification versus ledger completeness.
 
 ### PR-09 — Local continuity demonstration
-- [ ] Depends on PR-08. Minimally extend the existing external-listener demonstration and local HTTP/SSE reference to prove target continuity without removing legacy v1 behavior. Do not extend the reference into a separate hosted backend or build alternative infrastructure providers.
+- [ ] Depends on PR-08. Implemented on the PR-09 review branch (SPEC §15.17): explicit target mode on existing HTTP/SSE and CLI reference, committed history/catch-up, separately authenticated participants and privileged local reviewer, process and listener replacement, continued instance and offline CLI verification. Review/merge pending. Local transport and owner/admin policy are demonstration profiles, not the final native boundary contract; no alternate hosted backend or reaction worker.
 - Acceptance: separate participants with different identities receive same signed header; independent next submission; restart machine and replace listener, recover history, continue same instance and verify offline. No reaction worker in the target path.
 
 ### PR-09A — Rigid boundary contracts and conformance

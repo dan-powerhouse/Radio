@@ -9,6 +9,7 @@ execSync(`bun build ${root}dist/index.js --outfile ${root}dist/browser.js --form
 const files = {
   "/lib.js": readFileSync(root + "dist/browser.js", "utf8"),
   "/conformance.js": readFileSync(root + "test/conformance.mjs", "utf8"),
+  "/continuity-conformance.js": readFileSync(root + "test/continuity-conformance.mjs", "utf8"),
   "/bundle-v2-conformance.js": readFileSync(root + "test/bundle-v2-conformance.mjs", "utf8"),
   "/atomic-conformance.js": readFileSync(root + "test/atomic-conformance.mjs", "utf8"),
   "/process-ledger-conformance.js": readFileSync(root + "test/process-ledger-conformance.mjs", "utf8"),
@@ -40,7 +41,8 @@ const groups = await page.evaluate(async (fixtureText) => {
   const { processLedgerConformance } = await import("/process-ledger-conformance.js");
   const { atomicConformance } = await import("/atomic-conformance.js");
   const { bundleV2Conformance } = await import("/bundle-v2-conformance.js");
-  return { bundlesV2: await bundleV2Conformance(L, fixtures.receiptV2, fixtures.runV2, receipts, fixtures.testKey), atomic: await atomicConformance(L, fixtures.testKey), instances: await processLedgerConformance(L, fixtures.receiptV2, fixtures.runV2, fixtures.testKey), runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
+  const { continuityConformance } = await import("/continuity-conformance.js");
+  return { continuity: await continuityConformance(L, fixtures.testKey), bundlesV2: await bundleV2Conformance(L, fixtures.receiptV2, fixtures.runV2, receipts, fixtures.testKey), atomic: await atomicConformance(L, fixtures.testKey), instances: await processLedgerConformance(L, fixtures.receiptV2, fixtures.runV2, fixtures.testKey), runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
 }, JSON.stringify([jcs, receipts, fixtures]));
 const ua = await page.evaluate(() => navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0]);
 await browser.close();

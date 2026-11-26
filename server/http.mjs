@@ -1,4 +1,4 @@
-// HTTP for a machine opened with openMachine. Node's http module, no dependencies.
+// Local HTTP for openMachine (historical v1) or openProcessMachine (explicit v2 reference). Node only.
 //
 //   GET  /.well-known/logline.json      published keys, limits (cacheable)
 //   GET  /head                         current ledger head (not cacheable)
@@ -17,7 +17,6 @@
 import http from "node:http";
 import * as L from "../dist/index.js";
 
-const VERSION = "1";
 const IMMUTABLE = "public, max-age=31536000, immutable";
 const DEFAULTS = { maxBody: 64 * 1024, ratePerMinute: 60, burst: 30, heartbeatMs: 15_000, maxBuffered: 1 << 20 };
 
@@ -39,7 +38,10 @@ function limiter({ ratePerMinute, burst }) {
 }
 
 export function createServer(machine, options = {}) {
-  const o = { ...DEFAULTS, ...options };
+  const VERSION = machine.version ?? "1";
+  const target = VERSION === "2";
+  if (!["1","2"].includes(VERSION)) throw new Error("unsupported reference machine version");
+  const o = { ...DEFAULTS, ...(target ? { maxBody: L.MAX_SUBMISSION_BYTES } : {}), ...options };
   const { ledger } = machine;
   const limit = limiter(o);
   let queue = Promise.resolve();
@@ -84,12 +86,16 @@ export function createServer(machine, options = {}) {
     if (entries.some((e) => e.receipt.header.by !== who.by)) throw new HttpError(403, "forbidden", "only the submitter (or an admin) may read this");
   }
 
+  // Demonstration only: reuse the reference owner/admin policy. This is
+  // not the target institution/delegation contract (PR-09A).
+  const access = who => ({ by: who.by, canRead: r => who.admin || r.header.by === who.by });
+  const machineTag = target ? "machine@2" : "machine@1";
   const routes = [
-    ["GET", /^\/$/, () => ({ logline: "machine@1", see: "/.well-known/logline.json" })],
+    ["GET", /^\/$/, () => ({ logline: machineTag, see: "/.well-known/logline.json" })],
     ["GET", /^\/\.well-known\/logline\.json$/, () => ({
-      logline: "machine@1",
+      logline: machineTag,
       keys: ledger.keys,
-      limits: { maxDepth: ledger.maxDepth, maxReactions: ledger.maxReactions, maxBody: o.maxBody },
+      limits: target ? { maxBody: o.maxBody } : { maxDepth: ledger.maxDepth, maxReactions: ledger.maxReactions, maxBody: o.maxBody },
       versions: [VERSION],
       ttlMs: 60000,
       cacheScope: "public",
@@ -100,19 +106,20 @@ export function createServer(machine, options = {}) {
       if (!who) throw new HttpError(401, "token", "no bearer token");
       return { account: who.account, admin: who.admin, by: who.by };
     }],
-    ["GET", /^\/processes$/, () => ledger.published().map(({ id, hash }) => ({ id, hash })).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)],
-    ["GET", /^\/processes\/(sha256:[0-9a-f]{64})$/, (req, m) => ledger.processByHash(m[1]) ?? notFound("no process has that hash")],
+    ["GET", /^\/processes$/, async () => (await ledger.published()).map(({ id, hash }) => ({ id, hash })).sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0)],
+    ["GET", /^\/processes\/(sha256:[0-9a-f]{64})$/, (req, m) => (target ? ledger.law(m[1]) : ledger.processByHash(m[1])) ?? notFound("no process has that hash")],
     ["POST", /^\/processes$/, async (req) => {
       const who = await caller(req);
       if (!who?.admin) throw new HttpError(who ? 403 : 401, "forbidden", "publishing a process needs an admin token");
-      const process = L.parseStrict(await body(req));
-      const hash = await serial(() => ledger.publish(process));
+      const text = await body(req), process = L.parseStrict(text);
+      const hash = await serial(() => ledger.publish(target ? text : process));
       return [201, { id: process.id, hash }];
     }],
     ["POST", /^\/submit$/, async (req) => {
       const who = await caller(req);
+      if (target && !who) throw new HttpError(401, "token", "target submission needs an authenticated participant");
       const text = await body(req);
-      const r = await serial(() => ledger.submitText(text, { by: who?.by ?? null }));
+      const r = await serial(() => ledger.submitText(text, target ? access(who) : { by: who?.by ?? null }));
       return [r.replayed ? 200 : 201, r];
     }],
     ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})$/, (req, m) => {
@@ -122,18 +129,24 @@ export function createServer(machine, options = {}) {
     ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})\/detail$/, async (req, m) => {
       const e = ledger.entry(m[1]) ?? notFound("no receipt has that id");
       mayRead(await caller(req), [e]);
-      return { detail: e.detail, tuple: e.tuple };
+      return target ? { detail: e.detail, tuple: e.tuple, context: e.context } : { detail: e.detail, tuple: e.tuple };
     }],
     ["GET", /^\/receipts\/(sha256:[0-9a-f]{64})\/bundle$/, async (req, m) => {
       if (!ledger.entry(m[1])) notFound("no receipt has that id");
+      const who = await caller(req);
+      if (target) {
+        mayRead(who, [ledger.entry(m[1])]);
+        return await ledger.bundle(m[1], access(who).canRead);
+      }
       const b = ledger.bundle(m[1]);
-      mayRead(await caller(req), b.entries);
+      mayRead(who, b.entries);
       return b;
     }],
     ["GET", /^\/history$/, async (req, m, q) => {
       const who = await caller(req);
       const after = seqParam(q.get("after"), "after") ?? 0;
       const lim = Math.min(seqParam(q.get("limit"), "limit") ?? 100, 1000);
+      if (target && lim < 1) throw new HttpError(400, "tuning", "limit must be positive");
       const items = ledger.page(tuning(q, who), after, lim);
       return { items, next: items.length === lim ? items[items.length - 1].seq : null };
     }],
@@ -144,17 +157,22 @@ export function createServer(machine, options = {}) {
       res.writeHead(200, { "content-type": "text/event-stream; charset=utf-8", "cache-control": "no-store", "x-accel-buffering": "no", "logline-version": VERSION, "vary": "LogLine-Version", ...cors });
       res.write(": tuned\n\n");
       const stream = { res, stop: null };
+      let closed = false;
       const send = (receipt, seq) => {
         // A listener that can't keep up is dropped; it resumes with Last-Event-ID.
+        if (closed) return;
         if (res.writableLength > o.maxBuffered) return close();
         res.write(`id: ${seq}\nevent: receipt\ndata: ${JSON.stringify({ seq, receipt })}\n\n`);
       };
-      const beat = setInterval(() => res.write(": ping\n\n"), o.heartbeatMs);
-      const close = () => { clearInterval(beat); stream.stop?.(); streams.delete(stream); res.end(); };
-      stream.stop = ledger.listen(t, send, after);
+      const beat = setInterval(() => { if (res.writableLength > o.maxBuffered) close(); else if (!closed) res.write(": ping\n\n"); }, o.heartbeatMs);
+      const close = () => { if(closed)return; closed=true; clearInterval(beat); stream.stop?.(); streams.delete(stream); res.end(); };
       stream.close = close;
       streams.add(stream);
-      req.on("close", close);
+      res.on("close", close);
+      try { stream.stop = ledger.listen(t, send, after); }
+      catch(e) { close(); throw e; }
+      if(closed)stream.stop(); // synchronous catch-up may hit backpressure before listen returns
+
       return undefined; // streaming: the handler owns the response
     }],
   ];
@@ -201,7 +219,7 @@ export function createServer(machine, options = {}) {
       if (res.headersSent) { res.destroy(); return; }
       if (e instanceof HttpError) return send(e.status, { error: e.code, message: e.message, ...e.extra }, e.headers);
       if (e instanceof L.LoglineError) {
-        const status = e.code === "unavailable" ? 503 : e.code === "process_exists" ? 409 : 400;
+        const status = e.code === "unavailable" ? 503 : e.code === "process_exists" || e.code === "submission_conflict" ? 409 : e.code === "admission_denied" ? 403 : 400;
         return send(status, { error: e.code, message: e.message });
       }
       console.error(e);
