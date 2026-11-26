@@ -2,7 +2,11 @@
 
 *Third Layer / RADIO · Working vocabulary · 26 November 2026*
 
-This glossary records the terminology used in RADIO and DIPLOMACY. It is a concise conceptual reference, not a second specification. The existing `SPEC.md` governs technical behavior; `DIPLOMACY.md` remains the founding article. The target RADIO 1.0 and the DIPLOMACY package format are not yet frozen.
+This glossary records the vocabulary used in RADIO and DIPLOMACY. The approved RADIO Protocol 1.0 defines technical behavior. [Specification](SPEC.md)
+
+## LogLine
+
+LogLine is the preferred convention for writing a Contract. Fields such as `who`, `did`, `this` and `with` help an author identify entities, describe an event or proposed action and give its context. A Skill can teach this convention for a particular law. The tuple remains free I-JSON, and the Process Type determines which fields matter.
 
 ## Core ontology
 
@@ -11,7 +15,7 @@ The six primary concepts distinguish institutional context, reusable definitions
 | Dimension | Term | Definition |
 |---|---|---|
 | Context | **Institution** | The living context of authority and participation within which one or more Diplomacies may be adopted. Its laws, commitments and constituted trajectories remain durable even when no institutional computation is active. An Institution is a persistent institutional presence (a living server in the Third Layer sense), not a resident application process, a Process Type, a trajectory or necessarily a deployment. |
-| Definition | **Diplomacy** | A portable institutional artifact combining exactly one Process Type with one or more participant-facing Skills. It defines the rite and distributes the knowledge and law needed for participation. DIPLOMACY names the proposed open format, inspired by Agent Skills. |
+| Definition | **Diplomacy** | A portable institutional artifact combining exactly one Process Type with one or more participant-facing Skills. It defines the rite and distributes the knowledge and law needed for participation. DIPLOMACY names the package format defined in SPEC §15.18.5 and inspired by Agent Skills. |
 | Definition | **Process Type** | An immutable, content-addressed law defining a kind of trajectory: its recognition predicate, possible RUNs, conditions, causal dependencies and consequences. |
 | Definition | **Skill** | Portable knowledge for action and participation. Skills may express different perspectives, responsibilities or strategies under a common law. They guide participants without conferring authority or altering the law. |
 | Formation | **Contract** | The free I-JSON expression (the tuple in the current SPEC) submitted by a participant for consideration under a law. It expresses a proposed movement or intention; it is not, merely by submission, an accepted agreement, an authorization or a constituted effect. |
@@ -62,7 +66,7 @@ The example is conceptual, not an additional domain model or executable law. The
 | **Activation** | Satisfaction of the required input, causal and evidence conditions for the relevant RUN, subject to applicable authority. Recognition alone does not establish activation. |
 | **Constitution** | The establishment of the law-defined internal result through a successfully committed `ok` receipt. Evaluation, signature and durable commit are distinct boundaries. |
 | **Authority** | Legitimate permission to perform a particular operation under the applicable rules. Knowledge, technical capability, a claimed role, and authenticated identity are not sufficient by themselves. |
-| **Mandate** | Delegated authority with defined scope or conditions. A useful institutional concept, not a new mandatory Process Type field. The exact generic delegation and revocation boundary remains to be specified. |
+| **Mandate** | Delegated authority with defined scope or conditions. The approved delegation and revocation boundaries are described in SPEC §§15.18.1–2. |
 | **Role** | A perspective or responsibility in an institution. A Skill can describe a role; possession of that Skill does not prove or grant it. Roles need not be intrinsic kernel entities. |
 | **Continuation** | An independent submission referring explicitly to an existing instance, RUN and required predecessor receipts under its original law. It does not invoke initial recognition again. |
 | **Outcome** | The result of an evaluation. The target statuses are `registered`, `not`, `doubt` and `ok`. A valid diplomatic refusal may itself be an `ok` result of a law-defined refusal movement; `not` is not a universal synonym for refusal. |
@@ -74,7 +78,7 @@ The example is conceptual, not an additional domain model or executable law. The
 |---|---|
 | **Registry** | The authoritative publication boundary for laws; its active set is represented by immutable, content-addressed snapshots. Retired laws remain available for historical verification. |
 | **Law identity** | The SHA-256 content address of the canonical JSON Process Type. A published versioned ID cannot be rebound to different content. An amendment creates a new law ID and hash. |
-| **Package identity** | The proposed identity of a Diplomacy's composition and component contents, distinct from the law identity. Exact manifest and digest rules remain open; ZIP compression details must not define law identity. |
+| **Package identity** | The hash of a Diplomacy’s canonical manifest, which binds its component contents. The Process Type has its own law identity. See SPEC §15.18.5. |
 | **Citation** | An explicit reference to a receipt required or permitted by the law. It must satisfy the applicable integrity, eligibility, access and consumption conditions. |
 | **Parent** | A required causal predecessor RUN receipt of the same instance, as declared by `after`. A citation is not necessarily a parent. |
 | **Projection** | A derived view of receipts under a rule or interpretation. It may represent state but is not a competing authoritative history. |
@@ -101,8 +105,6 @@ The example is conceptual, not an additional domain model or executable law. The
 
 ## Source and status
 
-- [RADIO SPEC.md](https://github.com/dan-powerhouse/Radio/blob/beeb0d01ef16e05554cab1670fbbfffe6252be0e/SPEC.md), especially §§15.1–15.11.
-- [RADIO VISION.md](https://github.com/dan-powerhouse/Radio/blob/beeb0d01ef16e05554cab1670fbbfffe6252be0e/VISION.md).
-- *Introducing DIPLOMACY*, founding proposal, 26 November 2026 (user-supplied `DIPLOMACY(1).md`).
-
-The six-concept ontology reflects the agreed vocabulary of 26 November 2026. Institution and Contract are conceptual additions; their use does not introduce a new wire schema, rename `tuple`, add an institutional registry or tenancy model, or change existing Process Type and receipt semantics. Package manifest, role system, mandate format, RUN graph changes and deployment remain subject to the existing technical review process. The technical contract remains in SPEC.md.
+- [RADIO specification](SPEC.md), especially §§3, 15.1–15.11 and 15.18.
+- [RADIO vision](VISION.md).
+- [Introducing DIPLOMACY](DIPLOMACY.md), founding article of 26 November 2026.
