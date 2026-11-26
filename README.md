@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04; multi-RUN execution and receipt@2 remain pending.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); multi-RUN execution and receipt@2 remain pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -11,10 +11,17 @@ tuple + process + when ──▶ machine ──▶ receipt
 receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ …   (a trajectory)
 ```
 
+## Repository organization
+
+The repository is the executable reference, the rigid protocol contract and conformance corpus, and the native Supabase materialization. Root documents have distinct roles; the npm library, full reference ZIP and hosted deployment archive have different delivery boundaries.
+
 | Path | What |
 |---|---|
 | `VISION.md` | Purpose, architecture and principles |
 | `SPEC.md` | Single technical contract: existing v1 and target requirements (§15) |
+| `GLOSSARY.md` | Stable institutional and computational vocabulary |
+| `DIPLOMACY.md` | Founding proposal; exact package contract remains open |
+| `contracts/` | Machine-readable structural projection of the single SPEC; not a second evaluator |
 | `AGENTS.md` | Shared engineering instructions for coding agents |
 | `ROADMAP.md` | Proposed milestones, PR dependencies and acceptance gates |
 | `CLAUDE.md` | Imports the same instructions for Claude Code |
@@ -22,13 +29,16 @@ receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ … 
 | `src/process-type.ts` | Process Type validation, immutable reference publication and snapshot capture; no execution or hosted authorization |
 | `src/scanner.ts` | Pure deterministic recognition, verified registry evidence and shared operation budget; no authority or RUN execution |
 | `src/ledger.ts` | Reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
-| `processes/` | The first process: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
+| `processes/` | Historical v1 example laws: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
 | `bin/logline.mjs` | CLI: `logline verify-bundle <bundle.json\|url> [--keys keys.json\|url]` |
 | `src/hosted.ts` | Direct Supabase client: native OAuth discovery, ephemeral writes, RLS reads and local verification |
 | `server/` | Optional local HTTP reference: a durable, hash-chained ledger file. Not on the hosted request path |
 | `bin/logline-server.mjs` | `logline-server serve`, `account`, `head` |
-| `vectors/` | Frozen v1 goldens plus independent expression, strict JSON, Process Type, registry and recognition vectors |
+| `vectors/` | Frozen v1 goldens, independent portable vectors and v2 contract fixtures (not execution evidence) |
+| `test/` | Conformance, integration and adversarial tests; reusable cross-runtime harnesses |
+| `scripts/` | Build, staging, packaging and verification tools |
+| `.github/workflows/` | CI and explicitly gated staging delivery |
 | `supabase/` | Hosted target: Auth, transactional ledger, native radio and ephemeral functions; preview, not deployed |
 
 ```bash
@@ -43,7 +53,7 @@ npm run example   # the course, start to certificate
 
 ## Cloud-first delivery
 
-The GitHub-hosted RADIO CI workflow runs on pull requests targeting main or a RADIO review branch, and pushes to main. Two required jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling and Supabase CLI; all are development dependencies.
+The GitHub-hosted RADIO CI workflow runs on pull requests targeting main or a RADIO review branch, and pushes to main. Required status-check enforcement in repository settings must be verified separately. Two CI jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling, independent JSON Schema validator and Supabase CLI; all are development dependencies.
 
 A passing kernel job packages the exact tracked migration/function sources and tested compiled core, including the Git commit and SHA-256 manifest. Staging CD invokes the same CI on the explicitly confirmed main revision, waits for both jobs, downloads that run's artifact, checks the revision and manifest, and then uses Supabase CLI. Staging plan/apply are manual; apply is disabled until the hosted contract and project are approved. There is no automatic production deployment. See [hosted setup](supabase/README.md) for the staging gate and eventual production release.
 
@@ -55,6 +65,7 @@ Do not equate a green test count with a working hosted service.
 |---|---|---|
 | Historical vectors | 69 JCS/key/receipt checks across Node, Bun and Chromium; historical files pinned by SHA-256; native crypto independently audits receipt hashes, signatures and expected statuses | The original receipt goldens were generated by RADIO, so they preserve established behavior, not independent proof of all RUN semantics |
 | New portable vectors | 48 expression, 23 strict JSON, 24 Process Type, 16 registry scenario and 51 scanner checks in all three runtimes | Covers only the implemented contract, not RUN execution or receipt@2 |
+| Machine-readable contracts | Node/Bun structural checks, cross-part consistency and independent signed v2 fixtures | Not target RUN evaluation, complete replay or authority |
 | Adversarial verification | 9 cross-runtime probes of changed evidence, signatures, keys and missing replay context | A valid signature alone is not a successful replay |
 | Reference behavior | Existing and new Node/Bun tests, including real local HTTP/SSE, restart, retries, corruption and publication boundaries | Hosted adapter tests with doubles are contract tests, not service integration |
 | Targeted mutations | npm run test:mutations: each deliberate regression must fail its named test in an isolated copy | Selected faults, not exhaustive mutation coverage |
@@ -80,7 +91,7 @@ An alternative law in `examples/alumni.external.logline-101@1.json` has no autom
 
 ## Primary architecture: Supabase-native (hosted preview)
 
-No LogLine HTTP daemon, identity broker or application session is required. Supabase Auth is the OAuth 2.1 authorization server; Postgres holds the ledger; Edge Functions evaluate and sign individual submissions. The OAuth consent surface must exist but can be a static browser application. See [the hosted architecture](supabase/README.md) for setup boundaries and outstanding verification.
+Identity is the sole standing application server in the logical target architecture. The Institution remains alive through durable laws and trajectories even when computation is dormant. Managed persistence and communication services remain necessary. No LogLine HTTP daemon, identity broker, resident workflow or application session is required. Supabase Auth is the native OAuth 2.1 authorization server; Postgres holds the ledger; Edge Functions evaluate and sign individual submissions. The OAuth consent surface must exist but can be a static browser application. See [the hosted architecture](supabase/README.md) for setup boundaries and outstanding verification.
 
 ```js
 import { hostedClient } from "@logline/receipt";

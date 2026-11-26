@@ -7,12 +7,18 @@
   "types": "dist/index.d.ts",
   "files": [
     "dist",
+    "!dist/browser.js",
     "bin",
     "server",
     "SPEC.md",
     "VISION.md",
+    "GLOSSARY.md",
+    "DIPLOMACY.md",
+    "contracts",
     "vectors",
-    "processes"
+    "processes",
+    "examples",
+    "supabase/README.md"
   ],
   "scripts": {
     "build": "tsc -p .",
