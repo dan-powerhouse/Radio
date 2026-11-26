@@ -172,6 +172,19 @@ The library's ProcessLedger invokes the same request-scoped evaluator and adopts
 
 ## Portable target trajectory
 
+LogLine is a useful starting point when writing a Contract. The protocol accepts any I-JSON value within its limits. The course example opens a trajectory with the following tuple.
+
+```json
+{
+  "who": "learner:ana",
+  "did": "enroll",
+  "this": "course@2",
+  "with": { "course": "RADIO" }
+}
+```
+
+The example law recognizes `did: "enroll"` and reads `with.course`. The machine gets the actor from the authenticated request. The completion RUN reads `with.score` and accepts the smaller tuple `{"with":{"score":95}}` when the Submission supplies the correct continuation and parents. Skills can teach the LogLine convention and show which references the law needs.
+
 Run the standalone course trajectory example with npm run example (after the historical example). ProcessLedger.bundle(id) returns private portable evidence; it is not an authorization API. Supply verifyBundleV2 with the raw JSON text and an independently obtained trusted key ring. A valid verdict requires authenticity, decision replay and recursive closure verification, not only a valid signature. Do not treat bundle.keys as a trust anchor or a successful replay as proof of global ledger completeness. See SPEC §15.16.
 
 ## Local target continuity
