@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { kernelConformance, receiptEvidenceConformance } from "../test/kernel-conformance.mjs";
+import { continuityConformance } from "../test/continuity-conformance.mjs";
 import { bundleV2Conformance } from "../test/bundle-v2-conformance.mjs";
 import { atomicConformance } from "../test/atomic-conformance.mjs";
 import { processLedgerConformance } from "../test/process-ledger-conformance.mjs";
@@ -20,7 +21,7 @@ const recognition = load("recognition");
 const runV2Fixture = load("run-v2"), receiptV2Fixture = load("receipt-v2-contract"), testKey = load("test-key");
 const run = async (L, includeLedger=false) => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition), ...await runV2Conformance(L,receiptV2Fixture,testKey), ...await runV2OutcomeConformance(L,runV2Fixture,testKey), ...(includeLedger ? await processLedgerConformance(L,receiptV2Fixture,runV2Fixture,testKey) : [])];
 const baselineLibrary=await import("../dist/index.js");
-const baseline = [...await run(baselineLibrary,true),...await atomicConformance(baselineLibrary,testKey),...await bundleV2Conformance(baselineLibrary,receiptV2Fixture,runV2Fixture,receipts,testKey)];
+const baseline = [...await run(baselineLibrary,true),...await atomicConformance(baselineLibrary,testKey),...await bundleV2Conformance(baselineLibrary,receiptV2Fixture,runV2Fixture,receipts,testKey),...await continuityConformance(baselineLibrary,testKey)];
 assert.deepEqual(baseline.filter(x => !x.ok), [], "clean baseline must pass");
 const mutations = [
   ["inherited operator", "expr.js", "Object.prototype.hasOwnProperty.call(LAZY, op)", "op in LAZY", "expr/inherited-op-constructor"],
@@ -77,6 +78,10 @@ const mutations = [
   ["bundle treats extra objects as admitted", "bundle-v2.js", "resolved.has(ref) || ref === c.completed ? read(ref) : null", "Object.hasOwn(b.objects, ref) ? read(ref) : null", "bundle-v2/outcome/denied-root"],
   ["bundle ignores conflicting claims", "bundle-v2.js", "if (set.has(k)) {", "if (false) {", "bundle-v2/conflicting-success-closure"],
 
+  ["continuity omits historical catch-up", "process-ledger.js", "if (afterSeq !== undefined)", "if (false)", "continuity/replacement-catchup"],
+  ["continuity ignores live cursor", "process-ledger.js", "entry.seq > l.after && tuned(l.tuning, entry.receipt.header)", "tuned(l.tuning, entry.receipt.header)", "continuity/future-cursor-no-rewind"],
+  ["continuity ignores history tuning", "process-ledger.js", "if (tuned(tuning, e.receipt.header))", "if (true)", "continuity/filtered-gap"],
+
 ];
 let failed = 0;
 for (const [name, file, from, to, killer] of mutations) {
@@ -88,7 +93,7 @@ for (const [name, file, from, to, killer] of mutations) {
     if (source.split(from).length !== 2) throw Error("mutation anchor missing or ambiguous: " + file);
     writeFileSync(target, source.replace(from, to));
     const library=await import(pathToFileURL(join(dir, "dist/index.js")).href);
-    const results = killer.startsWith("bundle-v2/") ? await bundleV2Conformance(library,receiptV2Fixture,runV2Fixture,receipts,testKey) : killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
+    const results = killer.startsWith("continuity/") ? await continuityConformance(library,testKey) : killer.startsWith("bundle-v2/") ? await bundleV2Conformance(library,receiptV2Fixture,runV2Fixture,receipts,testKey) : killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
     const observed = results.find(r => r.name === killer);
     if (!observed || observed.ok) {
       console.error("SURVIVED", name, "expected killer", killer); failed++;

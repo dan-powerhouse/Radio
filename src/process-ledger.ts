@@ -56,7 +56,7 @@ export class ProcessLedger {
   #submissions = new Map<string,{requestHash:string;id:string}>();
   #success = new Map<string,string>();
   #consumed = new Set<string>();
-  #listeners = new Set<{tuning:Tuning;fn:(r:ReceiptV2,seq:number)=>void}>();
+  #listeners = new Set<{tuning:Tuning;fn:(r:ReceiptV2,seq:number)=>void;after:number}>();
   #tail: Promise<unknown> = Promise.resolve();
   #failed = false;
   #restoring = false;
@@ -127,6 +127,24 @@ export class ProcessLedger {
   law(hash: string) { this.#readable(); return this.#registry.law(hash); }
   snapshotByHash(hash: string) { this.#readable(); return this.#registry.snapshotByHash(hash); }
   entry(id: string): ProcessEntry | null { this.#readable(); const e=this.#byId.get(id); return e?clone(e):null; }
+  /** Active laws only; historical laws remain retrievable by hash. */
+  async published():Promise<{id:string;hash:string}[]>{
+    this.#readable();
+    const {snapshot}=await this.#registry.snapshot();
+    return snapshot.types.map(hash=>({id:this.#registry.law(hash)!.id,hash}));
+  }
+  /** Local durable history, with a cursor independent of tuning. */
+  page(tuning:Tuning={},afterSeq=0,limit=100):{seq:number;receipt:ReceiptV2}[]{
+    this.#readable();
+    if(!Number.isSafeInteger(afterSeq)||afterSeq<0||!Number.isSafeInteger(limit)||limit<1)
+      return err("history_invalid","invalid history cursor or limit");
+    const out:{seq:number;receipt:ReceiptV2}[]=[];
+    for(let i=afterSeq;i<this.#entries.length&&out.length<limit;i++){
+      const e=this.#entries[i];
+      if(tuned(tuning,e.receipt.header))out.push({seq:e.seq,receipt:clone(e.receipt)});
+    }
+    return out;
+  }
   history(tuning: Tuning = {}): ReceiptV2[] {
     this.#readable();
     return this.#entries.filter(e=>tuned(tuning,e.receipt.header)).map(e=>clone(e.receipt));
@@ -144,7 +162,7 @@ export class ProcessLedger {
     return this.#entries.filter(e=>seen.has(e.receipt.id)).map(e=>clone(e.receipt.header));
   }
   /** Trusted local export. The host must authorize disclosure of every object. */
-  async bundle(id:string):Promise<BundleV2>{
+  async bundle(id:string,canRead?:ProcessAccess["canRead"]):Promise<BundleV2>{
     this.#readable();
     const objects:Record<string,unknown>=Object.create(null),seen=new Set<string>(),pending=[id];
     while(pending.length){
@@ -152,6 +170,7 @@ export class ProcessLedger {
       if(seen.size>=MAX_BUNDLE_RECEIPTS)return err("bundle_limit","receipt limit");
       seen.add(ref);
       const e=this.entry(ref);if(!e)return err("evidence_invalid","missing bundle receipt");
+      if(canRead&&(await canRead(clone(e.receipt)))!==true)return err("admission_denied","private evidence unavailable");
       const h=e.receipt.header,c=e.context;
       await putBundleObject(objects,ref,e.receipt,true);
       await putBundleObject(objects,h.input_hash,e.tuple);
@@ -170,8 +189,19 @@ export class ProcessLedger {
     if(utf8(canonicalize(result)).length>MAX_BUNDLE_BYTES)return err("bundle_limit","bundle byte limit");
     return result;
   }
-  listen(tuning:Tuning,fn:(r:ReceiptV2,seq:number)=>void):()=>void {
-    const l={tuning:clone(tuning),fn};this.#listeners.add(l);
+  listen(tuning:Tuning,fn:(r:ReceiptV2,seq:number)=>void,afterSeq?:number):()=>void {
+    this.#readable();
+    if(afterSeq!==undefined&&(!Number.isSafeInteger(afterSeq)||afterSeq<0))
+      return err("history_invalid","invalid history cursor");
+    const l={tuning:clone(tuning),fn,after:afterSeq??this.#entries.length};
+    // Register and replay within one synchronous turn; commits cannot interleave.
+    this.#listeners.add(l);
+    try{
+      if(afterSeq!==undefined)for(const e of this.#entries)
+        if(e.seq>l.after&&tuned(l.tuning,e.receipt.header)){
+          l.after=e.seq;fn(clone(e.receipt),e.seq);
+        }
+    }catch(e){this.#listeners.delete(l);throw e;}
     return ()=>{this.#listeners.delete(l);};
   }
   async #capture() {
@@ -250,7 +280,8 @@ export class ProcessLedger {
       const prepared=this.#claims(entry,submissionKey);
       await this.#write({kind:"receipt-v2",entry,admission_snapshot:s.snapshot});
       this.#adoptEntry(entry,submissionKey,prepared);
-      for(const l of [...this.#listeners])if(tuned(l.tuning,entry.receipt.header)){
+      for(const l of [...this.#listeners])if(entry.seq>l.after&&tuned(l.tuning,entry.receipt.header)){
+        l.after=entry.seq;
         // Notification failure cannot turn an acknowledged durable commit into a failed submission.
         try{ Promise.resolve(l.fn(clone(entry.receipt),entry.seq)).catch(()=>{}); }catch{}
       }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // logline verify-bundle <bundle.json|url> [--keys keys.json|url]
 // Verifies a receipt and its whole trajectory offline. Without --keys it uses the
-// keys inside the bundle and says so: compare the key id with the machine's published one.
+// keys inside a historical v1 bundle and says so. Target v2 requires independent --keys.
 // URLs are fetched; a bundle URL sends LOGLINE_TOKEN as a bearer token when it is set.
 // For a bundle on https://host/receipts/<id>/bundle, --keys https://host is enough.
 import { readFileSync } from "node:fs";
@@ -10,17 +10,28 @@ import * as L from "../dist/index.js";
 const [cmd, file, ...rest] = process.argv.slice(2);
 if (cmd !== "verify-bundle" || !file) { console.error("usage: logline verify-bundle <bundle.json> [--keys keys.json]"); process.exit(2); }
 const isUrl = (s) => /^https?:\/\//.test(s);
-async function get(where, auth) {
-  if (!isUrl(where)) return JSON.parse(readFileSync(where, "utf8"));
+async function getText(where, auth) {
+  if (!isUrl(where)) return readFileSync(where, "utf8");
   const res = await fetch(where, { headers: auth && process.env.LOGLINE_TOKEN ? { authorization: `Bearer ${process.env.LOGLINE_TOKEN}` } : {} });
   if (!res.ok) { console.error(`${where}: HTTP ${res.status} ${await res.text()}`); process.exit(2); }
-  return res.json();
+  return res.text();
 }
-const bundle = await get(file, true);
+const text = await getText(file, true);
+let bundle;
+try { bundle = JSON.parse(text); } catch { console.error("INVALID: malformed JSON"); process.exit(1); }
 const ki = rest.indexOf("--keys");
 let keysAt = ki >= 0 ? rest[ki + 1] : null;
 if (keysAt && isUrl(keysAt) && !keysAt.endsWith(".json")) keysAt = new URL("/.well-known/logline.json", keysAt).href;
-const keys = keysAt ? (await get(keysAt, false)).keys : bundle.keys;
+if (bundle.logline === "bundle@2" && !keysAt) {
+  console.error("Target bundle@2 requires independently obtained --keys");
+  process.exit(2);
+}
+const keys = keysAt ? (bundle.logline === "bundle@2" ? L.parseStrict(await getText(keysAt, false)) : JSON.parse(await getText(keysAt, false))).keys : bundle.keys;
+if (bundle.logline === "bundle@2") {
+  const verdict = await L.verifyBundleV2(text, keys);
+  console.log(JSON.stringify(verdict));
+  process.exit(verdict.valid ? 0 : 1);
+}
 if (ki < 0) console.log(`! keys taken from the bundle itself: ${Object.keys(keys).join(", ")}\n  Check this against the issuer's /.well-known/logline.json, or pass --keys.`);
 const v = await L.verifyBundle(bundle, keys);
 for (const e of v.entries) {

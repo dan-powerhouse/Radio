@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance is implemented in the review branch; PR-08 portable bundle export and independent replay are implemented in the dependent review branch. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance is implemented in the review branch; PR-08 portable bundle export and independent replay, and PR-09 local continuity, are implemented in dependent review branches. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -162,6 +162,25 @@ The library's ProcessLedger invokes the same request-scoped evaluator and adopts
 ## Portable target trajectory (review)
 
 Run the standalone course trajectory example with npm run example (after the historical example). ProcessLedger.bundle(id) returns private portable evidence; it is not an authorization API. Supply verifyBundleV2 with the raw JSON text and an independently obtained trusted key ring. A valid verdict requires authenticity, decision replay and recursive closure verification, not only a valid signature. Do not treat bundle.keys as a trust anchor or a successful replay as proof of global ledger completeness. See SPEC §15.16.
+
+## Local target continuity (review)
+
+Use the same local reference server and CLI with an explicit target data directory; do not point these commands at an existing v1 directory. This is not the hosted deployment.
+
+```sh
+npm run build
+node bin/logline-server.mjs account --target --data ./data-v2 reviewer --admin
+node bin/logline-server.mjs account --target --data ./data-v2 learner
+node bin/logline-server.mjs serve --target --data ./data-v2
+```
+
+The existing POST /processes accepts a Process Type JSON law in target mode (admin token); POST /submit accepts the authenticated submission envelope. GET /radio and /history carry committed public receipts, with local sequence cursors. Private evidence stays behind owner/admin checks for this demonstration. See SPEC §15.17. For target bundle verification the CLI requires independently obtained keys (a trusted discovery document containing keys), for example:
+
+```sh
+node bin/logline.mjs verify-bundle bundle.json --keys trusted-discovery.json
+```
+
+The real process/reader replacement scenario runs in test/continuity.test.mjs. The historical server and CLI behavior remain available without --target.
 
 ## Hosted readiness
 

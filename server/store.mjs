@@ -115,7 +115,7 @@ async function openReference(dir, opts, target) {
   await ledger.restore(records, { replay: !!opts.replay });
 
   return {
-    dir, ledger, repaired,
+    dir, ledger, repaired, version: target ? "2" : "1",
     accounts: new Accounts(path.join(dir, "accounts.json")),
     pseudonym: (account) => L.pseudonym(new Uint8Array(secret), account),
     head: () => ({ ...state.head }),
