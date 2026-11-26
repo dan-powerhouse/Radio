@@ -394,7 +394,7 @@ Approved decisions: single-winner ambiguity (rather than fan-out), `_unaddressed
 
 ### 15.9 PR-02 — RUN, instance and receipt contract
 
-Status: **approved to proceed and merged as GitHub #4; PR-05 reference evaluation and tentative receipt@2 signing implemented, atomic instance/claim persistence and full verification pending**. This completes the kernel contract for the next version without changing `process@1`, `receipt@1`, or historical v1 vectors. It uses the approved recognition semantics in §15.8. The first RUN constitutes the instance; there is no authoritative mutable process object, scheduler or internal reaction loop.
+Status: **approved to proceed and merged as GitHub #4; PR-05 reference evaluation and tentative receipt@2 signing and PR-06 local instance persistence merged; PR-07 atomic claim/retry acceptance and PR-08 full portable verification pending**. This completes the kernel contract for the next version without changing `process@1`, `receipt@1`, or historical v1 vectors. It uses the approved recognition semantics in §15.8. The first RUN constitutes the instance; there is no authoritative mutable process object, scheduler or internal reaction loop.
 
 #### 15.9.1 Law and RUN definitions
 

@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented in the PR-05 review branch. The dependent PR-06 reference implements durable v2 instance formation and recovery; PR-07 concurrency/failure acceptance and independent portable replay remain pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 concurrency/failure acceptance and independent portable replay remain pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -153,7 +153,7 @@ LOGLINE_TOKEN=$TOKEN node bin/logline.mjs verify-bundle http://localhost:8080/re
 
 Not yet: key rotation, encrypted objects with erasure, an external anchor for the head, TLS (put it behind a reverse proxy). One process, one file: it is a single-writer machine.
 
-## Target v2 local reference (review)
+## Target v2 local reference
 
 The library's ProcessLedger invokes the same request-scoped evaluator and adopts a signed receipt only after its record sink acknowledges it. For a real local file, import openProcessMachine from server/store.mjs. Use a new directory for the target-format reference, not an existing v1 directory. It reuses the hash-chained file and fsync path without starting a server. A Process exists through the successful entry receipt and its causal continuations, not a running worker. The trusted adapter supplies an attested by and a canRead authorization callback for evidence; this is not an OAuth or participant-facing endpoint. Do not expose the private ledger methods to untrusted clients. Close a writer before opening another for the same directory. See SPEC §15.14 for recovery, storage limits and outstanding gates.
 
