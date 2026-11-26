@@ -71,12 +71,15 @@ The example is conceptual, not an additional domain model or executable law. The
 | **Continuation** | An independent submission referring explicitly to an existing instance, RUN and required predecessor receipts under its original law. It does not invoke initial recognition again. |
 | **Outcome** | The result of an evaluation. The target statuses are `registered`, `not`, `doubt` and `ok`. A valid diplomatic refusal may itself be an `ok` result of a law-defined refusal movement; `not` is not a universal synonym for refusal. |
 | **Registration** | The recording of a valid admitted expression without a successful activated result in the `registered` disposition. An unrecognized expression or unsuccessful entry does not create a process instance. Invalid admission and corrupt authoritative evidence are request failures, not registration outcomes. |
+| **Radio** | Communication of committed receipt notices within the Institution's visibility policy. In the Supabase profile, a notice carries the receipt ID. Listeners resolve and verify the signed receipt before tuning or acting. |
+| **Tuning** | A listener's selection of verified receipts by frequency, status, pseudonym, law hash and activation. The participant owns the filter and its response strategy. |
 
 ## Evidence, identity and continuity
 
 | Term | Definition |
 |---|---|
 | **Registry** | The authoritative publication boundary for laws; its active set is represented by immutable, content-addressed snapshots. Retired laws remain available for historical verification. |
+| **Protocol capability catalog** | The source of the RADIO Cookbook. It describes operations and guarantees shared across implementations. The Institution's Registry provides its available Process Types. |
 | **Law identity** | The SHA-256 content address of the canonical JSON Process Type. A published versioned ID cannot be rebound to different content. An amendment creates a new law ID and hash. |
 | **Package identity** | The hash of a Diplomacy’s canonical manifest, which binds its component contents. The Process Type has its own law identity. See SPEC §15.18.5. |
 | **Citation** | An explicit reference to a receipt required or permitted by the law. It must satisfy the applicable integrity, eligibility, access and consumption conditions. |
@@ -107,4 +110,6 @@ The example is conceptual, not an additional domain model or executable law. The
 
 - [RADIO specification](SPEC.md), especially §§3, 15.1–15.11 and 15.18.
 - [RADIO vision](VISION.md).
+- [RADIO Cookbook](COOKBOOK.md), generated from the protocol capability catalog.
+- [Delivery status and open gates](ROADMAP.md#current-checkpoint).
 - [Introducing DIPLOMACY](DIPLOMACY.md), founding article of 26 November 2026.

@@ -4,8 +4,8 @@ RADIO is a Third Layer application: a universal protocol for the formation of ve
 
 ## Authority and continuity
 
-- `VISION.md` explains why; `SPEC.md` is the only technical contract. Sections 1–14 preserve v1; §15 states target requirements and open decisions, not an implemented wire format. Source/tests describe what runs today. If they disagree, report the conflict; do not silently rewrite the contract.
-- Continue from the current checkpoint. Preserve working code, fixtures and tests; do not restart or broaden the scope without direction. Work in substantial verified increments toward §15.7; use [ROADMAP.md](ROADMAP.md) for the proposed granular PR sequence and acceptance gates. The roadmap is not a second spec.
+- `VISION.md` explains the purpose. `SPEC.md` is the technical authority. Sections 1–14 preserve v1. §15 records the approved Protocol 1.0 semantics and the reference profile. Report any disagreement between implementation and contract for review.
+- Continue from the [roadmap checkpoint](ROADMAP.md#current-checkpoint) and preserve working code, fixtures and tests. Keep merged implementation, local native evidence and hosted acceptance distinct. Update the protocol capability catalog when changing a cookbook procedure and regenerate [COOKBOOK.md](COOKBOOK.md) with `npm run cookbook`.
 - The architect owns semantic decisions and approval of publication, merge, remote changes and deployment. No remote write without explicit approval. Do not choose a Supabase project or use production credentials implicitly.
 - Discuss in Portuguese when the user does; code, specs and repo documentation are in English. Be precise about what was read, changed, tested and not tested. A blocked runtime or a missing credential is not a successful test. Preserve commitments and leave an executable checkpoint.
 
@@ -16,7 +16,7 @@ RADIO is a Third Layer application: a universal protocol for the formation of ve
 - Stateless hosted requests with Supabase-native Auth, persistence and Realtime. Identity provides standing authentication. Preserve institutional continuity in durable evidence and execute each submission independently of worker lifetime. Treat the contracts, mechanisms, vectors, conformance suite and CI gates as the rigid core. Choose native infrastructure for the elastic substrate. For each invariant, identify the smallest native enforcement mechanism and test it at its actual boundary. Use the shared hosted adapter in native deployments and keep `server/` as the local reference. Do not build provider abstractions or external orchestration into the machine.
 - State required for uniqueness must be enforced transactionally. Preserve idempotency, once consumption, and causal verification. A signature is not proof of external facts or ledger completeness; a receipt is not a substitute for a protected external executor.
 - Spec before code for semantic changes. Version incompatible changes explicitly, preserve historical vectors, and add new vectors for the new version. Do not change tests to make a broken implementation pass. Avoid speculative scope (HSM, blockchain, enterprise frameworks, multi-region) in the current milestone.
-- Preserve the domain vocabulary: Process Type, RUN, scanner, receipt, trajectory, frequency, tuning, `registered`, continuity. Process Type JSON remains independent of agent-facing Skill instructions; the package contract is open.
+- Preserve the domain vocabulary from [GLOSSARY.md](GLOSSARY.md). Use LogLine as the preferred authoring convention and preserve free I-JSON at the submission boundary. Process Type JSON remains independent of agent-facing Skill instructions. SPEC §15.18.5 governs the DIPLOMACY package.
 
 ## Commands and validation
 

@@ -1,6 +1,20 @@
 # RADIO — Kernel delivery roadmap
 
-Status: architect-directed rigid-first engineering sequence (2026-11-25), not a protocol specification or approved release. Baseline: `radio-organized.zip`, 2026-11-25. Read [VISION.md](VISION.md) and [SPEC.md](SPEC.md) first. SPEC §15 is the source of target requirements; this file owns only work order, dependencies and acceptance. Decisions below are gates, not decisions already taken. PR identifiers are roadmap identifiers, not GitHub PR numbers.
+Delivery status as of 2026-11-26, reconciled with `main` at `6187545`. SPEC §15 defines the protocol. This roadmap tracks implementation, dependencies and acceptance. PR-xx identifies roadmap work. GitHub #xx identifies an actual pull request. [Vision](VISION.md) · [Specification](SPEC.md)
+
+## Current checkpoint
+
+| Milestone | Verified progress | Open gate |
+|---|---|---|
+| M0–M2 · Rigid core | RADIO Protocol 1.0 approved. The conformance corpus, executable reference and release review are in Git. The cookbook is generated from the protocol capability catalog. | Publish the release ref for the exact approved tree. |
+| M3 · Substrate | PostgreSQL v2 transactions, CAS, Registry snapshots and ephemeral Edge Publish/Submit merged. Local native integration used PostgreSQL, PostgREST and Supabase Edge Runtime. | Qualify project configuration, native OAuth consent, resource binding and current authority. |
+| M4 · Radio | Committed receipt IDs flow through private Broadcast. Two independent listeners verified lookup, rollback, unauthorized access and lease expiry on a local native Realtime instance. | Qualify the protected channel on the project, implement durable history and finish the direct participant client. |
+| M5 · Interface | Stateless MCP discovery, submission and evidence merged. Local official-SDK tests verified the same RUN path and adopted DIPLOMACY guidance. | Exercise native OAuth through ChatGPT or Claude and qualify archive distribution. |
+| M6 · Community | Local reference continuity, portable replay and worker replacement exercised. | Run the hosted golden path, measure capacity and restore the whole Institution. |
+
+[GitHub #17](https://github.com/dan-powerhouse/Radio/pull/17) includes PR-10 and PR-11. [GitHub #18](https://github.com/dan-powerhouse/Radio/pull/18) includes the MCP implementation and DIPLOMACY catalog integration. [GitHub #19](https://github.com/dan-powerhouse/Radio/pull/19) includes committed Radio signals, executor equivalence and the generated cookbook.
+
+Both main CI jobs passed at this checkpoint. The active main ruleset requires pull requests and blocks deletion and force pushes. Its required-check list is empty. The two checks to require are **Kernel and vectors** and **PostgreSQL migrations and transactions**. The approved 1.0 release ref also remains unpublished. The staging workflow has no recorded runs. [Main CI run](https://github.com/dan-powerhouse/Radio/actions/runs/45822718547) · [Active main rules](https://github.com/dan-powerhouse/Radio/rules) · [Staging workflow](https://github.com/dan-powerhouse/Radio/actions/workflows/staging.yml)
 
 ## Delivery boundary
 
@@ -18,24 +32,12 @@ If materialization exposes an actual deficiency in the frozen contract, record i
 
 ## Working agreement
 
-- PRs below are proposed; existing code is a baseline, not evidence that any new PR is merged. PR-00 synchronized the already tested checkpoint and roadmap ([GitHub #2](https://github.com/dan-powerhouse/Radio/pull/2), merged). PR-01 is architect-approved in SPEC §15.8 ([GitHub #3](https://github.com/dan-powerhouse/Radio/pull/3), merged); PR-02 is merged as [GitHub #4](https://github.com/dan-powerhouse/Radio/pull/4); M0 is complete. Target runtime is being implemented in M1.
+- Checked boxes record the stated deliverable and evidence. Open boxes record remaining acceptance work. In Cycle II, keep local native integration and acceptance on an approved hosted project explicit.
 - Use one branch per PR, one reviewable purpose, tests alongside implementation, and a short PR description: intent, invariant, changed files, tests/results, compatibility, unresolved issues. Prefer subtracting code. No speculative framework or mandatory new dependency.
 - For semantic changes, update the relevant part of SPEC in the same PR before implementation. Resolve explicit decisions with the architect first. Version incompatibilities and retain historical vectors; do not change tests just to pass. A failing baseline is investigated, not silently waived.
 - Every code PR runs build and `npm test`; if a stage is blocked, run the remaining stages independently and report exact results. Add a targeted regression or conformance test for each new invariant. Infrastructure PRs require actual service tests, not only doubles. Never substitute a mock for an acceptance gate.
 - No publish, merge, remote configuration or deployment without explicit approval. Disposable project selection is a decision, not implicit permission. No production credentials in fixtures, archives or logs.
 - Work in order of dependencies. Complete Cycle I and obtain freeze approval before Cycle II implementation. For each rigid-core PR identify the invariant, mechanism contract, portable evidence and trust boundary; for each substrate PR map that invariant to the smallest actual native enforcement mechanism and test it at its real boundary. Keep the reference sufficient for conformance, not a second production backend. No separate document per PR.
-
-## Baseline inventory
-
-| Area | Existing baseline | Gap |
-|---|---|---|
-| Encoding/crypto | `src/jcs.ts`, `strict.ts`, `hash.ts`, `keys.ts`, `authentic.ts` | Explicit compatibility with new envelope; known pre-checkpoint v1 ordering defect (SPEC §15.5) |
-| Evaluation | `src/process.ts`, `expr.ts`, `receipt.ts`, `verify.ts`, `scanner.ts` | v1 explicitly addressed single law; target scanner implemented, multi-RUN pending |
-| Local reference | `src/ledger.ts`, `server/`, CLI | v1 synchronous `on`; target externally initiated continuation |
-| Hosted preview | migration, `submit`, `publish`, shared ledger/PostgREST adapter; real disposable PostgreSQL 16/17 transaction and RLS tests | v1 only; target schema and real Supabase Auth/Edge/PostgREST/Realtime integration pending |
-| Identity/client | `src/hosted.ts`, native OAuth discovery | real OAuth consent, scoped delegation and revocation |
-| Radio | local SSE, hosted receipt publication configuration | actual WebSocket and gap-free catch-up |
-| Examples/tests | course, external alumni fixture, frozen v1 vectors, portable Process Type/registry/expression/JSON vectors, cross-runtime tests and targeted mutations; CI/CD workflows prepared | RUN/trajectory vectors and hosted full path; PR-03 GitHub Actions passed both jobs |
 
 ## M0 — The Contract
 
@@ -73,7 +75,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 - Acceptance: zero/one/multiple matches per approved contract; snapshot/version changes; deterministic ordering and bounded work; valid scalars/arrays/objects and adversarial keys. No hidden preference based on arrival order.
 
 ### PR-05 — RUN evaluator and signed result
-- [x] Merged as GitHub #9. Coordinated machine-readable structural contract and decision boundary approved (2026-11-26), across PR-05–08, using the single schema projection and independent evidence described in SPEC §15.12. Reference RUN evaluation and tentative v2 signing implemented (SPEC §15.13), including approved diagnostic priority, authorized evidence/claim observation boundary and independent portable signed vectors. Reuse existing expression, field type, citation frequency and signing primitives. Remote CI passed on GitHub #9. Reference ledger integration is PR-06; full portable replay and hosted route remain pending.
+- [x] Merged as GitHub #9. Coordinated machine-readable structural contract and decision boundary approved (2026-11-26), across PR-05–08, using the schema projection and independent evidence described in SPEC §15.12. Reference RUN evaluation and tentative v2 signing implemented (SPEC §15.13), including approved diagnostic priority, authorized evidence/claim observations and independent portable signed vectors. Remote CI passed on GitHub #9. PR-06 continued with ledger integration, PR-08 with portable replay and PR-11 with the hosted adapter.
 - Acceptance: positive, negative, doubt and registered outcomes, no effects for unmet activation; machine-attested identity, immutable law, independent replay with exact evidence. Versioned vectors; retain v1 tests and vectors.
 
 ## M2 — The Trajectory
@@ -81,7 +83,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 Exit: multiple process instances progress independently, with receipts as the objects, portable evidence of causal history and uniqueness after restart. Provider-independent boundary contracts are complete for the declared 1.0 scope. The rigid-core release has passed all required reference and CI gates and is explicitly approved for freeze. Native PostgreSQL/Edge materialization begins in M3, not as an M2 exit requirement.
 
 ### PR-06 — Instance formation and continuation
-- [x] Merged as GitHub #10; remote CI passed. Implemented (SPEC §15.14): reference ProcessLedger and file-backed openProcessMachine, receipt-derived instance identity, explicit ancestry and nonlinear joins, immutable publication/retirement, recorded observation replay, local single-writer retry/claim indexes and recovery. No additional hosted server, mixed-version persistent import, or full bundle verification. PR-07 remains the concurrency/failure-boundary acceptance gate.
+- [x] Merged as GitHub #10 and passed remote CI. Implemented the reference ProcessLedger and file-backed openProcessMachine, receipt-derived instances, explicit ancestry and nonlinear joins, immutable publication/retirement, recorded observation replay and local single-writer recovery (SPEC §15.14). PR-07 covered the concurrency and failure boundary.
 - Acceptance: two instances of one law; cannot substitute one instance's receipts for another; retry and invalid successor cases. Nonlinear trajectories permitted only as specified.
 
 ### PR-07 — Atomic uniqueness and retry semantics
@@ -106,42 +108,45 @@ Exit: multiple process instances progress independently, with receipts as the ob
 ### PR-09B — RADIO Protocol 1.0 freeze
 
 - [x] GitHub #16 merged and architect-approved 2026-11-26 (SPEC §15.19). Review the complete SPEC for consistent normative terminology, version dispatch, bounded behavior, reason codes, evidence and explicit trust assumptions. Preserve the historical versions; the protocol release number is separate from object format versions. Curate a versioned conformance corpus with independently specified expectations, cryptographic/encoding fixtures, negative/adversarial cases, targeted mutations and complete trajectories. Retain historical vectors without modification.
-- Acceptance: reproducible clean build; required Node, Bun, Chromium and mutation checks; portable bundle replay; forced reference concurrency, rollback and replacement scenarios; deterministic results across runtime and ordering changes; existing PostgreSQL regression gate for the preserved preview; actual GitHub Actions execution and required checks verified, no unexplained skips or failures. Review the declared scope, independent-oracle limitations and outstanding hosted-only gates. Archive the exact reviewed commit, SPEC, vector hashes, tool lockfile and test results in Git; tag the protocol release only after explicit architect approval. No hosted deployment or assertion of hosted security/scale/conformance at this gate.
+- [x] Reproducible clean build, Node, Bun, Chromium and mutation checks, portable replay, reference concurrency/recovery and PostgreSQL regressions passed. The review head, CI, vector hashes and lockfile are recorded in SPEC §15.19.
+- [ ] Publish the protocol release tag for the exact approved tree and verify required-check enforcement. The approved protocol and the hosted release have separate acceptance gates.
 
 ## M3 — The Substrate
 
 Exit: the approved isolated Supabase materialization implements the frozen 1.0 contract with real transactional persistence, ephemeral execution, native identity, delegated authorization and privacy tests. Hosted staging writes remain gated until explicit project and hosted-contract approval; production remains separate. No native service is replaced by a custom equivalent.
 
 ### PR-10 — Hosted transaction schema and CAS
-- [ ] Depends on the approved PR-09B freeze; implement against the frozen transaction and evidence contracts. Adapt existing migration/RPCs to the approved new semantic contract; verify migration history before editing or adding a migration. Make native constraints, transactions, CAS and RLS the enforcement boundary; retain only needed indexes. Decide and remove or retain reserved outbox/reaction_jobs with architect approval, no community reaction worker.
-- Acceptance: real PostgreSQL concurrent idempotency/once/instance tests; rollback on conflict; immutable CAS; publication snapshot races; real RLS tests for direct access and private evidence; no UUID in broadcast rows. No evaluator in SQL.
+- [x] Merged in GitHub #17. Additive `radio_v2` migrations implement immutable CAS, bounded Registry snapshots and authoritative transactional admission/commit RPCs. Real PostgreSQL tests exercise concurrent submission, RUN and once claims, rollback, publication snapshots, direct SQL access and private evidence with test identities.
+- [ ] Apply the migrations and verify the actual Data API grants and private evidence access on the approved project. The v1 outbox remains in the compatibility schema. Any cleanup takes a reviewed migration. [Transaction checkpoint](supabase/README.md#pr-10-transaction-checkpoint)
 
 ### PR-11 — Ephemeral publish and submit
-- [ ] Depends on PR-10. Reuse staged TypeScript evaluator in existing Edge Functions and commit adapter. Define root response and version compatibility. Re-evaluate on transactional conflict; bound retries. Decide citation bundle transport: retain server-resolved citations for initial path unless approved otherwise.
-- Acceptance: actual Deno/Edge runtime against disposable Postgres; identical local/hosted results for fixed inputs/context; no warm-worker dependency; no duplicate effects across concurrent invocations; invalid/failed writes never broadcast.
+- [x] Merged in GitHub #17. Versioned Publish/Submit reuse the staged TypeScript evaluator. Local native Edge, PostgREST and PostgreSQL tests verify reference parity, conflict re-evaluation, server-resolved citations, lost acknowledgement and cold worker replacement. The admitted time and Registry stay fixed across retries.
+- [ ] Verify version dispatch, authenticated writes and receipt visibility through the project gateway. [Ephemeral Publish and Submit](supabase/README.md#pr-11-ephemeral-publish-and-submit)
 
 ### PR-12 — Native OAuth flow and consent
-- [ ] Depends on PR-09B; prepare native configuration and OAuth interoperability in Cycle II, without remote changes until project approval; merge after PR-11. Verify current Supabase docs/config; use native OAuth code + PKCE, metadata and token lifecycle; minimal static consent/login surface, no application backend or separate accounts system.
-- Acceptance: real approved test OAuth client can sign in, consent/deny, obtain and refresh token; invalid/expired credentials refused; machine key distinct from issuer key. Test callback and consent binding. No production deployment.
+- [x] The MCP adapter includes protected-resource metadata, JWKS validation and a configurable native access-token hook for the signed audience. Local tests use a signed issuer fixture.
+- [ ] Configure native Auth and the static login/consent surface on an approved project. Exercise consent and denial, authorization code + PKCE, callback binding, token expiry and refresh with a real client. Demonstrate that a grant for another resource cannot obtain a usable RADIO credential. Keep issuer and machine signing keys distinct.
 
 ### PR-13 — Delegation and access boundary
-- [ ] Depends on PR-11/12. Materialize and enforce the frozen caller/client authorization contract, admin publication, community/authority scope, revocation and RLS, using verified identity not tuple claims. Keep initial deployment single-community unless architect approves otherwise.
-- Acceptance: real client-specific positive/negative tests, wrong issuer/audience and unauthorized client, revoked access under declared freshness bound, spoofed `who`, private evidence denied to others, anonymous/public policy per SPEC. Document key provisioning and operator trust; do not invent a rotation protocol.
+- [x] PostgreSQL enforces principal authority, direct or OAuth client mandates and resource permissions, with a private decision audit and authority revalidation at commit. The local adapter tests use verified fixture claims and include wrong resource, revoked authority and denied evidence.
+- [ ] Test different native OAuth clients for the same principal, wrong issuer/audience, scope and revocation freshness, spoofed `who` and private evidence denial through the actual project. Declare the single-Institution visibility policy and operator trust before exposure.
 
 ## M4 — The Radio
 
-Exit: a real native Realtime WebSocket listener receives committed receipts, can disconnect, recover and continue without losing authorized history.
+Exit: a native Realtime WebSocket listener receives committed receipt IDs, verifies the resolved receipts and can recover after a disconnect without losing authorized history.
 
 ### PR-14 — Committed broadcast and tuning
-- [ ] Depends on PR-11/13. Use native Supabase Realtime with existing frequency/status/identity filters as specified. Verify signature before acting; keep private details outside public payload.
-- Acceptance: two independent authorized listeners receive the same committed receipt ID and can resolve the same signed object through an authorized read. Verify rollback, publish permissions, private-data exclusion and lease expiry against an uncooperative socket on native Realtime.
+- [x] Merged in GitHub #19. Database-originated private Broadcast carries only the committed receipt ID. Clients fetch it under current authority, verify the signature and tune the signed header locally. Local native Realtime tests covered two independent listeners, rollback, denied send/join, credential renewal and expiry on an uncooperative socket.
+- [ ] Verify native direct-session leases, deployed receipt lookup and private channel policy on the approved project before activation. [Committed radio signals](supabase/README.md#committed-radio-signals)
 
 ### PR-15 — Durable history and reconnect contract
-- [ ] Depends on PR-10/14. Materialize the frozen history/reconnect guarantees; resolve physical cursor design and live/catch-up overlap before implementing. Sequence allocation is not commit order; do not promise `seq > cursor` alone. Pick minimal correctness-preserving mechanism with architect approval.
+- [x] The local HTTP/SSE reference demonstrates catch-up and listener replacement. The PostgreSQL late-commit probe demonstrates the sequence allocation hazard.
+- [ ] Choose an approved physical cursor and implement authorized closed windows, stable pagination and overlap with live signals. Sequence allocation alone is insufficient to close a window.
 - Acceptance: forced out-of-order transaction commits, pagination with concurrent writes, disconnect/reconnect, duplicate delivery and listener replacement. Every accessible committed receipt recoverable under declared cursor contract; dedupe by receipt ID. No listener registry or per-agent workflow in machine.
 
 ### PR-16 — Direct participant client
-- [ ] Depends on PR-14/15. Extend existing `src/hosted.ts` (or a thin transport adapter where appropriate) for tuning, verified receipt reads and catch-up. Keep token ownership and local listener state with participant.
+- [x] The v2 receipt lookup and reference listener example resolve, verify and tune the committed ID independently of a local server.
+- [ ] Deliver the maintained v2 participant client or thin adapter with PR-15 catch-up. Keep token ownership and listener checkpoints with the participant.
 - Acceptance: independent clients with different local state can recover and submit via ordinary API; token refresh/reconnect tested; no hidden session; verify that API and machine share the same RUN boundary.
 
 ## M5 — The Interface
@@ -149,16 +154,16 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 Exit: a real OAuth-authorized MCP client discovers types and submits free JSON to the same hosted RUN boundary. Each request remains independent across executor replacements.
 
 ### PR-17 — Stateless MCP profile and discovery
-- [ ] Depends on PR-09B/13. Verify published MCP revision (target inspiration 2026-07-28) and actual client interoperability before fixing the profile; specify metadata, discovery/cache, auth resource metadata, version errors, supported capabilities and explicit context. Discovery excludes mutable head. Implement minimal ephemeral MCP endpoint.
-- Acceptance: protocol fixtures plus real compatible client discovery; repeat against fresh workers; stable ordering/cache keys; malformed/unsupported messages and credentials rejected. No invented MAP wire contract or required session state.
+- [x] Merged in GitHub #18. The pinned SDK serves MCP 2026-07-28 and stateless 2025 compatibility, with cacheable fixed metadata, protected-resource metadata and authorized law discovery. The official SDK client exercised discovery and replay after local worker replacement.
+- [ ] Prove the connector can discover and authorize the project resource through native OAuth. Check version handling, cache headers and rejected credentials in the deployed transport. [Stateless MCP](supabase/README.md#stateless-mcp)
 
 ### PR-18 — MCP submission and evidence
-- [ ] Depends on PR-17/16. Expose only the necessary discovery/read/submit capabilities; same handler and evaluator as API. Provide registered outcomes and actionable unmet conditions, immutable references, receipt/evidence reads under policy. Preserve free I-JSON input (transport validation is distinct from activation).
-- Acceptance: real authenticated MCP client obtains the same receipt semantics as API, retries safely, follows citations and verifies a returned object; stateless continuation and unauthorized actions tested. No automatic orchestration tools.
+- [x] Merged in GitHub #18. MCP uses the shared v2 submission adapter for free I-JSON, with explicit continuation, authorized receipt/evidence reads and stable outcome diagnostics. Local tests exercise a signed RUN, replay and revocation.
+- [ ] Verify the complete connector submission and continuation path, including citations, denial and independent receipt verification with native OAuth credentials. Hosted bundle export remains to be demonstrated with complete private evidence authorization.
 
 ### PR-19 — DIPLOMACY distribution / Agent Skills interoperability
-- [ ] Depends on PR-09B/17. Materialize the DIPLOMACY format after the package contract is reviewed and frozen in Cycle I. A Skill is instruction, not authority; no ZIP loader or scripts in evaluator. Add a minimal example and discovery linkage after approval. MAP integration only to supplied contract; otherwise demonstrate translation without claiming MAP compliance.
-- Acceptance: agent can locate exact law and learn how to form input; package/instruction edits cannot change law identity or authorize actions; machine works with law JSON alone. Optional wrapper not needed for RUN correctness.
+- [x] The frozen archive format has a real ZIP validator. The CLI emits operator adoption SQL, and MCP serves the adopted manifest and verifies the Skill text against it. The evaluator uses the law JSON alone.
+- [ ] Qualify archive distribution, protected access lifetime and recoverability. Demonstrate a hosted agent finding the exact law and using its Skill to draft a Contract with a human. Storage is a candidate for distribution. MAP integration requires a supplied contract.
 
 ## M6 — The Community
 
@@ -183,8 +188,8 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 - Key rotation receipt format and private erasure design remain SPEC open items. Before any production release, explicitly resolve minimum operational key/revocation/recovery and privacy requirements or narrow the supported deployment; do not claim automatic rotation/erasure exists.
 - Protected external executors, financial compliance, metered PATT computation, neural architectural research, universal object domain schemas and arbitrary participant workflows are separate work. A RADIO receipt alone does not establish external execution or truth.
 
-## Suggested merge order
+## Remaining acceptance dependencies
 
-`00 -> 01 -> 02 -> 03 -> 04 -> 05 -> 06 -> 07 -> 08 -> 09 -> 09A -> 09B [1.0 FREEZE] -> 10 -> 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17 -> 18 -> 19 -> 20 -> 21 -> 22`
-
-The two new review gates (09A/09B) preserve every existing numbered PR and acceptance criterion. No native implementation overlaps Cycle I. After the approved freeze, native work can overlap where its dependencies allow. CI/CD ties the materialization to frozen conformance evidence. Measure native limits as components become testable in Cycle II, not only in PR-21. No estimated delivery dates without measured work. PR-03 through PR-09 are merged, including the approved living-institution architecture (GitHub #8). PR-09A and PR-09B are merged and architect-approved. M0–M2 reference gates are complete; release ref publication follows successful final approval-commit CI. Next: PR-10, native transaction schema and CAS, after the release ref is verified. All hosted acceptance gates remain open.
+1. Use an approved disposable Supabase project to qualify M3, starting with native OAuth and authority (PR-12/13). Use that boundary to verify stateless MCP through a real connector and qualify protected Broadcast before activation.
+2. Evaluate the history cursor under concurrency in parallel with project setup (PR-15). Then finish the direct participant client and prove catch-up across disconnects and listener replacement (PR-16).
+3. Complete package distribution and connector verification (PR-17–19). Carry the resulting evidence into the hosted golden path, capacity measurements and institutional restore (PR-20–22).
