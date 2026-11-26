@@ -51,7 +51,7 @@ export async function verifiedUser({ url, publishableKey, fetcher = fetch }, aut
   return u;
 }
 
-export const isUUID = value => typeof value === "string" &&
+export const isUUID = value => typeof value === "string" && value.length === 36 &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 export function auth(options) {

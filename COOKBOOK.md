@@ -163,7 +163,7 @@ Ask the Institution to recognize a free tuple and attempt the first RUN.
 
 ### Procedure
 
-1. Draft the tuple with the Process Type and any adopted Skill in view. Prefer the LogLine convention `who`, `did`, `this` and `with` where it fits the law.
+1. Draft the tuple with the Process Type and any adopted Skill in view. LogLine's `who`, `did`, `this` and `with` help the author name the entities, action, object and context. Use the Skill to identify relevant evidence and missing facts before submitting.
 2. Generate a fresh `submission` nonce, for example 16 cryptographically random bytes encoded as unpadded base64url. Authenticate and send the `tuple` and `submission` with `continue` omitted.
 3. Read the committed receipt. Use its ID as the instance ID when an entry RUN succeeds.
 
@@ -173,7 +173,7 @@ Ask the Institution to recognize a free tuple and attempt the first RUN.
 - A committed `ok` entry has `header.instance: null`. Its own receipt ID identifies the Process instance.
 - A scalar is a valid tuple shape. The applicable law determines whether it is recognized. The machine derives `by` from the verified participant.
 
-Entry request for `blue@1`. [receipt-v2-contract.json · entry-A](vectors/receipt-v2-contract.json)
+Entry request for `blue@1` using the LogLine fields its law needs. [receipt-v2-contract.json · entry-A](vectors/receipt-v2-contract.json)
 
 ~~~json
 {
@@ -480,7 +480,7 @@ Observe committed receipts and recover the authorized institutional history.
 ### Outcome
 
 - The contract includes late commits in a later completed window. The durable history boundary owns the checkpoint.
-- The reference exercises listener replacement and local catch-up. A hosted implementation supplies its own evidence for closed windows and lease enforcement.
+- The local reference exercises listener replacement. The PostgreSQL profile tests closed windows with real concurrent commits and the participant adapter tests overlap with live delivery.
 
 Closed-window acceptance scenario. [boundary-review.json · late-commit](vectors/boundary-review.json)
 
@@ -495,7 +495,7 @@ Closed-window acceptance scenario. [boundary-review.json · late-commit](vectors
 
 **JSON shapes** [ReceiptNotice](contracts/radio.schema.json) · [Tuning](contracts/radio.schema.json) · [HistoryRequest](contracts/radio.schema.json) · [HistoryPage](contracts/radio.schema.json)
 
-**Reference evidence** [continuity-conformance.test.mjs](test/continuity-conformance.test.mjs) · [boundary-contracts.test.mjs](test/boundary-contracts.test.mjs) · [postgres.integration.mjs](test/postgres.integration.mjs)
+**Reference evidence** [continuity-conformance.test.mjs](test/continuity-conformance.test.mjs) · [boundary-contracts.test.mjs](test/boundary-contracts.test.mjs) · [postgres-v2.integration.mjs](test/postgres-v2.integration.mjs) · [hosted-v2.test.mjs](test/hosted-v2.test.mjs)
 
 ## Package a law with DIPLOMACY Skills
 

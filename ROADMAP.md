@@ -1,20 +1,20 @@
 # RADIO — Kernel delivery roadmap
 
-Delivery status as of 2026-11-26, reconciled with `main` at `6187545`. SPEC §15 defines the protocol. This roadmap tracks implementation, dependencies and acceptance. PR-xx identifies roadmap work. GitHub #xx identifies an actual pull request. [Vision](VISION.md) · [Specification](SPEC.md)
+Delivery status as of 2026-11-26, covering the `4699644` baseline and the pre-deployment closure changes. SPEC §15 defines the protocol. This roadmap tracks implementation, dependencies and acceptance. PR-xx identifies roadmap work. GitHub #xx identifies an actual pull request. [Vision](VISION.md) · [Specification](SPEC.md)
 
 ## Current checkpoint
 
 | Milestone | Verified progress | Open gate |
 |---|---|---|
-| M0–M2 · Rigid core | RADIO Protocol 1.0 approved. The conformance corpus, executable reference and release review are in Git. The cookbook is generated from the protocol capability catalog. | Publish the release ref for the exact approved tree. |
+| M0–M2 · Rigid core | RADIO Protocol 1.0 approved and tagged at `e0e39a5`. The conformance corpus, executable reference and release review are in Git. The cookbook is generated from the protocol capability catalog. | Require both CI checks in the main ruleset. |
 | M3 · Substrate | PostgreSQL v2 transactions, CAS, Registry snapshots and ephemeral Edge Publish/Submit merged. Local native integration used PostgreSQL, PostgREST and Supabase Edge Runtime. | Qualify project configuration, native OAuth consent, resource binding and current authority. |
-| M4 · Radio | Committed receipt IDs flow through private Broadcast. Two independent listeners verified lookup, rollback, unauthorized access and lease expiry on a local native Realtime instance. | Qualify the protected channel on the project, implement durable history and finish the direct participant client. |
-| M5 · Interface | Stateless MCP discovery, submission and evidence merged. Local official-SDK tests verified the same RUN path and adopted DIPLOMACY guidance. | Exercise native OAuth through ChatGPT or Claude and qualify archive distribution. |
+| M4 · Radio | Private receipt signals, closed history windows and the thin v2 participant client. Local Realtime and PostgreSQL tests cover lease expiry, rollback and late commits. | Qualify the channel, cursor retention and reconnect behavior on staging. |
+| M5 · Interface | Stateless MCP discovery and submission, shared receipt and evidence reads, authorized DIPLOMACY adoption and exact ZIP retrieval. | Exercise native OAuth through ChatGPT or Claude and qualify archive delivery on staging. |
 | M6 · Community | Local reference continuity, portable replay and worker replacement exercised. | Run the hosted golden path, measure capacity and restore the whole Institution. |
 
 [GitHub #17](https://github.com/dan-powerhouse/Radio/pull/17) includes PR-10 and PR-11. [GitHub #18](https://github.com/dan-powerhouse/Radio/pull/18) includes the MCP implementation and DIPLOMACY catalog integration. [GitHub #19](https://github.com/dan-powerhouse/Radio/pull/19) includes committed Radio signals, executor equivalence and the generated cookbook.
 
-Both main CI jobs passed at this checkpoint. The active main ruleset requires pull requests and blocks deletion and force pushes. Its required-check list is empty. The two checks to require are **Kernel and vectors** and **PostgreSQL migrations and transactions**. The approved 1.0 release ref also remains unpublished. The staging workflow has no recorded runs. [Main CI run](https://github.com/dan-powerhouse/Radio/actions/runs/45822718547) · [Active main rules](https://github.com/dan-powerhouse/Radio/rules) · [Staging workflow](https://github.com/dan-powerhouse/Radio/actions/workflows/staging.yml)
+Both main CI jobs passed at this checkpoint. The active main ruleset requires pull requests and blocks deletion and force pushes. Its required-check list is empty. A repository administrator must select **Kernel and vectors** and **PostgreSQL migrations and transactions**. GitHub rejected editing the ruleset through the integration. The staging workflow has no recorded runs. [Protocol tag](https://github.com/dan-powerhouse/Radio/tree/radio-protocol-1.0) · [Main CI](https://github.com/dan-powerhouse/Radio/actions/runs/45826318857) · [Active main rules](https://github.com/dan-powerhouse/Radio/rules/28157446)
 
 ## Delivery boundary
 
@@ -109,7 +109,8 @@ Exit: multiple process instances progress independently, with receipts as the ob
 
 - [x] GitHub #16 merged and architect-approved 2026-11-26 (SPEC §15.19). Review the complete SPEC for consistent normative terminology, version dispatch, bounded behavior, reason codes, evidence and explicit trust assumptions. Preserve the historical versions; the protocol release number is separate from object format versions. Curate a versioned conformance corpus with independently specified expectations, cryptographic/encoding fixtures, negative/adversarial cases, targeted mutations and complete trajectories. Retain historical vectors without modification.
 - [x] Reproducible clean build, Node, Bun, Chromium and mutation checks, portable replay, reference concurrency/recovery and PostgreSQL regressions passed. The review head, CI, vector hashes and lockfile are recorded in SPEC §15.19.
-- [ ] Publish the protocol release tag for the exact approved tree and verify required-check enforcement. The approved protocol and the hosted release have separate acceptance gates.
+- [x] Published `radio-protocol-1.0` at the exact approval commit `e0e39a5af02b7f60e852dc23bffae3b167df6250` after verifying the frozen corpus, fixture digests, lockfile and post-approval CI. [Freeze CI](https://github.com/dan-powerhouse/Radio/actions/runs/45752202387)
+- [ ] Require and verify both named checks on main.
 
 ## M3 — The Substrate
 
@@ -125,7 +126,8 @@ Exit: the approved isolated Supabase materialization implements the frozen 1.0 c
 
 ### PR-12 — Native OAuth flow and consent
 - [x] The MCP adapter includes protected-resource metadata, JWKS validation and a configurable native access-token hook for the signed audience. Local tests use a signed issuer fixture.
-- [ ] Configure native Auth and the static login/consent surface on an approved project. Exercise consent and denial, authorization code + PKCE, callback binding, token expiry and refresh with a real client. Demonstrate that a grant for another resource cannot obtain a usable RADIO credential. Keep issuer and machine signing keys distinct.
+- [x] Packaged the static login/consent surface and prepared the native Auth qualification harness.
+- [ ] Configure native Auth and consent on the approved project. Exercise consent and denial, authorization code + PKCE, callback binding, token expiry and refresh. Demonstrate that a grant for another resource cannot obtain a usable RADIO credential.
 
 ### PR-13 — Delegation and access boundary
 - [x] PostgreSQL enforces principal authority, direct or OAuth client mandates and resource permissions, with a private decision audit and authority revalidation at commit. The local adapter tests use verified fixture claims and include wrong resource, revoked authority and denied evidence.
@@ -140,13 +142,13 @@ Exit: a native Realtime WebSocket listener receives committed receipt IDs, verif
 - [ ] Verify native direct-session leases, deployed receipt lookup and private channel policy on the approved project before activation. [Committed radio signals](supabase/README.md#committed-radio-signals)
 
 ### PR-15 — Durable history and reconnect contract
-- [x] The local HTTP/SSE reference demonstrates catch-up and listener replacement. The PostgreSQL late-commit probe demonstrates the sequence allocation hazard.
-- [ ] Choose an approved physical cursor and implement authorized closed windows, stable pagination and overlap with live signals. Sequence allocation alone is insufficient to close a window.
+- [x] PostgreSQL closes windows by transaction snapshot visibility. Bounded pagination, SQL authority, scoped opaque cursors, expiry and late-commit recovery are exercised against real PostgreSQL. Edge history verifies signed receipts and uses the shared tuning predicates.
+- [ ] Qualify cursor retention and page cost on staging under concurrent receipt traffic.
 - Acceptance: forced out-of-order transaction commits, pagination with concurrent writes, disconnect/reconnect, duplicate delivery and listener replacement. Every accessible committed receipt recoverable under declared cursor contract; dedupe by receipt ID. No listener registry or per-agent workflow in machine.
 
 ### PR-16 — Direct participant client
-- [x] The v2 receipt lookup and reference listener example resolve, verify and tune the committed ID independently of a local server.
-- [ ] Deliver the maintained v2 participant client or thin adapter with PR-15 catch-up. Keep token ownership and listener checkpoints with the participant.
+- [x] The v2 participant client resolves and verifies receipt IDs, submits explicit continuations and combines a participant-owned checkpoint with live tuning and verified-ID deduplication. Reconnect, replacement and refresh behavior have regression coverage.
+- [ ] Exercise the participant client against hosted Auth and Realtime, including replacement after a disconnect.
 - Acceptance: independent clients with different local state can recover and submit via ordinary API; token refresh/reconnect tested; no hidden session; verify that API and machine share the same RUN boundary.
 
 ## M5 — The Interface
@@ -162,8 +164,8 @@ Exit: a real OAuth-authorized MCP client discovers types and submits free JSON t
 - [ ] Verify the complete connector submission and continuation path, including citations, denial and independent receipt verification with native OAuth credentials. Hosted bundle export remains to be demonstrated with complete private evidence authorization.
 
 ### PR-19 — DIPLOMACY distribution / Agent Skills interoperability
-- [x] The frozen archive format has a real ZIP validator. The CLI emits operator adoption SQL, and MCP serves the adopted manifest and verifies the Skill text against it. The evaluator uses the law JSON alone.
-- [ ] Qualify archive distribution, protected access lifetime and recoverability. Demonstrate a hosted agent finding the exact law and using its Skill to draft a Contract with a human. Storage is a candidate for distribution. MAP integration requires a supplied contract.
+- [x] The ZIP validator emits SQL for authorized adoption. Canonical manifests and exact archived bytes are immutable in PostgreSQL. MCP serves verified Skill text and the direct API retrieves the archive under current authority.
+- [ ] Verify archive delivery at the profile limit on staging and restore it with the Institution. Demonstrate a hosted agent using its Skill to draft a Contract with a human.
 
 ## M6 — The Community
 
@@ -190,6 +192,6 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 
 ## Remaining acceptance dependencies
 
-1. Use an approved disposable Supabase project to qualify M3, starting with native OAuth and authority (PR-12/13). Use that boundary to verify stateless MCP through a real connector and qualify protected Broadcast before activation.
-2. Evaluate the history cursor under concurrency in parallel with project setup (PR-15). Then finish the direct participant client and prove catch-up across disconnects and listener replacement (PR-16).
-3. Complete package distribution and connector verification (PR-17–19). Carry the resulting evidence into the hosted golden path, capacity measurements and institutional restore (PR-20–22).
+1. Require both CI checks and review the staging candidate. Use an approved disposable Supabase project to qualify native OAuth and authority (PR-12/13), then verify the MCP connector and the protected Broadcast lease before exposure.
+2. Qualify history, participant reconnect and archive download on the deployed profile (PR-15/16/19).
+3. Carry the resulting evidence into the hosted golden path, capacity measurements and institutional restore (PR-20–22).

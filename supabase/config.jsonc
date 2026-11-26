@@ -3,8 +3,23 @@
   "project_id": "radio",
   "api": { "auto_expose_new_tables": false },
   "db": { "major_version": 17 },
+  "auth": {
+    "oauth_server": {
+      "enabled": false,
+      "authorization_url_path": "/oauth/consent",
+      "allow_dynamic_registration": false
+    },
+    "hook": {
+      "custom_access_token": {
+        "enabled": false,
+        "uri": "pg-functions://postgres/public/radio_v2_oauth_audience"
+      }
+    }
+  },
   "functions": {
     "mcp": { "verify_jwt": false },
-    "receipt": { "verify_jwt": false }
+    "receipt": { "verify_jwt": false },
+    "history": { "verify_jwt": false },
+    "diplomacy": { "verify_jwt": false }
   }
 }

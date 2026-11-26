@@ -2,7 +2,8 @@ import * as L from "./core/index.js";
 import { bodyText, BodyLimit } from "./body.mjs";
 import { hostedEnvironment, isUUID, verifiedUser } from "./http.mjs";
 import { HostedError } from "./ledger.mjs";
-import { databaseV2, publishV2, readReceiptV2, submitV2 } from "./transactions-v2.mjs";
+import { databaseV2, publishV2, readPackageV2, readReceiptV2, retireV2, submitV2 } from "./transactions-v2.mjs";
+import { historyV2, maxHistoryRequestBytes } from "./history-v2.mjs";
 
 const requestTimeoutMs = 60_000;
 const headers = {
@@ -28,43 +29,65 @@ export function directIdentity(options) {
     if (claims?.sub !== user.id || claims.iss !== issuer || claims.aud !== "authenticated" ||
         claims.role !== "authenticated" || !Number.isInteger(claims.exp) || claims.exp <= Date.now()/1000)
       throw new HostedError(401,"unauthenticated","invalid verified claims");
-    // OAuth mandates need the provider/resource binding tests in PR-12/13.
-    if (Object.hasOwn(claims,"client_id") || claims.is_anonymous === true || user.is_anonymous === true)
+    // Delegated calls are bound to the MCP resource by its own adapter.
+    if (Object.hasOwn(claims,"client_id") || claims.is_anonymous !== false || user.is_anonymous === true)
       throw new HostedError(403,"forbidden","direct sessions only");
     if (!isUUID(claims.session_id)) throw new HostedError(401,"unauthenticated","invalid direct session");
-    return {owner:user.id,by:await L.pseudonym(options.pseudonymSecret,user.id)};
+    const owner = user.id.toLowerCase();
+    return {owner,by:await L.pseudonym(options.pseudonymSecret,owner)};
   };
 }
 
 export function createV2Handler({action,database,key,keys,identify}) {
-  const method = action === "receipt" ? "GET" : "POST";
+  const methods = ["receipt","diplomacy"].includes(action) ? ["GET"] : action === "publish" ? ["POST","DELETE"] : ["POST"];
   return async req => {
     if (req.method === "OPTIONS") return new Response(null,{status:204,headers:{
-      ...headers,"access-control-allow-methods":method,
+      ...headers,"access-control-allow-methods":methods.join(", "),
       "access-control-allow-headers":"authorization, apikey, content-type, logline-version"
     }});
     if (req.headers.get("logline-version") !== "2") return v2Response(400,{error:"unsupported_version"});
-    if (req.method !== method) return v2Response(405,{error:"invalid_request"});
+    if (!methods.includes(req.method)) return v2Response(405,{error:"invalid_request"});
     const signal = AbortSignal.any([req.signal,AbortSignal.timeout(requestTimeoutMs)]);
     try {
       const actor = await identify(req,signal);
       const db = database(actor,signal);
-      if (action === "receipt") {
-        const params = new URL(req.url).searchParams;
+      const params = new URL(req.url).searchParams;
+      if (action === "diplomacy") {
         if (params.size !== 1) return v2Response(400,{error:"invalid_request"});
-        return v2Response(200,await readReceiptV2(db,keys,params.get("id")));
+        const {archive,hash} = await readPackageV2(db,params.get("id"));
+        return new Response(archive,{headers:{...headers,"content-type":"application/zip",
+          "content-disposition":"attachment; filename=DIPLOMACY.zip","radio-archive":hash,
+          "access-control-expose-headers":"LogLine-Version, Radio-Archive"}});
       }
-      const limit = action === "publish" ? L.MAX_LAW_BYTES : L.MAX_SUBMISSION_BYTES;
+      if (action === "receipt") {
+        const evidence = params.get("view") === "evidence";
+        if (!params.has("id") || params.size !== (evidence ? 2 : 1))
+          return v2Response(400,{error:"invalid_request"});
+        return v2Response(200,await readReceiptV2(db,keys,params.get("id"),evidence ? "disclose" : "public"));
+      }
+      if (req.method === "DELETE") {
+        if (params.size !== 1) return v2Response(400,{error:"invalid_request"});
+        try { await bodyText(req,0,{signal}); }
+        catch (error) {
+          if (!(error instanceof BodyLimit)) throw error;
+          return v2Response(400,{error:"invalid_request"});
+        }
+        return v2Response(200,await retireV2(db,params.get("id")));
+      }
+      if (params.size !== 0) return v2Response(400,{error:"invalid_request"});
+      const limit = action === "history" ? maxHistoryRequestBytes :
+        action === "publish" ? L.MAX_LAW_BYTES : L.MAX_SUBMISSION_BYTES;
       let text, input;
       try {
         text = await bodyText(req,limit,{preserveBOM:true,signal});
-        input = action === "publish" ? L.parseProcessType(text) : L.parseSubmissionV2(text);
+        if (action !== "history") input = action === "publish" ? L.parseProcessType(text) : L.parseSubmissionV2(text);
       } catch (error) {
         if (signal.aborted) return v2Response(503,{error:"unavailable"});
         if (error instanceof BodyLimit || error?.code === "submission_limit")
           return v2Response(413,{error:"resource_limit"});
         return v2Response(400,{error:"invalid_request"});
       }
+      if (action === "history") return v2Response(200,await historyV2(db,keys,actor,text));
       if (action === "publish") {
         const result = await publishV2(db,input);
         return v2Response(result.status,result.body);
@@ -87,7 +110,7 @@ export function createV2Handler({action,database,key,keys,identify}) {
 }
 
 export async function fromEnvironmentV2(action,env) {
-  if (env("RADIO_ENABLE_V2") !== "true") throw Error("RADIO v2 is disabled");
+  if (env("RADIO_ENABLE_V2") !== "true") return () => v2Response(503,{error:"unavailable"});
   const settings = await hostedEnvironment(env);
   const {key} = settings;
   return createV2Handler({

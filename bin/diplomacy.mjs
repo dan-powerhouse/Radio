@@ -74,7 +74,7 @@ export async function validateDiplomacy(input) {
   return {id,law_hash,skills};
 }
 
-export async function diplomacyAdoptionSql(input) {
+export async function diplomacyAdoptionSql(input, principal) {
   const {archive,manifest,id,law_hash,skills} = await inspectDiplomacy(input);
   const index = Object.fromEntries(skills.map(({name,description}) => [name,{
     // A JSON string carries every valid Skill description, including escaped NUL.
@@ -82,6 +82,14 @@ export async function diplomacyAdoptionSql(input) {
     bytes: archive.get("skills/" + name + "/SKILL.md").toString("base64")
   }]));
   const sqlText = value => "convert_from(decode('" + Buffer.from(value).toString("hex") + "','hex'),'UTF8')";
+  if (principal !== undefined) {
+    if (!/^[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}(?![\s\S])/.test(principal))
+      return invalid("expected an institutional principal UUID");
+    const digest = "sha256:" + createHash("sha256").update(input).digest("hex");
+    return "select public.radio_v2_adopt_package('" + principal + "',null,'" + law_hash + "','" + id + "',\n  " +
+      sqlText(canonicalize(manifest)) + ",\n  " + sqlText(JSON.stringify(index)) + "::jsonb,\n  '" + digest +
+      "',decode('" + Buffer.from(input).toString("base64") + "','base64'));";
+  }
   return "insert into radio_v2.diplomacy (law,id,manifest,skills) values (\n  '" + law_hash + "','" + id + "',\n  " +
     sqlText(canonicalize(manifest)) + ",\n  " + sqlText(JSON.stringify(index)) + "::jsonb\n" +
     ") on conflict (law) do update set id=excluded.id, manifest=excluded.manifest, skills=excluded.skills;";
@@ -90,7 +98,9 @@ export async function diplomacyAdoptionSql(input) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     const adoption = process.argv[3] === "--mcp-sql";
-    if (process.argv.length !== (adoption ? 4 : 3)) throw new Error("usage: logline-diplomacy PACKAGE.zip [--mcp-sql]");
+    const distribution = process.argv[3] === "--adopt-sql";
+    if (process.argv.length !== (distribution ? 5 : adoption ? 4 : 3))
+      throw new Error("usage: logline-diplomacy PACKAGE.zip [--adopt-sql PRINCIPAL | --mcp-sql]");
     const file = await open(process.argv[2], "r");
     let result;
     try {
@@ -105,7 +115,8 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
       }
       if (size !== info.size) invalid("archive changed while reading");
       const input = buffer.subarray(0, size);
-      result = adoption ? await diplomacyAdoptionSql(input) : JSON.stringify(await validateDiplomacy(input), null, 2);
+      result = distribution ? await diplomacyAdoptionSql(input,process.argv[4]) :
+        adoption ? await diplomacyAdoptionSql(input) : JSON.stringify(await validateDiplomacy(input), null, 2);
     } finally { await file.close(); }
     console.log(result);
   } catch (e) {

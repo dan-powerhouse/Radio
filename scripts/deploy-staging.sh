@@ -37,18 +37,18 @@ if [[ "$mode" == plan ]]; then
 fi
 # Apply requires the explicit staging gate and revision/project confirmation. Review the plan before dispatching apply. Never force migration history or prune functions.
 cli db push "$target" --skip-vault --yes
-cli functions deploy submit publish "$target" --use-api --yes
+cli functions deploy submit publish receipt history mcp diplomacy "$target" --use-api --yes
 cli migration list "$target"
-# Minimal transport smoke, NOT full hosted OAuth or receipt conformance.
+# The packaged functions can be staged with their feature flags closed.
 # No authenticated writes; failure after deployment is reported, not rolled back.
 base="https://$RADIO_STAGING_PROJECT_REF.supabase.co"
-curl --fail --silent --show-error --max-time 30 \
-  -H "apikey: $RADIO_STAGING_PUBLISHABLE_KEY" \
-  "$base/rest/v1/receipts?select=id&limit=0" >/dev/null
-for function in submit publish; do
-  status="$(curl --silent --show-error --max-time 30 -o /dev/null -w '%{http_code}' \
-    -X POST -H 'Content-Type: application/json' -H "apikey: $RADIO_STAGING_PUBLISHABLE_KEY" \
-    --data '{}' "$base/functions/v1/$function")"
-  [[ "$status" == 401 ]] || { echo "Unauthenticated $function expected 401, got $status" >&2; exit 1; }
+for function in submit publish receipt history mcp diplomacy; do
+  request=()
+  if [[ "$function" != receipt && "$function" != diplomacy ]]; then request=(--data '{}'); fi
+  status="$(curl --silent --show-error --max-time 30 -o smoke.json -w '%{http_code}' \
+    -H 'Content-Type: application/json' -H 'LogLine-Version: 2' -H "apikey: $RADIO_STAGING_PUBLISHABLE_KEY" \
+    "${request[@]}" "$base/functions/v1/$function")"
+  if [[ "$status" == 503 ]] && node -e 'process.exit(JSON.parse(require("fs").readFileSync("smoke.json")).error === "unavailable" ? 0 : 1)'; then continue; fi
+  [[ "$status" == 401 ]] || { echo "Unauthenticated $function expected 401 or disabled response, got $status" >&2; exit 1; }
 done
 echo "Staging transport smoke passed for $GITHUB_SHA; hosted integration gates remain separate."

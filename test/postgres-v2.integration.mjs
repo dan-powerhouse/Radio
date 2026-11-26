@@ -28,7 +28,7 @@ const lawId = "postgres-v2." + randomUUID();
 const run = (id,after,extra={}) => ({id,after,requires:{},steps:[],if_ok:"ok",if_not:"not",if_doubt:"doubt",...extra});
 const law = {
   logline:"process-type@1",id:lawId,issuer:"Integration",
-  recognize:{and:[{has:"kind"},{"==":[{var:"kind"},"native"]}]},
+  recognize:{and:[{has:"kind"},{"==":[{var:"kind"},lawId]}]},
   runs:[run("open",[],{broadcast:["tuple.value"]}),
     run("review",["open"]),run("consume",["open"],{cites:{source:{frequency:lawId,once:true}}})]
 };
@@ -106,7 +106,7 @@ const save = async r => {
   return c.payload.id;
 };
 const continueAt = (instance,run) => ({instance,run,parents:{open:instance}});
-const entry = value => request({kind:"native",value});
+const entry = value => request({kind:lawId,value});
 
 await admin(`insert into radio_v2.broadcast_settings(issuer) values (${q(issuer)}) on conflict (singleton) do update set issuer=excluded.issuer;`);
 const initial=await rpc("registry",[...who(),"NULL","false"]);
@@ -328,6 +328,66 @@ assert.equal((await race(newRoot,stale)).kind,"retry");
 const found = await evaluate(waiting,waitingAdmission);
 assert.equal(found.payload.status,"ok");
 assert.equal((await commit(found)).kind,"committed");
+
+const historyScope = await L.hashOf({tuning:{}});
+const history = (cursor,limit=1000,identity=who(),scope=historyScope,role) =>
+  rpc("history",[...identity,q(scope),q(cursor),String(limit)],role);
+async function closedWindow(after,limit) {
+  const ids=[];
+  for (let page=0;page<100;page++) {
+    const result=await history(after,limit);
+    ids.push(...result.items.map(item=>L.parseStrict(item,65).id));
+    if (result.checkpoint) return {ids,checkpoint:result.checkpoint};
+    assert.ok(result.next);
+    after=result.next;
+  }
+  assert.fail("history window did not close");
+}
+const baseline=await closedWindow(null,1000);
+const late=await candidate(entry("history late"));
+const later=await candidate(entry("history later"));
+const extra=await candidate(entry("after window capture"));
+const rollback=await candidate(entry("rolled back before next window"));
+const lateSession=spawn("psql",["-X","-qAt","-v","ON_ERROR_STOP=1",url.href],{stdio:["pipe","pipe","pipe"]});
+const lateLines=createInterface({input:lateSession.stdout});
+const lateDone=firstEvent(lateSession,"close");
+try {
+  const ready=firstEvent(lateLines,"line",{signal:AbortSignal.timeout(5000)});
+  lateSession.stdin.write(`begin; set role service_role; ${rpcSQL("commit",[...who(),j(late.payload)])}\n`);
+  assert.equal(JSON.parse((await ready)[0]).kind,"committed");
+  assert.equal((await commit(later)).kind,"committed");
+  const within=await closedWindow(baseline.checkpoint,1);
+  assert.deepEqual(within.ids,[later.payload.id]);
+  await admin(`begin; set role service_role; ${rpcSQL("commit",[...who(),j(rollback.payload)])} rollback;`);
+  lateSession.stdin.end("commit;\n");
+  assert.equal((await lateDone)[0],0);
+  assert.equal(await scalar(`select to_jsonb((select written from radio_v2.receipts where id=${q(late.payload.id)})
+    < (select written from radio_v2.receipts where id=${q(later.payload.id)}));`),true);
+  const second=await save(entry("page two"));
+  const partial=await history(within.checkpoint,1);
+  assert.deepEqual(partial.items.map(x=>L.parseStrict(x).id),[late.payload.id]);
+  assert.ok(partial.next);
+  assert.equal(partial.checkpoint,null);
+  assert.equal((await commit(extra)).kind,"committed");
+  const final=await closedWindow(partial.next,1);
+  assert.deepEqual(final.ids,[second]);
+  const next=await closedWindow(final.checkpoint,1);
+  assert.deepEqual(next.ids,[extra.payload.id]);
+  assert.deepEqual((await closedWindow(next.checkpoint,1)).ids,[]);
+  assert.deepEqual(await history(next.checkpoint,1,who(outsider)),{kind:"cursor_invalid"});
+  assert.deepEqual(await history(next.checkpoint,1,who(owner,reader)),{kind:"cursor_invalid"});
+  assert.deepEqual(await history(next.checkpoint,1,who(),await L.hashOf({tuning:{status:"ok"}})),{kind:"cursor_invalid"});
+  await admin(`update radio_v2.history_cursors set expires=now()-interval '1 second' where token=${q(next.checkpoint)};`);
+  assert.deepEqual(await history(next.checkpoint),{kind:"cursor_expired"});
+  await assert.rejects(history(null,1,who(),historyScope,"authenticated"),/permission denied/);
+  await admin(`update radio_v2.authority set mandates=mandates where principal=${q(owner)};`);
+  assert.deepEqual(await history(final.checkpoint),{kind:"cursor_invalid"});
+} finally {
+  lateSession.stdin.destroy();
+  lateLines.close();
+  await lateDone;
+}
+console.log("PostgreSQL v2 history: closed snapshots, late commit, rollback, stable pages, cursor scope, expiry and grants passed.");
 
 // Revocation after evaluation precedes any candidate or replay disclosure.
 const revoked=await candidate(entry("revoked"),who(owner,alternate));

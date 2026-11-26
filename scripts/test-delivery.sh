@@ -12,6 +12,8 @@ tar -xzf release/radio-supabase.tar.gz -C "$work"
 [[ "$(cat "$work/COMMIT")" == "$sha" ]]
 (cd "$work" && sha256sum -c SHA256SUMS >/dev/null)
 test -f "$work/supabase/functions/_shared/core/index.js"
+test -f "$work/supabase/consent/index.html"
+test -f "$work/supabase/functions/history/index.ts"
 diff -r --exclude='*.d.ts' --exclude=browser.js dist "$work/supabase/functions/_shared/core"
 test ! -e "$work/supabase/.temp"
 test ! -e "$work/vectors/test-key.json"
