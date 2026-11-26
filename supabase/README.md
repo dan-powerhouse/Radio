@@ -43,6 +43,23 @@ The adapter bounds request and RPC response bytes. It uses one full Registry rea
 
 The integration harness exercises the Edge entrypoints with real Supabase Edge Runtime, PostgREST and PostgreSQL. It verifies committed bytes against the frozen reference, forces a native once conflict, truncates a committed response, replaces the worker and tests revocation and resource failures. Its Auth endpoint is a fixture. A complete hosted Auth and gateway test remains a separate acceptance gate.
 
+### Execution and scaling
+
+Start with Supabase Edge Functions. They run the staged evaluator and the shared v2 submission adapter. Qualification of an optional dedicated worker pool belongs to [PR-21](../ROADMAP.md#pr-21--kernel-limits-and-contention). It follows the [RUN execution and replacement contract](../SPEC.md#run-execution-and-replacement).
+
+| Deployment choice | Operational use |
+| --- | --- |
+| Edge Functions | Default for demand-driven capacity. Measure CPU, memory and latency against the declared workload and native limits. |
+| Dedicated worker pool | Candidate for sustained load with demonstrated cost savings, or for a measured runtime capacity limit. Size and replace workers independently of Process instances. |
+
+Measure the same workload in both profiles. Break out admission and Registry reads, scanner/RUN and signing, evidence I/O and commit. Include cold and warm requests, contention, retries, tail latency and total cost per committed submission, including idle capacity and operations. Check PostgreSQL saturation separately before moving compute. [Supabase Edge Function limits](https://supabase.com/docs/guides/functions/limits)
+
+Keep the public Submission and MCP resource stable. Route each request to one trusted executor running the same evaluator artifact and submission adapter. Both profiles use the Institution's Supabase Auth configuration, pseudonym binding and machine signing identity, and the same authoritative PostgreSQL admission, evidence and commit RPCs. Reserve any bounded worker cache for verified immutable Process Types and Registry snapshots keyed by hash. Obtain the selected snapshot from admission and resolve current permissions, evidence availability and competing claims through the authoritative boundary.
+
+Qualify a candidate pool in a disposable environment before serving traffic. Run the frozen corpus on the candidate runtime and compare the canonical decision parts and signed receipts with the Edge/reference path for fixed inputs and observations. Against one disposable PostgreSQL ledger, compose a trajectory across both executors and recover an exact receipt after a lost reply on the other executor. Force duplicate submissions and competing RUN or once claims across the two paths. Revoke a grant between evaluation and commit and verify rejection. Repeat from cold workers and throughout a switch back to Edge. Once qualified, shift traffic incrementally and roll back by routing new requests back to Edge. Use the same ledger and trust material throughout.
+
+The local Deno and Supabase Edge Runtime harnesses provide baseline evidence for the shared adapter. The dedicated pool and its traffic routing are a deployment design awaiting implementation and qualification if selected.
+
 ### Stateless MCP
 
 The `mcp` function uses `@modelcontextprotocol/server@2.4.0` for Streamable HTTP and MCP 2026-07-28. The SDK's stateless 2025 compatibility path uses the same tools and authority checks. Both paths work across worker replacements. Fixed tool and machine metadata can be cached for 60 seconds. Law catalog, Skill and receipt reads check current authority at request time.

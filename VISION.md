@@ -28,9 +28,9 @@ Continuity is not just persistence or memory. A computation may end without eras
 
 ## The Institution as a Living Server
 
-An Institution is a persistent institutional presence, not a continuously running application. In the Third Layer architecture, identity is the only standing application server: the persistent reference for authentication and participation. Authority remains a separate, enforceable condition; an authenticated identity is not a mandate. The identity authority is not the machine's receipt-signing key.
+An Institution is a persistent institutional presence. In the Third Layer architecture, identity provides the standing application reference for authentication and participation. Institutional authority remains a separate condition enforced for each operation. The identity service authenticates participants, and the machine signs receipts with its own key.
 
-The computational mechanisms of an Institution are ephemeral. Its laws, commitments and constituted trajectories are durable. Between movements the Institution may remain computationally dormant without losing its continuity. A new Contract invokes computation under the applicable law, with explicit causal evidence; it does not resume a suspended application program. No instance requires a resident worker, open conversational session or central workflow orchestrator.
+The computation for each movement is request-scoped. The Institution's laws, commitments and constituted trajectories are durable. Between movements the Institution may remain computationally dormant without losing its continuity. A new Contract invokes computation under the applicable law, with explicit causal evidence. A deployment may reuse a worker across requests. A participant can continue the same trajectory through a replacement worker using its receipts.
 
 This borrows the economic insight of stateless and durable workflow architectures while preserving something different: institutional continuity rather than continuity of a particular execution. Persistence and communication still require infrastructure and resources. The single-server principle refers to the logical application architecture, not a claim that a deployment contains one physical machine or has no managed data services or idle costs.
 
@@ -38,7 +38,7 @@ This borrows the economic insight of stateless and durable workflow architecture
 
 Keep the machine small enough to understand and independently reproduce. Use one deterministic evaluator, content-addressed immutable laws and objects, signed receipts and authoritative transactional uniqueness. Keep translation probabilistic and external. Do not duplicate semantic rules in SQL or add a universal workflow controller. Refusals explain what was missing. A machine's key holder remains a trusted authority for issuance and the ledger remains an authority for shared uniqueness; independent replay does not establish external truth or ledger completeness.
 
-RADIO's semantic core stays stable across implementations. The Supabase materialization uses Auth, ephemeral functions, PostgreSQL and Realtime. The local HTTP/SSE implementation provides an executable reference. A small community and a larger deployment can apply the same laws, with isolation and capacity verified for each deployment.
+RADIO's semantic core stays stable across implementations. The initial Supabase materialization uses Auth, Edge Functions, PostgreSQL and Realtime. The local HTTP/SSE implementation provides an executable reference. A small community and a larger deployment can apply the same laws, with isolation and capacity verified for each deployment. [Execution on Supabase](supabase/README.md#execution-and-scaling)
 
 A Diplomacy pairs an immutable Process Type with one or more Agent Skills. The Skills show how to prepare a Contract for that law. The machine applies the published Process Type. [Founding DIPLOMACY article](DIPLOMACY.md) · [Approved package format](SPEC.md#15185-diplomacy-minimal-package)
 

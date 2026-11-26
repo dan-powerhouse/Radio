@@ -118,7 +118,7 @@ An alternative law in `examples/alumni.external.logline-101@1.json` has no autom
 
 ## Primary architecture: Supabase-native (hosted preview)
 
-Identity is the sole standing application server in the logical target architecture. The Institution remains alive through durable laws and trajectories even when computation is dormant. Managed persistence and communication services remain necessary. No LogLine HTTP daemon, identity broker, resident workflow or application session is required. Supabase Auth is the native OAuth 2.1 authorization server; Postgres holds the ledger; Edge Functions evaluate and sign individual submissions. The OAuth consent surface must exist but can be a static browser application. See [the hosted architecture](supabase/README.md) for setup boundaries and outstanding verification.
+Supabase Auth provides standing OAuth 2.1 identity service. PostgreSQL holds the durable laws and trajectories, and Realtime supplies communication. Edge Functions evaluate and sign individual submissions in the initial deployment. Each request can run on a replacement executor using the same RUN contract. The OAuth consent surface can be a static browser application. [Hosted architecture](supabase/README.md) · [Execution and scaling](supabase/README.md#execution-and-scaling)
 
 ```js
 import { hostedClient } from "@logline/receipt";
