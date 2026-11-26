@@ -6,6 +6,8 @@ import { runInNewContext } from "node:vm";
 const script = readFileSync(new URL("../supabase/consent/consent.js",import.meta.url),"utf8");
 
 test("consent leaves callback validation in the page for both SDK decisions", async () => {
+  const html=readFileSync(new URL("../supabase/consent/index.html",import.meta.url),"utf8");
+  assert.match(html,/integrity="sha384-[A-Za-z0-9+/]{64}"/);
   for (const decision of ["approve","deny"]) {
     const paths = new Map([
       ["#status",{}],["#login",{reset(){},querySelector:()=>({})}],["#consent",{}],
