@@ -2,7 +2,7 @@ import { LoglineError } from "./errors.js";
 
 /**
  * I-JSON (RFC 7493) parser for submitted bytes. Rejects what JSON.parse would
- * silently accept and change: duplicate keys (last one wins), lone surrogates,
+ * silently accept and change: duplicate keys (last one wins), lone surrogates, Unicode noncharacters,
  * and integers outside ±(2^53−1), which would be rounded before hashing.
  */
 export function parseStrict(text: string, maxDepth = 64): unknown {
@@ -62,8 +62,13 @@ export function parseStrict(text: string, maxDepth = 64): unknown {
     catch { return err("invalid JSON string escape"); }
     for (let j = 0; j < s.length; j++) {
       const h = s.charCodeAt(j);
-      if (h >= 0xd800 && h <= 0xdbff) { const l = s.charCodeAt(j + 1); if (!(l >= 0xdc00 && l <= 0xdfff)) err("lone surrogate"); j++; }
-      else if (h >= 0xdc00 && h <= 0xdfff) err("lone surrogate");
+      if (h >= 0xd800 && h <= 0xdbff) {
+        const l = s.charCodeAt(j + 1);
+        if (!(l >= 0xdc00 && l <= 0xdfff)) err("lone surrogate");
+        if ((l & 0x3ff) >= 0x3fe && ((h - 0xd800) & 0x3f) === 0x3f) err("Unicode noncharacter");
+        j++;
+      } else if (h >= 0xdc00 && h <= 0xdfff) err("lone surrogate");
+      else if ((h >= 0xfdd0 && h <= 0xfdef) || h >= 0xfffe) err("Unicode noncharacter");
     }
     return s;
   };

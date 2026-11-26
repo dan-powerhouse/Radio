@@ -1,5 +1,5 @@
 // PR-09A review-only structural contract and independent content-address checks.
-// No provider authorization, cursor protocol or ZIP validator is implemented here.
+// Actual archive validation and native history probes have separate tests.
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, mkdtempSync, rmSync } from "node:fs";
@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { createHash } from "node:crypto";
 import Ajv2020 from "ajv/dist/2020.js";
 import * as L from "../dist/index.js";
+import * as limits from "../dist/profile.js";
 import { openProcessMachine } from "../server/store.mjs";
 import { createServer } from "../server/http.mjs";
 const read = name => JSON.parse(readFileSync(new URL("../" + name, import.meta.url), "utf8"));
@@ -93,6 +94,19 @@ const cases=[
  ["package file digest strict","DiplomacyManifest",{logline:"diplomacy@1",files:{"process-type.json":h.process_hash,"skills/a/SKILL.md":"fake"}},false]
 ];
 for(const [label,name,value,expected] of cases)test("boundary review: "+label,()=>check(name,value,expected));
+
+test("candidate machine-readable limits match the v2 reference runtime",()=>{
+ check("ReferenceLimitsV2",{
+   active_laws: limits.MAX_SCAN_LAWS,
+   active_law_bytes: limits.MAX_SCAN_LAW_BYTES,
+   eval_work: limits.MAX_EVAL_WORK,
+   intermediate_value_bytes: limits.MAX_EVAL_VALUE_BYTES,
+   result_part_bytes: limits.MAX_RESULT_PART_BYTES,
+   public_receipt_bytes: limits.MAX_PUBLIC_RECEIPT_BYTES,
+   evidence_bytes: limits.MAX_EVIDENCE_BYTES,
+   evidence_pair_bytes: limits.MAX_EVIDENCE_PAIR_BYTES
+ });
+});
 
 test("boundary review: original signed fixture fits existing decision assembly",()=>{
  check("DecisionParts",{header:receipt.header,detail,context});

@@ -110,3 +110,60 @@ await assert.rejects(sql(`select public.logline_publish(${q(law.id)},${q(amended
 assert.equal(await scalar(`select count(*) from public.objects where hash=${q(amendedHash)};`),0);
 assert.equal(await sql(`select hash from public.processes where id=${q(law.id)};`),hash);
 console.log("PostgreSQL integration: concurrent idempotency, forced once race, transactional rollback/retry, CAS collision, rejected amendment, outbox, RLS, immutable receipt and RPC authorization passed.");
+
+// A transaction snapshot can fence a closed window even when sequence
+// allocation order differs from commit order. This probe owns its own table.
+const probe = "public.radio_history_probe_" + randomUUID().replaceAll("-", "");
+const asPostgres = statement => sql(statement, "postgres");
+await asPostgres(`CREATE TABLE ${probe} (position bigint GENERATED ALWAYS AS IDENTITY, writer xid8 NOT NULL DEFAULT pg_current_xact_id());`);
+const late = spawn("psql", ["-X","-qAt","-v","ON_ERROR_STOP=1",url.href], {stdio:["pipe","pipe","pipe"]});
+let output = "", errors = "";
+late.stdout.on("data", chunk => { output += chunk; });
+late.stderr.on("data", chunk => { errors += chunk; });
+const lateDone = new Promise((resolve,reject) => {
+  late.on("error",reject);
+  late.on("close", code => code === 0 ? resolve() : reject(Error(errors || "history writer stopped")));
+});
+lateDone.catch(() => {});
+async function waitForPosition() {
+  let timer;
+  const timerDone = new Promise((_,reject) => {
+    timer = setTimeout(() => reject(Error("history writer did not reach its barrier")),5000);
+  });
+  try {
+    await Promise.race([lateDone.then(() => {throw Error("history writer closed before commit");}),timerDone,
+      new Promise(resolve => {
+        if (output.includes("1\n")) return resolve();
+        late.stdout.on("data", function ready() {
+          if (!output.includes("1\n")) return;
+          late.stdout.off("data",ready);
+          resolve();
+        });
+      })]);
+  } finally {clearTimeout(timer);}
+}
+try {
+  late.stdin.write(`BEGIN; INSERT INTO ${probe} DEFAULT VALUES RETURNING position;\n`);
+  await waitForPosition();
+  assert.equal(await asPostgres(`INSERT INTO ${probe} DEFAULT VALUES RETURNING position;`), "2");
+  const window = JSON.parse(await asPostgres(`SELECT json_build_object(
+    'snapshot', pg_current_snapshot()::text,
+    'positions', (SELECT json_agg(position ORDER BY position) FROM ${probe}));`));
+  assert.deepEqual(window.positions,[2], "first window excludes the uncommitted earlier position");
+
+  late.stdin.end("COMMIT;\n");
+  await lateDone;
+  await asPostgres(`BEGIN; INSERT INTO ${probe} DEFAULT VALUES; ROLLBACK;`);
+  const old = q(window.snapshot) + "::pg_snapshot";
+  const positions = async predicate => JSON.parse(await asPostgres(`SELECT coalesce(
+    json_agg(position ORDER BY position),'[]') FROM ${probe} WHERE ${predicate};`));
+  assert.deepEqual(await positions("position > 2"),[], "a sequence watermark loses the late commit");
+  assert.deepEqual(await positions(`pg_visible_in_snapshot(writer, ${old})`),[2], "old window remains closed");
+  assert.deepEqual(await positions(`pg_visible_in_snapshot(writer, pg_current_snapshot())
+    AND NOT pg_visible_in_snapshot(writer, ${old})`),[1], "next window recovers late commit and excludes rollback");
+  console.log("PostgreSQL history probe: forced late commit recovered by snapshot visibility; sequence watermark skipped it.");
+} finally {
+  late.stdin.destroy();
+  await lateDone.catch(() => {});
+  await asPostgres(`DROP TABLE ${probe};`);
+}

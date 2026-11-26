@@ -1,3 +1,4 @@
+import { boundaryHardeningConformance } from "../test/boundary-hardening-conformance.mjs";
 // A small deterministic fault-injection gate, not a statistical mutation score.
 // Mutates compiled JS in isolated temporary copies, NEVER the working tree.
 // Each mutant must be rejected by its specific named test, not just crash.
@@ -82,6 +83,15 @@ const mutations = [
   ["continuity ignores live cursor", "process-ledger.js", "entry.seq > l.after && tuned(l.tuning, entry.receipt.header)", "tuned(l.tuning, entry.receipt.header)", "continuity/future-cursor-no-rewind"],
   ["continuity ignores history tuning", "process-ledger.js", "if (tuned(tuning, e.receipt.header))", "if (true)", "continuity/filtered-gap"],
 
+  ["I-JSON accepts BMP noncharacters", "strict.js", "(h >= 0xfdd0 && h <= 0xfdef) || h >= 0xfffe", "false", "hardening/unicode-noncharacters"],
+  ["I-JSON accepts supplementary noncharacters", "strict.js", "(l & 0x3ff) >= 0x3fe && ((h - 0xd800) & 0x3f) === 0x3f", "false", "hardening/unicode-noncharacters"],
+  ["add_days accepts expanded years", "expr.js", "!(t >= FIRST_DAY && t <= LAST_DAY)", "!Number.isFinite(t)", "hardening/four-digit-calendar"],
+  ["concat omits preflight", "expr.js", "if (bytes > space)", "if (false)", "hardening/concat-before-allocation"],
+  ["array omits preflight", "expr.js", "size += inspect(value, budget, MAX_EVAL_VALUE_BYTES - size);", "size++;", "hardening/array-before-serialization"],
+  ["scanner resets work per law", "scanner.js", "budget.left--; // charge even a literal predicate", "budget.left--; budget.work = MAX_EVAL_WORK;", "hardening/shared-scanner-work"],
+  ["RUN omits work bounds", "run-v2.js", "work: MAX_EVAL_WORK", "work: null", "hardening/run-amplification-is-doubt"],
+  ["public receipt limit omits one byte", "run-v2.js", "MAX_PUBLIC_RECEIPT_BYTES, tooLarge, 65", "MAX_PUBLIC_RECEIPT_BYTES + 1, tooLarge, 65", "hardening/signed-receipt-byte-limit"],
+
 ];
 let failed = 0;
 for (const [name, file, from, to, killer] of mutations) {
@@ -93,7 +103,7 @@ for (const [name, file, from, to, killer] of mutations) {
     if (source.split(from).length !== 2) throw Error("mutation anchor missing or ambiguous: " + file);
     writeFileSync(target, source.replace(from, to));
     const library=await import(pathToFileURL(join(dir, "dist/index.js")).href);
-    const results = killer.startsWith("continuity/") ? await continuityConformance(library,testKey) : killer.startsWith("bundle-v2/") ? await bundleV2Conformance(library,receiptV2Fixture,runV2Fixture,receipts,testKey) : killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
+    const results = killer.startsWith("hardening/") ? await boundaryHardeningConformance(library,testKey,killer) : killer.startsWith("continuity/") ? await continuityConformance(library,testKey) : killer.startsWith("bundle-v2/") ? await bundleV2Conformance(library,receiptV2Fixture,runV2Fixture,receipts,testKey) : killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
     const observed = results.find(r => r.name === killer);
     if (!observed || observed.ok) {
       console.error("SURVIVED", name, "expected killer", killer); failed++;

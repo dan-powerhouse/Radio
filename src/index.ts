@@ -15,9 +15,13 @@ export * from './hosted.js';
 
 export * from "./process-type.js";
 
-export * from "./scanner.js";
+export { scan, MAX_SCAN_INPUT_BYTES, MAX_SCAN_SNAPSHOT_BYTES, MAX_SCAN_LAWS, MAX_SCAN_LAW_BYTES } from "./scanner.js";
+export type { ScanDiagnostic, ScanResult } from "./scanner.js";
 
-export * from "./run-v2.js";
+export { runV2, issueV2, authenticV2, parseSubmissionV2, MAX_SUBMISSION_BYTES,
+  MAX_RESULT_PART_BYTES, MAX_PUBLIC_RECEIPT_BYTES } from "./run-v2.js";
+export type { Continuation, SubmissionV2, ReasonCode, DetailV2, HeaderV2, ReceiptV2, SpentClaim,
+  ContextV1, RunV2Result, RunV2Options } from "./run-v2.js";
 
 export * from "./process-ledger.js";
 

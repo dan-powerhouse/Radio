@@ -21,13 +21,14 @@ The repository is the executable reference, the rigid protocol contract and conf
 | `SPEC.md` | Single technical contract: existing v1 and target requirements (§15) |
 | `GLOSSARY.md` | Stable institutional and computational vocabulary |
 | `DIPLOMACY.md` | Founding proposal; exact package contract remains open |
+| `bin/diplomacy.mjs` | Reference validator for a proposed DIPLOMACY ZIP (§15.18.5) |
 | `contracts/` | Machine-readable structural projection of the single SPEC; not a second evaluator |
 | `AGENTS.md` | Shared engineering instructions for coding agents |
 | `ROADMAP.md` | Proposed milestones, PR dependencies and acceptance gates |
 | `CLAUDE.md` | Imports the same instructions for Claude Code |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/process-type.ts` | Process Type validation, immutable reference publication and snapshot capture; no execution or hosted authorization |
-| `src/scanner.ts` | Pure deterministic recognition, verified registry evidence and shared operation budget; no authority or RUN execution |
+| `src/scanner.ts` | Pure deterministic recognition, verified registry evidence and shared operation/work budgets; no authority or RUN execution |
 | `src/run-v2.ts` | Request-scoped target RUN evaluation, authorized evidence observations and tentative receipt@2 signing; no commit or broadcast |
 | `src/process-ledger.ts` | Target local reference: receipt-derived instances, publication/retirement, explicit continuation and recovery; trusted local adapter only |
 | `src/ledger.ts` | Historical v1 reference machine: an append-only, content-addressed ledger with the radio, trajectories and bundles |
@@ -44,7 +45,7 @@ The repository is the executable reference, the rigid protocol contract and conf
 | `supabase/` | Hosted target: Auth, transactional ledger, native radio and ephemeral functions; preview, not deployed |
 
 ```bash
-npm ci            # pinned development tools; zero runtime dependencies
+npm ci            # pinned development tools and the CLI validator’s YAML parser
 npx playwright install chromium
 npm test          # build; Node, Bun and Chromium checks
 npm run test:mutations  # targeted fault injection in isolated compiled copies
@@ -53,9 +54,17 @@ npm run example   # the course, start to certificate
 
 `dist/` is prebuilt in the release zip, so `node examples/course.mjs` and `node bin/logline.mjs` work without a build.
 
+Validate a candidate DIPLOMACY archive after `npm ci` and `npm run build`:
+
+```sh
+node bin/diplomacy.mjs package.zip
+```
+
+The command verifies archive structure, manifest coverage and byte digests, exact canonical law bytes, and Agent Skills frontmatter. It prints the package id, law hash and Skill metadata. Package adoption remains a separate institutional decision.
+
 ## Cloud-first delivery
 
-The GitHub-hosted RADIO CI workflow runs on pull requests targeting main or a RADIO review branch, and pushes to main. Required status-check enforcement in repository settings must be verified separately. Two CI jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling, independent JSON Schema validator and Supabase CLI; all are development dependencies.
+The GitHub-hosted RADIO CI workflow runs on pull requests targeting main or a RADIO review branch, and pushes to main. Required status-check enforcement in repository settings must be verified separately. Two CI jobs run the kernel, frozen and portable vectors, browser, targeted mutations, local reference demo, packaging checks, and real PostgreSQL 17 migrations/transactions. PostgreSQL uses a disposable stock database with test-only Auth claim accessors, not a live Supabase project. The jobs require no cloud credentials. The lockfile pins the compiler, browser tooling, independent JSON Schema validator, Supabase CLI and the YAML parser for the archive CLI.
 
 A passing kernel job packages the exact tracked migration/function sources and tested compiled core, including the Git commit and SHA-256 manifest. Staging CD invokes the same CI on the explicitly confirmed main revision, waits for both jobs, downloads that run's artifact, checks the revision and manifest, and then uses Supabase CLI. Staging plan/apply are manual; apply is disabled until the hosted contract and project are approved. There is no automatic production deployment. See [hosted setup](supabase/README.md) for the staging gate and eventual production release.
 
@@ -75,6 +84,7 @@ Do not equate a green test count with a working hosted service.
 | Adversarial verification | 9 cross-runtime probes of changed evidence, signatures, keys and missing replay context | A valid signature alone is not a successful replay |
 | Reference behavior | Existing and new Node/Bun tests, including real local HTTP/SSE, restart, retries, corruption and publication boundaries | Hosted adapter tests with doubles are contract tests, not service integration |
 | Targeted mutations | npm run test:mutations: each deliberate regression must fail its named test in an isolated copy | Selected faults, not exhaustive mutation coverage |
+| Boundary hardening | Cross-runtime I-JSON, calendar, work and receipt-size regressions; real ZIPs, independent package IDs and malformed archive cases | Reference profile; native capacity, resource binding and agent interoperability require separate evidence |
 | Actual PostgreSQL | npm run test:postgres: separate real transaction, concurrency, rollback, CAS and RLS tests | Requires an explicitly disposable DB; local claim fixture is not Supabase Auth, and SQL tests do not test OAuth, Edge, PostgREST or Realtime |
 
 The new expected values are hand-derived from SPEC; Process Type and scanner canonical bytes and hashes were computed independently on an ASCII/simple-JSON subset with Python json/hashlib, and the native crypto audit checks their content addresses. The regular test command never generates or updates goldens. The historical generator is not an oracle and must not overwrite compatibility evidence during ordinary development.

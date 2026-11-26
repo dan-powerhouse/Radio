@@ -2800,6 +2800,19 @@
       ],
       "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
     },
+    "ReferenceLimitsV2": {
+      "$comment": "PR-09A candidate reference profile, SPEC 15.18.6. This describes limits enforced by the runtime, including canonical UTF-8 sizes. It is not a discovery or receipt field.",
+      "const": {
+        "active_laws": 4096,
+        "active_law_bytes": 16777216,
+        "eval_work": 4194304,
+        "intermediate_value_bytes": 65536,
+        "result_part_bytes": 1048576,
+        "public_receipt_bytes": 245760,
+        "evidence_bytes": 8388608,
+        "evidence_pair_bytes": 1294400
+      }
+    },
     "DiplomacyManifest": {
       "type": "object",
       "properties": {

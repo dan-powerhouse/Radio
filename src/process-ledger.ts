@@ -1,12 +1,13 @@
 import { BundleV2, putBundleObject, MAX_BUNDLE_BYTES, MAX_BUNDLE_RECEIPTS } from "./bundle-v2.js";
 import { utf8 } from "./bytes.js";
-import { canonicalize } from "./jcs.js";
+import { canonicalBytes, canonicalize } from "./jcs.js";
 import { hashOf } from "./hash.js";
 import { LoglineError } from "./errors.js";
 import { KeyRing, MachineKey } from "./keys.js";
 import { ProcessTypeRegistry, RegistrySnapshot, parseProcessType } from "./process-type.js";
 import { MAX_OPS } from "./process.js";
 import { tuned, Tuning } from "./radio.js";
+import { parseStrict } from "./strict.js";
 import { ContextV1, DetailV2, HeaderV2, ReceiptV2, RunV2Options, SubmissionV2,
   authenticV2, issueV2, parseSubmissionV2, runV2 } from "./run-v2.js";
 
@@ -102,6 +103,7 @@ export class ProcessLedger {
       if (!persist) return err("restore","duplicate publication record");
       return hash;
     }
+    this.#registry.checkCapacity(utf8(json).length);
     if (persist) await this.#write({kind:"process-type",law:json});
     try {
       const adopted = await this.#registry.publish(json);
@@ -165,6 +167,18 @@ export class ProcessLedger {
   async bundle(id:string,canRead?:ProcessAccess["canRead"]):Promise<BundleV2>{
     this.#readable();
     const objects:Record<string,unknown>=Object.create(null),seen=new Set<string>(),pending=[id];
+    const snapshots = new Set<string>(), laws = new Set<string>();
+    const result:BundleV2={logline:"bundle@2",head:id,keys:this.keys,objects};
+    const overflow = (): never => err("bundle_limit","bundle byte limit");
+    let remaining = MAX_BUNDLE_BYTES - canonicalBytes(result,MAX_BUNDLE_BYTES,overflow) + 1;
+    async function add(address:string,value:unknown,receipt=false):Promise<void> {
+      if (!Object.hasOwn(objects,address)) {
+        // 71-byte address, two quotes, colon and the separator after the first item.
+        remaining -= 75;
+        remaining -= canonicalBytes(value,remaining,overflow,receipt?65:64);
+      }
+      await putBundleObject(objects,address,value,receipt);
+    }
     while(pending.length){
       const ref=pending.pop()!;if(seen.has(ref))continue;
       if(seen.size>=MAX_BUNDLE_RECEIPTS)return err("bundle_limit","receipt limit");
@@ -172,21 +186,24 @@ export class ProcessLedger {
       const e=this.entry(ref);if(!e)return err("evidence_invalid","missing bundle receipt");
       if(canRead&&(await canRead(clone(e.receipt)))!==true)return err("admission_denied","private evidence unavailable");
       const h=e.receipt.header,c=e.context;
-      await putBundleObject(objects,ref,e.receipt,true);
-      await putBundleObject(objects,h.input_hash,e.tuple);
-      await putBundleObject(objects,h.detail_hash,e.detail);
-      await putBundleObject(objects,h.context_hash,c);
-      const snapshot=this.snapshotByHash(h.registry_hash);
-      if(!snapshot)return err("evidence_invalid","missing bundle snapshot");
-      await putBundleObject(objects,h.registry_hash,snapshot);
-      for(const hash of snapshot.types){
-        const law=this.law(hash);if(!law)return err("evidence_invalid","missing bundle law");
-        await putBundleObject(objects,hash,law);
+      await add(ref,e.receipt,true);
+      await add(h.input_hash,e.tuple);
+      await add(h.detail_hash,e.detail);
+      await add(h.context_hash,c);
+      if (!snapshots.has(h.registry_hash)) {
+        const snapshot=this.snapshotByHash(h.registry_hash);
+        if(!snapshot)return err("evidence_invalid","missing bundle snapshot");
+        await add(h.registry_hash,snapshot);
+        snapshots.add(h.registry_hash);
+        for(const hash of snapshot.types){
+          if(laws.has(hash))continue;
+          const law=this.law(hash);if(!law)return err("evidence_invalid","missing bundle law");
+          await add(hash,law);
+          laws.add(hash);
+        }
       }
       pending.push(...h.prev,...(c.completed?[c.completed]:[]));
     }
-    const result:BundleV2={logline:"bundle@2",head:id,keys:this.keys,objects};
-    if(utf8(canonicalize(result)).length>MAX_BUNDLE_BYTES)return err("bundle_limit","bundle byte limit");
     return result;
   }
   listen(tuning:Tuning,fn:(r:ReceiptV2,seq:number)=>void,afterSeq?:number):()=>void {
@@ -258,7 +275,7 @@ export class ProcessLedger {
     const request=parseSubmissionV2(text),by=access.by,canRead=access.canRead;
     if(typeof by!=="string"||!by.length||by.length>256||typeof canRead!=="function")
       return Promise.reject(new LoglineError("admission_invalid","trusted identity and evidence authorization required"));
-    try { canonicalize(by); } catch { return err("admission_invalid","invalid attested identity"); }
+    try { parseStrict(canonicalize(by)); } catch { return err("admission_invalid","invalid attested identity"); }
     return this.#serial(async()=>{
       this.#used=true;
       const submissionKey=await hashOf({by,submission:request.submission});
