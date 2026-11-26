@@ -1,0 +1,477 @@
+{
+  "protocol": "1.0",
+  "recipes": [
+    {
+      "id": "discover-machine",
+      "title": "Discover a machine and its laws",
+      "goal": "Find the supported submission version and the rules that apply in the Institution.",
+      "steps": [
+        "Identify the Institution and obtain its trusted machine keys through an independent channel.",
+        "Read the machine discovery metadata for the supported transport versions and request limits.",
+        "Read the active Registry separately under current authority, then fetch the Process Types you need by content hash."
+      ],
+      "outcomes": [
+        "Discovery can be cached for its advertised lifetime. The active Registry and current permissions have their own freshness requirements.",
+        "Discovery keys are convenient public material. Pin trust to the Institution before verifying a receipt."
+      ],
+      "spec": [
+        "15.8.2",
+        "15.18.1",
+        "15.18.3"
+      ],
+      "shapes": [
+        "MachineDiscovery",
+        "Registry",
+        "ProcessType",
+        "KeyRing"
+      ],
+      "examples": [],
+      "tests": [
+        "test/boundary-contracts.test.mjs",
+        "test/process-type.test.mjs"
+      ]
+    },
+    {
+      "id": "publish-law",
+      "title": "Publish or retire a Process Type",
+      "goal": "Define a reusable procedure with recognition, entry conditions, successor conditions and consequences.",
+      "steps": [
+        "Author a `process-type@1` law. Give its first RUN an empty `after` and declare each successor's parent RUN names.",
+        "Write `recognize` against tuple data. Declare the fields in `requires`, the checks in `steps`, and the success grants and consequences in the RUN.",
+        "Submit the law through the Institution's authorized publication operation. Record the resulting law hash and Registry snapshot.",
+        "To retire a law, use the Institution's authorized retirement operation for its published identifier. Capture the new Registry snapshot."
+      ],
+      "outcomes": [
+        "Publishing the same law is idempotent. A revised law has a new content address and versioned identifier.",
+        "Retirement changes the active Registry for new entries. Existing trajectories still refer to their bound law."
+      ],
+      "spec": [
+        "15.8.1",
+        "15.8.2",
+        "15.9.1",
+        "15.10"
+      ],
+      "shapes": [
+        "ProcessType",
+        "Run",
+        "Registry"
+      ],
+      "examples": [
+        {
+          "title": "The complete law used by the entry and review recipes",
+          "vector": "run-v2.json",
+          "select": "laws.sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "shape": "ProcessType"
+        }
+      ],
+      "tests": [
+        "test/process-type.test.mjs",
+        "test/contracts.test.mjs"
+      ]
+    },
+    {
+      "id": "start-process",
+      "title": "Start a Process with a Contract",
+      "goal": "Ask the Institution to recognize a free tuple and attempt the first RUN.",
+      "steps": [
+        "Draft the tuple with the Process Type and any adopted Skill in view. Prefer the LogLine convention `who`, `did`, `this` and `with` where it fits the law.",
+        "Generate a fresh `submission` nonce, for example 16 cryptographically random bytes encoded as unpadded base64url. Authenticate and send the `tuple` and `submission` with `continue` omitted.",
+        "Read the committed receipt. Use its ID as the instance ID when an entry RUN succeeds."
+      ],
+      "outcomes": [
+        "The scanner uses the admitted Registry. A unique match selects the entry RUN, which still needs to satisfy its activation conditions.",
+        "A committed `ok` entry has `header.instance: null`. Its own receipt ID identifies the Process instance.",
+        "A scalar is a valid tuple shape. The applicable law determines whether it is recognized. The machine derives `by` from the verified participant."
+      ],
+      "spec": [
+        "15.8.3",
+        "15.8.4",
+        "15.9.2",
+        "15.9.3"
+      ],
+      "shapes": [
+        "Submission",
+        "Recognition",
+        "SubmitResult",
+        "ReceiptV2"
+      ],
+      "examples": [
+        {
+          "title": "Entry request for `blue@1`",
+          "vector": "receipt-v2-contract.json",
+          "case": "entry-A",
+          "select": "request",
+          "shape": "Submission"
+        },
+        {
+          "title": "Submission accepted by the scalar fixture's law",
+          "vector": "run-v2.json",
+          "case": "free-scalar",
+          "select": "request",
+          "shape": "Submission"
+        }
+      ],
+      "tests": [
+        "test/scanner-conformance.test.mjs",
+        "test/run-v2-conformance.test.mjs",
+        "test/process-ledger-conformance.test.mjs"
+      ]
+    },
+    {
+      "id": "interpret-result",
+      "title": "Read the cause and consequence of a receipt",
+      "goal": "Determine how far a submission progressed and what institutional effect it constituted.",
+      "steps": [
+        "Read `receipt.header.status` and `activated` to distinguish registration from evaluation.",
+        "With disclosure authority, inspect `detail.reason`, `detail.unmet` and `detail.findings` for recognition, activation or RUN diagnostics. Inspect `detail.consequence` for the recorded consequence and `detail.grants` for the structured result.",
+        "Handle a `BoundaryFailure` at the request boundary. Before retrying an interrupted write, recover the submission by its nonce."
+      ],
+      "outcomes": [
+        "`registered` records an admitted attempt that failed to activate. `not` and `doubt` record evaluated outcomes.",
+        "`ok` records success under the law. Grants are evaluated on that path. The text in `consequence` and the structured fields in `grants` serve different purposes.",
+        "Use structured status and reason codes for application control flow. Preserve the consequence and findings for explanation."
+      ],
+      "spec": [
+        "15.8.4",
+        "15.9.3",
+        "15.12.1",
+        "15.18.3"
+      ],
+      "shapes": [
+        "Status",
+        "DetailV2",
+        "Finding",
+        "ReasonCode",
+        "BoundaryFailure"
+      ],
+      "examples": [
+        {
+          "title": "Registration after no law matches (excerpt)",
+          "vector": "run-v2.json",
+          "case": "no-match",
+          "select": {
+            "status": "expected.receipt.header.status",
+            "activated": "expected.receipt.header.activated",
+            "reason": "expected.detail.reason",
+            "findings": "expected.detail.findings",
+            "consequence": "expected.detail.consequence",
+            "grants": "expected.detail.grants"
+          }
+        },
+        {
+          "title": "Evaluation where a negative finding decides the outcome (excerpt)",
+          "vector": "run-v2.json",
+          "case": "not-precedes-doubt",
+          "select": {
+            "status": "expected.receipt.header.status",
+            "activated": "expected.receipt.header.activated",
+            "reason": "expected.detail.reason",
+            "findings": "expected.detail.findings",
+            "consequence": "expected.detail.consequence",
+            "grants": "expected.detail.grants"
+          }
+        },
+        {
+          "title": "Evaluation with an unresolved condition (excerpt)",
+          "vector": "run-v2.json",
+          "case": "declared-doubt",
+          "select": {
+            "status": "expected.receipt.header.status",
+            "activated": "expected.receipt.header.activated",
+            "reason": "expected.detail.reason",
+            "findings": "expected.detail.findings",
+            "consequence": "expected.detail.consequence",
+            "grants": "expected.detail.grants"
+          }
+        },
+        {
+          "title": "Successful review with its law-defined grant (excerpt)",
+          "vector": "run-v2.json",
+          "case": "retired-law-continuation",
+          "select": {
+            "status": "expected.receipt.header.status",
+            "activated": "expected.receipt.header.activated",
+            "reason": "expected.detail.reason",
+            "findings": "expected.detail.findings",
+            "consequence": "expected.detail.consequence",
+            "grants": "expected.detail.grants"
+          }
+        }
+      ],
+      "tests": [
+        "test/run-v2-conformance.test.mjs",
+        "test/boundary-contracts.test.mjs"
+      ]
+    },
+    {
+      "id": "continue-trajectory",
+      "title": "Continue an existing trajectory",
+      "goal": "Propose the next movement under the law bound by the successful entry receipt.",
+      "steps": [
+        "Find the successful entry receipt and the intended successor RUN in its bound Process Type.",
+        "Collect one eligible parent receipt for each name in the successor's `after`. Put the root ID in `continue.instance`, the RUN name in `continue.run`, and the parent addresses in `continue.parents`.",
+        "Submit a new tuple and nonce with that continuation. Check the returned receipt for the bound instance, RUN and result."
+      ],
+      "outcomes": [
+        "The continuation uses the historical law even after retirement. It checks the current participant's authority and the explicit parent roles.",
+        "A missing or incorrect parent yields a registered attempt with `parents_unmet` when the law is known and the condition can be disclosed. Only an `ok` successor fills the unique success claim for that instance and RUN."
+      ],
+      "spec": [
+        "15.9.2",
+        "15.9.3",
+        "15.14",
+        "15.15"
+      ],
+      "shapes": [
+        "Continuation",
+        "Submission",
+        "ReceiptV2",
+        "ContextV1"
+      ],
+      "examples": [
+        {
+          "title": "Review submission referencing the signed entry receipt",
+          "vector": "receipt-v2-contract.json",
+          "case": "review-A",
+          "select": "request",
+          "shape": "Submission"
+        }
+      ],
+      "tests": [
+        "test/process-ledger-conformance.test.mjs",
+        "test/run-v2-conformance.test.mjs",
+        "test/atomic-conformance.test.mjs"
+      ]
+    },
+    {
+      "id": "cite-evidence",
+      "title": "Cite evidence and consume it once",
+      "goal": "Use a prior receipt as evidence in a law-defined slot with optional exclusivity.",
+      "steps": [
+        "Read the RUN's declared `cites` slots and their conditions. Put the address in `tuple.cites` under the selected slot name.",
+        "Submit with current authority to use the evidence. The machine resolves and verifies the cited receipt and detail at its authoritative boundary.",
+        "For a `once` slot, treat a claim as consumed only after the new `ok` receipt commits."
+      ],
+      "outcomes": [
+        "The `once` scope combines the consuming law hash, slot name and cited receipt ID. RUNs of the same law that share a slot name share that scope.",
+        "A spent claim prevents activation. If two candidates race for the same claim, the losing attempt uses updated authoritative observations."
+      ],
+      "spec": [
+        "15.9.1",
+        "15.9.3",
+        "15.15",
+        "15.18.1"
+      ],
+      "shapes": [
+        "Citation",
+        "Submission",
+        "SpentClaim",
+        "ResolvedObservations"
+      ],
+      "examples": [
+        {
+          "title": "Submission proposing an already consumed citation",
+          "vector": "run-v2.json",
+          "case": "spent-citation",
+          "select": "request",
+          "shape": "Submission"
+        },
+        {
+          "title": "Disposition of that attempt (excerpt)",
+          "vector": "run-v2.json",
+          "case": "spent-citation",
+          "select": {
+            "status": "expected.receipt.header.status",
+            "reason": "expected.detail.reason",
+            "observedSpending": "expected.context.spent"
+          }
+        }
+      ],
+      "tests": [
+        "test/run-v2-conformance.test.mjs",
+        "test/atomic-conformance.test.mjs",
+        "test/postgres-v2.integration.mjs"
+      ]
+    },
+    {
+      "id": "recover-submission",
+      "title": "Retry without creating a second effect",
+      "goal": "Recover the committed outcome when a response was lost or the executor changed.",
+      "steps": [
+        "Retain the nonce and the complete Submission, including any explicit continuation.",
+        "Resend the same request under the same authenticated principal and current authorization.",
+        "Use a fresh nonce for a new attempt, including when you change the tuple or continuation."
+      ],
+      "outcomes": [
+        "When the earlier attempt committed, an authorized retry with unchanged intent returns the original signed objects with `replayed: true`. The response may come from a replacement executor.",
+        "Reusing the nonce with different intent returns `submission_conflict`. If authority was withdrawn, recovery of private results is denied."
+      ],
+      "spec": [
+        "15.9.3",
+        "15.15",
+        "15.18.2",
+        "15.18.3"
+      ],
+      "shapes": [
+        "Submission",
+        "SubmissionKeyInput",
+        "RequestHashInput",
+        "SubmitResult",
+        "BoundaryFailure"
+      ],
+      "examples": [],
+      "tests": [
+        "test/atomic-conformance.test.mjs",
+        "test/edge-v2.integration.mjs"
+      ]
+    },
+    {
+      "id": "read-evidence",
+      "title": "Read a receipt and its authorized evidence",
+      "goal": "Retrieve the public signed envelope and inspect private decision inputs when permitted.",
+      "steps": [
+        "Read the receipt by ID through the Institution's authorized visibility surface.",
+        "Request `PrivateEvidence` separately to inspect the original tuple, detail and context. Compare their addresses with `input_hash`, `detail_hash` and `context_hash` in the header.",
+        "Obtain a full bundle only when the applicable disclosure policy allows access to every private constituent."
+      ],
+      "outcomes": [
+        "A public receipt envelope carries signed metadata and law-approved public projections within the Institution's visibility policy.",
+        "Formal use of a citation and raw disclosure of its private evidence are distinct permissions. Treat absent and denied private evidence alike where existence is protected."
+      ],
+      "spec": [
+        "15.9.4",
+        "15.18.1",
+        "15.18.3"
+      ],
+      "shapes": [
+        "ReceiptV2",
+        "PrivateEvidence",
+        "BundleV2",
+        "BoundaryFailure"
+      ],
+      "examples": [],
+      "tests": [
+        "test/boundary-contracts.test.mjs",
+        "test/run-v2.test.mjs",
+        "test/edge-v2.integration.mjs"
+      ]
+    },
+    {
+      "id": "verify-trajectory",
+      "title": "Verify a trajectory offline",
+      "goal": "Check who signed the receipt, reproduce its decision and verify its supplied causal closure.",
+      "steps": [
+        "Obtain the authorized `bundle@2` and independently trusted machine keys.",
+        "Run `verifyBundleV2` from the reference library or `node bin/logline.mjs verify-bundle bundle.json --keys trusted-keys.json` in a built checkout.",
+        "Read `authenticity`, `replay` and `trajectory` separately. For an incomplete verdict, retrieve the missing objects under current disclosure policy and verify again."
+      ],
+      "outcomes": [
+        "The verifier recognizes a valid trajectory when all three checks pass.",
+        "The result covers the supplied evidence closure. Global completeness and the truth of external facts are separate questions."
+      ],
+      "spec": [
+        "15.9.4",
+        "15.16",
+        "15.18.3"
+      ],
+      "shapes": [
+        "BundleV2",
+        "KeyRing",
+        "VerificationVerdict"
+      ],
+      "examples": [
+        {
+          "title": "Head of the signed review bundle (excerpt)",
+          "vector": "receipt-v2-contract.json",
+          "case": "review-A",
+          "select": {
+            "logline": "bundle.logline",
+            "head": "bundle.head"
+          }
+        }
+      ],
+      "tests": [
+        "test/bundle-v2-conformance.test.mjs",
+        "test/vector-audit.test.mjs"
+      ]
+    },
+    {
+      "id": "recover-history",
+      "title": "Tune the radio and catch up after disconnect",
+      "goal": "Observe committed receipts and recover the authorized institutional history.",
+      "steps": [
+        "Choose permitted tuning by frequency, status, actor, law hash or activation. Verify signed receipts against pinned machine keys before acting.",
+        "Read history with the same visibility and tuning. Follow `next` until the response supplies a completed-window `checkpoint`.",
+        "Save that checkpoint and deduplicate overlapping history and live notifications by verified receipt ID. Restart authorized history when the cursor scope changes."
+      ],
+      "outcomes": [
+        "The contract includes late commits in a later completed window. The durable history boundary owns the checkpoint.",
+        "The reference exercises listener replacement and local catch-up. A hosted implementation supplies its own evidence for closed windows and lease enforcement."
+      ],
+      "spec": [
+        "15.17",
+        "15.18.2",
+        "15.18.4"
+      ],
+      "shapes": [
+        "ReceiptNotice",
+        "Tuning",
+        "HistoryRequest",
+        "HistoryPage"
+      ],
+      "examples": [
+        {
+          "title": "Closed-window acceptance scenario",
+          "vector": "boundary-review.json",
+          "case": "late-commit",
+          "select": {
+            "given": "given",
+            "expect": "expect"
+          },
+          "group": "pending_scenarios"
+        }
+      ],
+      "tests": [
+        "test/continuity-conformance.test.mjs",
+        "test/boundary-contracts.test.mjs",
+        "test/postgres.integration.mjs"
+      ]
+    },
+    {
+      "id": "prepare-diplomacy",
+      "title": "Package a law with DIPLOMACY Skills",
+      "goal": "Distribute instructions that help a participant draft a Contract for an exact law.",
+      "steps": [
+        "Include the canonical `process-type.json` and Agent Skills under `skills/<name>/SKILL.md`. Use the Skills to explain how to express intent, supply evidence and read consequences.",
+        "Record the exact file digests for `process-type.json` and all Skill files in `diplomacy.json`. Validate the ZIP in a built checkout with `node bin/diplomacy.mjs package.zip`.",
+        "Record the verified package and law hashes. Apply the Institution's adoption and distribution policy before exposing the package to participants."
+      ],
+      "outcomes": [
+        "A Skill revision changes the package ID. The law hash remains stable when its canonical bytes stay the same.",
+        "Skills guide participation. The published JSON law governs execution and the Institution grants authority."
+      ],
+      "spec": [
+        "15.4",
+        "15.18.5"
+      ],
+      "shapes": [
+        "DiplomacyManifest",
+        "DiplomacyPath",
+        "SkillName",
+        "ProcessType"
+      ],
+      "examples": [
+        {
+          "title": "Manifest from the reviewed `blue@1` package",
+          "vector": "boundary-review.json",
+          "select": "package.manifest",
+          "shape": "DiplomacyManifest"
+        }
+      ],
+      "tests": [
+        "test/diplomacy.test.mjs",
+        "test/boundary-contracts.test.mjs"
+      ]
+    }
+  ]
+}

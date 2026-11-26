@@ -4,7 +4,7 @@ Status: architect-directed rigid-first engineering sequence (2026-11-25), not a 
 
 ## Delivery boundary
 
-Build the smallest common kernel for forming verifiable trajectories: free JSON -> deterministic recognition -> RUN -> signed object -> durable trajectory -> independent listener -> next JSON. One runtime-neutral TypeScript evaluator, one receipt family with explicit versions, one logical machine per community, no application daemon in the hosted path. Supabase Auth is the native OAuth authority; Postgres, Realtime and ephemeral Edge Functions supply managed persistence, broadcast and computation. Participants own their orchestration. The v1 local HTTP/SSE reference remains executable. No PATT implementation, financial product, general workflow manager, custom identity provider, arbitrary Skill-script execution, blockchain, microservice fleet or multi-region deployment is required.
+Build the smallest common kernel for forming verifiable trajectories: free JSON -> deterministic recognition -> RUN -> signed object -> durable trajectory -> independent listener -> next JSON. Use one runtime-neutral TypeScript evaluator, one receipt family with explicit versions, and one logical machine per community. Supabase Auth is the native OAuth authority. PostgreSQL, Realtime and Edge Functions supply managed persistence, broadcast and initial request-scoped computation. Participants own their orchestration. The v1 local HTTP/SSE reference remains executable. No PATT implementation, financial product, general workflow manager, custom identity provider, arbitrary Skill-script execution, blockchain, microservice fleet or multi-region deployment is required.
 
 Scale belongs to the elastic substrate; protocol identity belongs to the rigid core (contracts, specified mechanisms, vectors, conformance and CI gates). Supabase is the chosen native materialization at the intended scale. Prefer its existing capabilities to custom infrastructure; do not build alternative providers or a portability framework. Avoid global serialization where correctness does not require it; enforce shared uniqueness atomically. Independent communities remain possible; global multi-tenant operation is not claimed by the single-community release.
 
@@ -134,7 +134,7 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 
 ### PR-14 — Committed broadcast and tuning
 - [ ] Depends on PR-11/13. Use native Supabase Realtime with existing frequency/status/identity filters as specified. Verify signature before acting; keep private details outside public payload.
-- Acceptance: two independent authenticated/authorized listeners see the same committed object; no event for rolled-back commit; unauthorized subscription and private data leak tests; no bespoke WebSocket server.
+- Acceptance: two independent authorized listeners receive the same committed receipt ID and can resolve the same signed object through an authorized read. Verify rollback, publish permissions, private-data exclusion and lease expiry against an uncooperative socket on native Realtime.
 
 ### PR-15 — Durable history and reconnect contract
 - [ ] Depends on PR-10/14. Materialize the frozen history/reconnect guarantees; resolve physical cursor design and live/catch-up overlap before implementing. Sequence allocation is not commit order; do not promise `seq > cursor` alone. Pick minimal correctness-preserving mechanism with architect approval.
@@ -146,7 +146,7 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 
 ## M5 — The Interface
 
-Exit: a real OAuth-authorized MCP client discovers types and submits free JSON to the same hosted RUN boundary, with independent requests. No resident application server.
+Exit: a real OAuth-authorized MCP client discovers types and submits free JSON to the same hosted RUN boundary. Each request remains independent across executor replacements.
 
 ### PR-17 — Stateless MCP profile and discovery
 - [ ] Depends on PR-09B/13. Verify published MCP revision (target inspiration 2026-07-28) and actual client interoperability before fixing the profile; specify metadata, discovery/cache, auth resource metadata, version errors, supported capabilities and explicit context. Discovery excludes mutable head. Implement minimal ephemeral MCP endpoint.
@@ -171,6 +171,7 @@ Exit: reproducible, tested single-community release candidate with real hosted p
 ### PR-21 — Kernel limits and contention
 - [ ] Depends on PR-20. Consolidate incremental measurements from the native PRs: recognition cost versus published types, evaluation bounds, payload size, concurrent unrelated/conflicting commits, reconnect and fan-out. Record environment, workloads and observed latency/throughput/cost; agree resource limits based on measurements, not speculative target numbers. Treat these as substrate capacity profiles, not changes to protocol identity; rerun rigid-core conformance against any optimization.
 - Acceptance: bounded scanner/RUN work, no correctness dependence on global application mutex or warm instance; report contention and bottlenecks. Test community isolation if multiple communities are enabled; otherwise explicitly limit release to one community. Optimize only measured bottlenecks.
+- If measurements justify a dedicated execution profile, use the [worker qualification plan](supabase/README.md#execution-and-scaling) and [RUN replacement contract](SPEC.md#run-execution-and-replacement) before routing traffic to it.
 
 ### PR-22 — Conformance and release candidate
 - [ ] Depends on PR-21. Run full Node/Bun/browser conformance plus real Postgres/RLS/Deno/OAuth/MCP/WebSocket integration and golden path. Document minimal provisioning, key trust and known limits. Restore a complete Institution in an isolated environment, including identity mappings, pseudonym continuity, historical laws and snapshots, receipts and private evidence, signing and verification material, and DIPLOMACY objects held outside the database. Review open SPEC decisions and either resolve or explicitly exclude them from supported scope.

@@ -7,7 +7,7 @@ import * as L from "../_shared/core/index.js";
 import { bodyText, BodyLimit } from "../_shared/body.mjs";
 import { hostedEnvironment, isUUID } from "../_shared/http.mjs";
 import { HostedError } from "../_shared/ledger.mjs";
-import { boundaryFailure, databaseV2, submitV2 } from "../_shared/transactions-v2.mjs";
+import { boundaryFailure, databaseV2, readReceiptV2, submitV2 } from "../_shared/transactions-v2.mjs";
 
 const pageSize = 50;
 const maxRequestBodySize = 2 * L.MAX_SUBMISSION_BYTES;
@@ -87,21 +87,6 @@ async function lookup(db, law, skill) {
   return row;
 }
 
-async function readReceipt(db, keys, id, mode) {
-  const row = await db.disclose(id,mode);
-  if (!row) fail("not_found");
-  const receipt = L.parseStrict(row.receipt,65);
-  if (receipt.id !== id || !await L.authenticV2(receipt,keys)) fail("unavailable");
-  if (mode === "public") return {receipt};
-  const parts = {};
-  for (const [part, expected] of [["tuple",receipt.header.input_hash],
-    ["detail",receipt.header.detail_hash],["context",receipt.header.context_hash]]) {
-    if (typeof row[part] !== "string" || await L.sha256(row[part]) !== expected) fail("unavailable");
-    parts[part] = L.parseStrict(row[part]);
-  }
-  return parts;
-}
-
 function makeServer({db,actor,key,keys}) {
   const metadataCache = {ttlMs:60000,cacheScope:"public"};
   const server = new McpServer({name:"radio",version:"1.0.0"},{
@@ -167,9 +152,9 @@ function makeServer({db,actor,key,keys}) {
     });
 
   tool("read_receipt","Read the signed institutional receipt by content address.",
-    schemas.receipt,readOnly,({id}) => readReceipt(db,keys,id,"public"));
+    schemas.receipt,readOnly,({id}) => readReceiptV2(db,keys,id));
   tool("read_evidence","Read the original tuple, detail and context when current disclosure authority allows it.",
-    schemas.receipt,readOnly,({id}) => readReceipt(db,keys,id,"disclose"));
+    schemas.receipt,readOnly,({id}) => readReceiptV2(db,keys,id,"disclose"));
   return server;
 }
 

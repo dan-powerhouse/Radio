@@ -21,6 +21,8 @@ The Contract is the tuple inside the Submission. The protocol accepts any I-JSON
 
 RADIO Protocol 1.0 and its reference corpus were approved on 26 November 2026. The repository includes the historical v1 reference, the v2 reference and native Supabase materialization checkpoints. [Vision](VISION.md) · [Glossary](GLOSSARY.md) · [Specification](SPEC.md) · [Roadmap and review history](ROADMAP.md) · [Supabase setup and verification](supabase/README.md)
 
+Use the [RADIO Cookbook](COOKBOOK.md) for shared procedures, examples and expected outcomes. Edit the [capability catalog](docs/radio-capabilities.json) to update it, then run `npm run cookbook`. The test suite checks the generated Markdown.
+
 ## Repository organization
 
 The repository is the executable reference, the rigid protocol contract and conformance corpus, and the native Supabase materialization. Root documents have distinct roles; the npm library, full reference ZIP and hosted deployment archive have different delivery boundaries.
@@ -118,7 +120,7 @@ An alternative law in `examples/alumni.external.logline-101@1.json` has no autom
 
 ## Primary architecture: Supabase-native (hosted preview)
 
-Identity is the sole standing application server in the logical target architecture. The Institution remains alive through durable laws and trajectories even when computation is dormant. Managed persistence and communication services remain necessary. No LogLine HTTP daemon, identity broker, resident workflow or application session is required. Supabase Auth is the native OAuth 2.1 authorization server; Postgres holds the ledger; Edge Functions evaluate and sign individual submissions. The OAuth consent surface must exist but can be a static browser application. See [the hosted architecture](supabase/README.md) for setup boundaries and outstanding verification.
+Supabase Auth provides standing OAuth 2.1 identity service. PostgreSQL holds the durable laws and trajectories, and Realtime supplies communication. Edge Functions evaluate and sign individual submissions in the initial deployment. Each request can run on a replacement executor using the same RUN contract. The OAuth consent surface can be a static browser application. [Hosted architecture](supabase/README.md) · [Execution and scaling](supabase/README.md#execution-and-scaling)
 
 ```js
 import { hostedClient } from "@logline/receipt";

@@ -2,7 +2,7 @@ import * as L from "./core/index.js";
 import { bodyText, BodyLimit } from "./body.mjs";
 import { hostedEnvironment, isUUID, verifiedUser } from "./http.mjs";
 import { HostedError } from "./ledger.mjs";
-import { databaseV2, publishV2, submitV2 } from "./transactions-v2.mjs";
+import { databaseV2, publishV2, readReceiptV2, submitV2 } from "./transactions-v2.mjs";
 
 const requestTimeoutMs = 60_000;
 const headers = {
@@ -37,16 +37,23 @@ export function directIdentity(options) {
 }
 
 export function createV2Handler({action,database,key,keys,identify}) {
+  const method = action === "receipt" ? "GET" : "POST";
   return async req => {
     if (req.method === "OPTIONS") return new Response(null,{status:204,headers:{
-      ...headers,"access-control-allow-methods":"POST",
+      ...headers,"access-control-allow-methods":method,
       "access-control-allow-headers":"authorization, apikey, content-type, logline-version"
     }});
     if (req.headers.get("logline-version") !== "2") return v2Response(400,{error:"unsupported_version"});
-    if (req.method !== "POST") return v2Response(405,{error:"invalid_request"});
+    if (req.method !== method) return v2Response(405,{error:"invalid_request"});
     const signal = AbortSignal.any([req.signal,AbortSignal.timeout(requestTimeoutMs)]);
     try {
       const actor = await identify(req,signal);
+      const db = database(actor,signal);
+      if (action === "receipt") {
+        const params = new URL(req.url).searchParams;
+        if (params.size !== 1) return v2Response(400,{error:"invalid_request"});
+        return v2Response(200,await readReceiptV2(db,keys,params.get("id")));
+      }
       const limit = action === "publish" ? L.MAX_LAW_BYTES : L.MAX_SUBMISSION_BYTES;
       let text, input;
       try {
@@ -58,7 +65,6 @@ export function createV2Handler({action,database,key,keys,identify}) {
           return v2Response(413,{error:"resource_limit"});
         return v2Response(400,{error:"invalid_request"});
       }
-      const db = database(actor,signal);
       if (action === "publish") {
         const result = await publishV2(db,input);
         return v2Response(result.status,result.body);
