@@ -15,7 +15,7 @@ export interface Tuning {
 const list = <T>(v: T | T[] | undefined) => (v === undefined ? undefined : Array.isArray(v) ? v : [v]);
 const freqMatch = (pattern: string, f: string) => pattern.endsWith(".*") ? f.startsWith(pattern.slice(0, -1)) : pattern === f;
 
-export function tuned(t: Tuning, h: Header): boolean {
+export function tuned(t: Tuning, h: Pick<Header, "frequency" | "status" | "by" | "process_hash" | "activated">): boolean {
   const f = list(t.frequency), s = list(t.status), b = list(t.by), p = list(t.process_hash);
   return (!f || f.some((x) => freqMatch(x, h.frequency))) &&
     (!s || s.includes(h.status)) &&

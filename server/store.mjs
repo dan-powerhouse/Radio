@@ -1,5 +1,5 @@
 // The durable ledger: one append-only file of hash-chained lines, plus the
-// machine's secrets. Node only; the machine itself is the library's MemoryLedger.
+// machine's secrets. Node only; the library supplies versioned reference ledgers.
 //
 //   <dir>/ledger.jsonl       one JCS line per record: {"n":1,"prev":null|"sha256:…","rec":{…}}
 //   <dir>/machine-key.json   the Ed25519 private JWK (mode 0600)
@@ -71,35 +71,47 @@ export class Accounts {
  * Open (or create) a machine in `dir`. Every record is written and fsynced
  * before the ledger acts on it, so an acknowledged receipt survives a crash.
  */
-export async function openMachine(dir, opts = {}) {
+async function openReference(dir, opts, target) {
   fs.mkdirSync(dir, { recursive: true, mode: 0o700 });
   const keyFile = path.join(dir, "machine-key.json");
   if (!fs.existsSync(keyFile)) {
+    if (target && fs.existsSync(path.join(dir, LOG)) && fs.statSync(path.join(dir, LOG)).size > 0)
+      throw new L.LoglineError("key_invalid", "existing target log requires its original machine key");
     const { privateJwk } = await L.generateMachineKey();
     fs.writeFileSync(keyFile, JSON.stringify(privateJwk) + "\n", { mode: 0o600, flag: "wx" });
   }
   const key = await L.importMachineKey(JSON.parse(fs.readFileSync(keyFile, "utf8")));
+  if (target && fs.existsSync(path.join(dir, LOG)) && fs.statSync(path.join(dir, LOG)).size > 0 && !fs.existsSync(path.join(dir, "secret.key")))
+    throw new L.LoglineError("key_invalid", "existing target log requires its original identity secret");
   const secret = Buffer.from(readSecretFile(path.join(dir, "secret.key"), () => crypto.randomBytes(32).toString("hex") + "\n").trim(), "hex");
   if (secret.length !== 32) throw new Error("secret.key must hold 32 bytes as hex");
 
   const file = path.join(dir, LOG);
   const { records, head, repaired } = await readLog(file);
   const state = { head, broken: null };
-  let fd = null;
+  let fd = null, closed = false;
   const sink = async (rec) => {
+    if (closed) throw new L.LoglineError("unavailable", "reference log is closed");
     if (state.broken) throw new L.LoglineError("unavailable", "the ledger stopped accepting writes after a storage error");
     const line = L.canonicalize({ n: state.head.n + 1, prev: state.head.hash, rec });
+    const nextHash = await L.sha256(line);
+    if (closed) throw new L.LoglineError("unavailable", "reference log is closed");
     try {
       fd ??= fs.openSync(file, "a", 0o600);
-      fs.writeSync(fd, line + "\n");
+      fs.writeFileSync(fd, line + "\n"); // Write the entire record, including short writes.
       fs.fsyncSync(fd);
     } catch (e) {
       state.broken = e;
       throw new L.LoglineError("unavailable", "storage error; the ledger stopped accepting writes");
     }
-    state.head = { n: state.head.n + 1, hash: await L.sha256(line) };
+    state.head = { n: state.head.n + 1, hash: nextHash };
   };
-  const ledger = new L.MemoryLedger(key, { sink, clock: opts.clock, maxDepth: opts.maxDepth, maxReactions: opts.maxReactions });
+  // Historical v1 and target v2 have explicit reference record formats.
+  // Do not silently reinterpret a v1 log as v2 (or vice versa).
+  const storedBudget = target ? records.find(r => r.kind === "receipt-v2")?.admission_snapshot?.scan_ops : undefined;
+  const ledger = target
+    ? new L.ProcessLedger(key, { sink, clock: opts.clock, scanOps: opts.scanOps ?? storedBudget })
+    : new L.MemoryLedger(key, { sink, clock: opts.clock, maxDepth: opts.maxDepth, maxReactions: opts.maxReactions });
   await ledger.restore(records, { replay: !!opts.replay });
 
   return {
@@ -108,6 +120,10 @@ export async function openMachine(dir, opts = {}) {
     pseudonym: (account) => L.pseudonym(new Uint8Array(secret), account),
     head: () => ({ ...state.head }),
     broken: () => state.broken !== null,
-    close: () => { if (fd !== null) { fs.closeSync(fd); fd = null; } },
+    close: () => { closed = true; if (fd !== null) { fs.closeSync(fd); fd = null; } },
   };
 }
+
+// Local reference adapters only; neither is a production application server.
+export const openMachine = (dir, opts = {}) => openReference(dir, opts, false);
+export const openProcessMachine = (dir, opts = {}) => openReference(dir, opts, true);
