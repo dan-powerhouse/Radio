@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:radio:review:core-schema:1",
   "title": "RADIO target core — structural contract review",
-  "description": "Single machine-readable structural projection of SPEC 15.8-15.11. Not a frozen protocol, runtime validator or substitute for semantic conformance. Validate named $defs, not the schema root. Historical v1 semantics are unchanged. DIPLOMACY manifest, exact unresolved wire decisions, authority and hosted interfaces are not silently specified.",
+  "description": "Single machine-readable structural projection of SPEC 15.8-15.12. Not a frozen protocol, runtime validator or substitute for semantic conformance. Validate named $defs, not the schema root. Historical v1 semantics are unchanged. DIPLOMACY manifest, exact unresolved wire decisions, authority and hosted interfaces are not silently specified.",
   "not": {},
   "$defs": {
     "Hash": {
@@ -1218,7 +1218,7 @@
           }
         }
       ],
-      "description": "SPEC 15.9.4. Shape and local relationships only. Frequency must equal selected law id; entry/continuation/nullability, ancestry, public projection, authenticated identity, calendar validity and evidence require replay. Review proposal: known-law unknown/invalid RUN registrations may have run:null; the cross-part assembly requires continuation and a resolved root for this case. Pending approval."
+      "description": "SPEC 15.9.4. Shape and local relationships only. Frequency must equal selected law id; entry/continuation/nullability, ancestry, public projection, authenticated identity, calendar validity and evidence require replay. Approved disposition: known-law unknown/invalid RUN registrations may have run:null; the cross-part assembly requires continuation and a resolved root for this case."
     },
     "ReceiptV2": {
       "type": "object",
@@ -1371,8 +1371,7 @@
         "reason": {
           "anyOf": [
             {
-              "type": "string",
-              "minLength": 1
+              "$ref": "#/$defs/ReasonCode"
             },
             {
               "type": "null"
@@ -1400,7 +1399,7 @@
         "recognition"
       ],
       "additionalProperties": false,
-      "description": "Review projection: exact stable reason code vocabulary and diagnostic ordering still to be frozen in PR-05. Cross-object status/activation relationships require replay.",
+      "description": "Approved primary reason vocabulary. Exact diagnostic text and cross-object relationships require semantic conformance.",
       "allOf": [
         {
           "if": {
@@ -1445,46 +1444,6 @@
       ],
       "additionalProperties": false
     },
-    "ResolvedObservationsDraft": {
-      "type": "object",
-      "properties": {
-        "root": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Hash"
-            },
-            {
-              "type": "null"
-            }
-          ]
-        },
-        "parents": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/$defs/Hash"
-          },
-          "propertyNames": {
-            "$ref": "#/$defs/RunId"
-          }
-        },
-        "cites": {
-          "type": "object",
-          "additionalProperties": {
-            "$ref": "#/$defs/Hash"
-          },
-          "propertyNames": {
-            "$ref": "#/$defs/RunId"
-          }
-        }
-      },
-      "required": [
-        "root",
-        "parents",
-        "cites"
-      ],
-      "additionalProperties": false,
-      "description": "Proposed exact encoding of resolved roles for review, not a frozen wire decision. Only actually resolved ids, never caller claims."
-    },
     "ContextV1": {
       "type": "object",
       "properties": {
@@ -1525,7 +1484,7 @@
           ]
         },
         "resolved": {
-          "$ref": "#/$defs/ResolvedObservationsDraft"
+          "$ref": "#/$defs/ResolvedObservations"
         }
       },
       "required": [
@@ -1538,7 +1497,7 @@
         "resolved"
       ],
       "additionalProperties": false,
-      "description": "Review projection of SPEC 15.9.4: resolved subshape is explicitly provisional. Spent order, evidence integrity, availability and authoritative claim observations require semantic checks.",
+      "description": "SPEC 15.9.4 and 15.12.1. Spent order, evidence integrity, availability and authoritative claim observations require semantic checks.",
       "allOf": [
         {
           "if": {
@@ -2218,11 +2177,244 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "recognition_none",
+                      "recognition_ambiguous",
+                      "recognition_indeterminate",
+                      "continuation_unavailable",
+                      "run_unavailable",
+                      "parents_unmet",
+                      "run_completed",
+                      "requires_unmet",
+                      "cites_unmet",
+                      "citation_spent"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "not"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "check_not"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "doubt"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "enum": [
+                      "check_doubt",
+                      "grants_doubt"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "const": "none"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": "recognition_none"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "const": "ambiguous"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": "recognition_ambiguous"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "const": "indeterminate"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": "recognition_indeterminate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "frequency": {
+                    "const": "_unaddressed"
+                  }
+                }
+              },
+              "context": {
+                "properties": {
+                  "continue": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": "continuation_unavailable"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "process": {
+                    "type": "string"
+                  },
+                  "run": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": "run_unavailable"
+                  }
+                }
+              }
+            }
+          }
         }
       ]
     },
-    "ReasonCodeDraft": {
-      "description": "Proposed closed primary reason vocabulary for PR-05 review; not yet a normative restriction on DetailV2.",
+    "ReasonCode": {
+      "description": "Architect-approved primary reason vocabulary (SPEC 15.12.1). Null on ok.",
       "enum": [
         "recognition_none",
         "recognition_ambiguous",
@@ -2238,6 +2430,46 @@
         "check_doubt",
         "grants_doubt"
       ]
+    },
+    "ResolvedObservations": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parents": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          }
+        },
+        "cites": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          }
+        }
+      },
+      "required": [
+        "root",
+        "parents",
+        "cites"
+      ],
+      "additionalProperties": false,
+      "description": "Architect-approved resolved roles. Only actually resolved ids, never caller claims. See SPEC 15.12.1."
     }
   }
 }

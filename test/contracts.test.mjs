@@ -109,8 +109,8 @@ const variants = [
   ["continuation detail", "DetailV2", { ...detail, recognition: null }, true],
   ["reason absent", "DetailV2", Object.fromEntries(Object.entries(detail).filter(([k]) => k !== "reason")), false],
   ["legacy detail version", "DetailV2", { ...detail, logline: "detail@1" }, false],
-  ["context entry draft", "ContextV1", context, true],
-  ["context successor draft", "ContextV1", { ...context, continue: cont, resolved: { root: h("a"), parents: { open: h("a") }, cites: {} } }, true],
+  ["context entry", "ContextV1", context, true],
+  ["context successor", "ContextV1", { ...context, continue: cont, resolved: { root: h("a"), parents: { open: h("a") }, cites: {} } }, true],
   ["context duplicate spent pair", "ContextV1", { ...context, spent: [{ slot: "proof", id: h("a") }, { slot: "proof", id: h("a") }] }, false],
   ["context distinct slots", "ContextV1", { ...context, spent: [{ slot: "one", id: h("a") }, { slot: "two", id: h("a") }] }, true],
   ["context fabricated by field", "ContextV1", { ...context, by: "admin" }, false],
@@ -280,7 +280,7 @@ test("contract: absolute end of identifiers and encodings", () => {
   check("RunExpression", { var: "$parents.open.detail." }, false);
   check("RunExpression", { var: "$parents.open.detail.grants.owner" });
 });
-test("contract review: known law but unknown requested RUN", () => {
+test("contract: known law but unknown requested RUN", () => {
   const request = { ...cont, run: "unknown" };
   const c = { ...context, continue: request, resolved: { root: h("a"), parents: {}, cites: {} } };
   const header = { ...continuationHeader, status: "registered", activated: false, run: null };
@@ -298,10 +298,10 @@ test("contract: unresolved continuation has no invented ancestry or claims", () 
   check("DecisionParts", { header: unaddressed, detail: d, context: { ...c, completed: h("a") } }, false);
   check("DecisionParts", { header: unaddressed, detail: d, context: continuationContext }, false);
 });
-test("contract review: primary reason codes do not contain host messages", () => {
+test("contract: primary reason codes do not contain host messages", () => {
   for (const value of ["recognition_ambiguous", "run_unavailable", "cites_unmet", "grants_doubt"])
-    check("ReasonCodeDraft", value);
-  check("ReasonCodeDraft", "relation receipts does not exist", false);
+    check("ReasonCode", value);
+  check("ReasonCode", "relation receipts does not exist", false);
 });
 test("contract assembly: selection, root and conflicts constrain disposition", () => {
   check("DecisionParts", { header: unaddressed, detail: unmet, context }, false);
@@ -309,4 +309,11 @@ test("contract assembly: selection, root and conflicts constrain disposition", (
   check("DecisionParts", { header: { ...continuationHeader, instance: null }, detail: { ...detail, recognition: null }, context: continuationContext }, false);
   check("DecisionParts", { header: continuationHeader, detail: { ...detail, recognition: null }, context: { ...continuationContext, completed: h("b") } }, false);
   check("DecisionParts", { ...decision, context: { ...context, spent: [{ slot: "proof", id: h("a") }] } }, false);
+});
+
+test("contract: approved reason vocabulary is closed and status-specific", () => {
+  check("DetailV2", { ...detail, reason: "arbitrary_host_error" }, false);
+  check("DecisionParts", { header: { ...entry, status: "registered", activated: false }, detail: { ...unmet, reason: "check_not" }, context }, false);
+  check("DecisionParts", { header: unaddressed, detail: { ...unmet, recognition: noMatch, reason: "recognition_ambiguous" }, context }, false);
+  check("DecisionParts", { header: { ...continuationHeader, status: "not" }, detail: { ...refused, reason: "check_doubt" }, context: continuationContext }, false);
 });

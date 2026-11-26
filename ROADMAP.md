@@ -73,7 +73,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 - Acceptance: zero/one/multiple matches per approved contract; snapshot/version changes; deterministic ordering and bounded work; valid scalars/arrays/objects and adversarial keys. No hidden preference based on arrival order.
 
 ### PR-05 — RUN evaluator and signed result
-- [ ] Depends on PR-04. In progress: coordinated machine-readable contract review in one pass across PR-05–08, using the single schema projection and independent evidence described in SPEC §15.12. Freeze exact unresolved encoding and reason codes before the runtime relies on them. Reuse existing expression, citation, status, signing and verification primitives. Bind law, RUN, context and output according to SPEC, including registration without activation.
+- [ ] Depends on PR-04. In progress: coordinated machine-readable structural contract and decision boundary approved (2026-11-26), across PR-05–08, using the single schema projection and independent evidence described in SPEC §15.12. Complete exact diagnostic text, semantic validators and executable vectors before claiming runtime conformance. Reuse existing expression, citation, status, signing and verification primitives. Bind law, RUN, context and output according to SPEC, including registration without activation.
 - Acceptance: positive, negative, doubt and registered outcomes, no effects for unmet activation; machine-attested identity, immutable law, independent replay with exact evidence. Versioned vectors; retain v1 tests and vectors.
 
 ## M2 — The Trajectory
