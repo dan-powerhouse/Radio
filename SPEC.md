@@ -318,7 +318,7 @@ The external alumni fixture (`examples/alumni.external.logline-101@1.json`) has 
 ### 15.6 Open decisions before a new normative version
 
 - Recognition and registry semantics are approved in §15.8. The Process Type and RUN schema, instance identity and receipt encoding are specified in §15.9.
-- Instance and RUN identities and receipt binding; successor eligibility, causal dependencies, retries and transactional consumption scope (§15.9; implementation pending).
+- Instance and RUN identities, receipt binding, successor eligibility, causal dependencies, retries and transactional consumption scope are implemented in the reference (§§15.9, 15.13–15.17). Native enforcement remains a Cycle II gate.
 - The DIPLOMACY conceptual direction is adopted; exact manifest, package identity, component integrity, safe archive profile and association between instructions and immutable law versions are not frozen. MAP wire contract has not been supplied.
 - Root-only response shape and removal or retention of reserved outbox/reaction jobs; any automatic internal RUN advancement must be explicitly specified.
 - Hosted history recovery under concurrent commits, client-specific authorization and revocation, trust and community scope, citation bundle input and protection against fabricated or spent citations.
@@ -667,3 +667,11 @@ Native MCP conformance requires a real OAuth flow against the intended resource 
 The M6 recovery boundary comprises identity mapping and pseudonym secret, laws and registry snapshots, receipts and private evidence, current signing material and historical public keys, and DIPLOMACY packages. Verify a restore into a separate environment, including package bytes when the database backup excludes Storage objects. Revoke compromised issuance authority, establish a new trusted key, and retain historical verification keys and the applicable trust windows.
 
 The single schema adds the proposed SubmitResult, PrivateEvidence, ReceiptNotice, Tuning, HistoryCursor/Request/Page, MachineDiscovery, BoundaryFailure, SkillName, DiplomacyPath/Manifest and VerificationVerdict shapes, and a ReferenceLimitsV2 definition for the draft reference profile. Existing definitions are unchanged. vectors/boundary-review.json supplies independent package identities for the reference ZIP tests and separate scenarios for native acceptance. Native authorization, end-to-end recoverable history and interoperability with agents still require tests. Approval of this proposal is required before marking §15.6 resolved or declaring PR-09A complete. The founding DIPLOMACY article is preserved verbatim.
+
+### 15.19 PR-09B — Conformance corpus for freeze review
+
+The reference conformance corpus is indexed by `vectors/corpus.json` as `radio-conformance@1`. Its SHA-256 pins cover the exact fixture file bytes. The corpus revision is independent of the protocol release and the wire object versions. Changes to a published corpus require a new review and must preserve historical evidence.
+
+The standards fixtures carry RFC 8785 Appendix B binary64 encodings and RFC 8032 §7.1 Ed25519 cases. Node, Bun and Chromium test them alongside the existing protocol vectors. The JCS tests start from binary64 bits. Transport admission applies the separate I-JSON requirements in §2. The native-crypto audit checks the signed v2 headers and prescribed evidence addresses without using the RADIO evaluator. Reference replay and trajectory tests check the decision and closure separately.
+
+The proposed profile in §15.18.6 admits the historical v1 fixtures and all reviewed v2 fixtures. Pre-freeze v2 objects outside that profile can retain authentic signatures even when the hardened profile refuses replay. Freeze approval must record that compatibility boundary and identify the exact reviewed commit, corpus, tool lockfile and CI results. Hosted capacity, OAuth resource binding, authorization under revocation, durable paginated history and Institution recovery retain their separate native acceptance gates.

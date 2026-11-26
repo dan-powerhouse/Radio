@@ -1,0 +1,16 @@
+{
+  "logline": "radio-conformance@1",
+  "files": {
+    "boundary-review.json": "add775c833d45c5a4df2c05929c4c9178264d0f8c6d1942a6e9e6bc4f279fae8",
+    "expressions.json": "9268f28decb6d121f140abb1572a14f4b11070ccea1e7aff4cf79b79af906399",
+    "jcs.json": "a51a0fb2dbefa2db3c6ef3b5a1c48f20b67ec141a0f6c8a075e2c9bc8f7cd7cf",
+    "process-types.json": "0781faee379fc93460c5ca1efa381da41cc8c298b093d6171a43705443813113",
+    "receipt-v2-contract.json": "1c98ac70ad725f0e63423c16fd0aeeb36bb54b279f7fdd4d08a7624dbdca9f28",
+    "receipts.json": "998970293c928d51e8103615d9e54bdf7e9351c95ae5cfe6a655d8409fe9c7fc",
+    "recognition.json": "64491b30381fbe4ec715a46b6fa6b25136b6d789eb49f80378aede2bc481a0de",
+    "run-v2.json": "da05e4ff33387973a2c09775a30167289b7a15c6c80a522187023b423f4a7c69",
+    "standards.json": "9a5d271cffad518dc04968b06131afac91420b51fd10b4f970feee63c80c1e05",
+    "strict-json.json": "5c328fcec50534fc8992c6ce7a11117d2510b1d336df4658f14b0bae9fb1e522",
+    "test-key.json": "bd69db85943a8b2617c2f58fb6c4726bc97fb25f876679aa76846263710ac50a"
+  }
+}
