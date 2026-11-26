@@ -134,7 +134,7 @@ Exit: a real native Realtime WebSocket listener receives committed receipts, can
 
 ### PR-14 — Committed broadcast and tuning
 - [ ] Depends on PR-11/13. Use native Supabase Realtime with existing frequency/status/identity filters as specified. Verify signature before acting; keep private details outside public payload.
-- Acceptance: two independent authenticated/authorized listeners see the same committed object; no event for rolled-back commit; unauthorized subscription and private data leak tests; no bespoke WebSocket server.
+- Acceptance: two independent authorized listeners receive the same committed receipt ID and can resolve the same signed object through an authorized read. Verify rollback, publish permissions, private-data exclusion and lease expiry against an uncooperative socket on native Realtime.
 
 ### PR-15 — Durable history and reconnect contract
 - [ ] Depends on PR-10/14. Materialize the frozen history/reconnect guarantees; resolve physical cursor design and live/catch-up overlap before implementing. Sequence allocation is not commit order; do not promise `seq > cursor` alone. Pick minimal correctness-preserving mechanism with architect approval.

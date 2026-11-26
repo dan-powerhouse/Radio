@@ -96,6 +96,10 @@ const counts = () => scalar(`select json_build_array((select count(*) from radio
   (select count(*) from radio_v2.receipts),(select count(*) from radio_v2.decisions),
   (select count(*) from radio_v2.successful_runs),(select count(*) from radio_v2.consumptions));`);
 const candidate = async (r,identity=who()) => evaluate(r,await admit(r,identity),identity);
+const topic = "radio:v2:receipts", issuer = "http://127.0.0.1/auth/v1";
+const signalRows = id => scalar(`select coalesce(jsonb_agg(jsonb_build_object(
+  'payload',payload,'event',event,'private',private,'extension',extension)), '[]'::jsonb)
+  from realtime.messages where topic=${q(topic)} and payload->>'id'=${q(id)};`);
 const save = async r => {
   const c=await candidate(r);
   assert.equal((await commit(c)).kind,"committed");
@@ -104,6 +108,7 @@ const save = async r => {
 const continueAt = (instance,run) => ({instance,run,parents:{open:instance}});
 const entry = value => request({kind:"native",value});
 
+await admin(`insert into radio_v2.broadcast_settings(issuer) values (${q(issuer)}) on conflict (singleton) do update set issuer=excluded.issuer;`);
 const initial=await rpc("registry",[...who(),"NULL","false"]);
 const initialLaws=L.parseStrict(initial.snapshot).types;
 const denied = await publish(lawBytes,lawHash,who(owner,reader));
@@ -166,6 +171,8 @@ const same=[...await Promise.all([commit(first),commit(first,who(owner,alternate
 assert.deepEqual(same.map(x=>x.kind).sort(),["committed","replayed"]);
 assert.equal(first.payload.registry, firstAdmission.registry);
 const firstId=first.payload.id;
+const expectedSignal = id => [{payload:{id},event:"receipt",private:true,extension:"broadcast"}];
+assert.deepEqual(await signalRows(firstId),expectedSignal(firstId));
 const recovery=await admit(scalarRequest,who(owner,alternate));
 assert.equal(recovery.kind,"replayed");
 assert.equal(recovery.result.receipt,L.canonicalize(first.issued.receipt));
@@ -176,6 +183,31 @@ assert.equal(await read(firstId,"use",who(outsider)),null);
 assert.equal(await read("sha256:"+"0".repeat(64),"use",who(outsider)),null);
 assert.equal((await admit({...scalarRequest,tuple:"different"})).kind,"submission_conflict");
 assert.equal((await admit(scalarRequest,who(owner,reader))).kind,"forbidden");
+
+const issued = Math.floor(Date.now()/1000);
+const claims = {sub:owner,iss:issuer,aud:"authenticated",role:"authenticated",is_anonymous:false,
+  session_id:randomUUID(),iat:issued-10,exp:issued+60};
+const readSignal = "select count(*) from realtime.messages where payload->>'id'=" + q(firstId) + ";";
+const setTopic = "set realtime.topic=" + q(topic) + ";";
+assert.equal(await scalar(setTopic+readSignal,"authenticated",claims),1);
+assert.equal(await scalar(readSignal,"authenticated",claims),0);
+for (const denied of [{...claims,iss:"https://other.invalid"},{...claims,exp:issued-1},{...claims,exp:issued+301},
+  {...claims,client_id:reader},{...claims,is_anonymous:true},{...claims,sub:randomUUID()}])
+  assert.equal(await scalar(setTopic+readSignal,"authenticated",denied),0);
+assert.equal(await scalar(setTopic+readSignal,"anon"),0);
+await admin("create policy test_shared_realtime_read on realtime.messages for select to authenticated using (true);");
+await admin("create policy test_shared_realtime_send on realtime.messages for insert to authenticated with check (true);");
+try {
+  assert.equal(await scalar(readSignal,"authenticated",claims),0);
+  await admin(`update radio_v2.authority set active=false where principal=${q(owner)};`);
+  try { assert.equal(await scalar(setTopic+readSignal,"authenticated",claims),0); }
+  finally { await admin(`update radio_v2.authority set active=true where principal=${q(owner)};`); }
+  await assert.rejects(sql(`insert into realtime.messages(id,topic,event,payload,private,extension)
+    values(gen_random_uuid(),${q(topic)},'receipt',${j({id:firstId})},true,'broadcast');`,
+    "authenticated",claims),/row-level security/);
+} finally {
+  await admin("drop policy test_shared_realtime_read on realtime.messages; drop policy test_shared_realtime_send on realtime.messages;");
+}
 
 // Explicit resource authority permits use and disclosure independently.
 await admin(`update radio_v2.authority set evidence=${j({[firstId]:["use_evidence"]})} where principal=${q(outsider)};`);
@@ -211,6 +243,7 @@ async function race(firstCandidate,secondCandidate) {
     session.stdin.write(`begin; set role service_role; ${rpcSQL("commit",[...who(),j(firstCandidate.payload)])}\n`);
     assert.equal(JSON.parse((await pending)[0]).kind,"committed");
     assert.equal(await read(firstCandidate.payload.id,"public"),null,"tentative receipt visible before commit");
+    assert.deepEqual(await signalRows(firstCandidate.payload.id),[]);
     const statement=rpcSQL("commit",[...who(),j(secondCandidate.payload)]);
     competing=sql(statement,"service_role",{},app).then(JSON.parse);
     competing.catch(()=>{});
@@ -239,10 +272,12 @@ assert.equal(runWinner.payload.status,"ok");
 assert.equal(runLoser.payload.status,"ok");
 assert.equal((await race(runWinner,runLoser)).kind,"retry");
 assert.equal(await read(runLoser.payload.id,"public"),null);
+assert.deepEqual(await signalRows(runLoser.payload.id),[]);
 const conflict=await evaluate(runB,runAdmission);
 assert.equal(conflict.issued.detail.reason,"run_completed");
 assert.equal(conflict.issued.context.completed,runWinner.payload.id);
 assert.equal((await commit(conflict)).kind,"committed");
+assert.deepEqual(await signalRows(conflict.payload.id),expectedSignal(conflict.payload.id));
 
 const left=await save(entry("left")), right=await save(entry("right")), source=await save(entry("source"));
 const a=request({cites:{source}},continueAt(left,"consume"));
@@ -272,10 +307,12 @@ try {
   await assert.rejects(commit(bad),/forced failure after receipt insert/);
   assert.deepEqual(await counts(),before);
   assert.equal(await read(bad.payload.id,"public"),null);
+  assert.deepEqual(await signalRows(bad.payload.id),[]);
 } finally {
   await admin(`drop trigger ${fault} on radio_v2.decisions; drop function radio_v2.${fault}();`);
 }
 assert.equal((await commit(bad)).kind,"committed");
+assert.deepEqual(await signalRows(bad.payload.id),expectedSignal(bad.payload.id));
 await assert.rejects(sql(`update radio_v2.objects set body='rewrite' where hash=${q(bad.payload.tuple_hash)};`),/permission denied/);
 await assert.rejects(admin(`update radio_v2.objects set body='rewrite' where hash=${q(bad.payload.tuple_hash)};`),/immutable/);
 
@@ -298,6 +335,7 @@ await admin(`update radio_v2.authority set mandates=mandates-${q(alternate)} whe
 assert.equal((await commit(revoked,who(owner,alternate))).kind,"forbidden");
 assert.equal((await admit(scalarRequest,who(owner,alternate))).kind,"forbidden");
 assert.equal(await read(revoked.payload.id,"public"),null);
+assert.deepEqual(await signalRows(revoked.payload.id),[]);
 
 // Retirement changes admission only. Existing instances keep the original law.
 const retired=await publish(null,null);
@@ -312,4 +350,9 @@ assert.equal((await candidate(entry("new admission"))).issued.detail.reason,"rec
 for (const suffix of ["a","b","later"]) {
   assert.equal((await rpc("publish",[...who(),q(lawId+"."+suffix),"NULL","NULL"])).kind,"committed");
 }
-console.log("PostgreSQL v2: Registry races and retirement, JCS bytes, concurrent submission/RUN/once claims, no tentative visibility, rollback, current authority and RLS passed.");
+
+await admin("delete from radio_v2.broadcast_settings;");
+const silent = await save(entry("broadcast disabled"));
+assert.deepEqual(await signalRows(silent),[]);
+assert.ok((await read(silent,"public")).receipt);
+console.log("PostgreSQL v2: Registry, JCS bytes, submission/RUN/once races, atomic Broadcast enqueue and rollback, current authority and RLS passed.");

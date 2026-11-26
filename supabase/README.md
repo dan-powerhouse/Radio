@@ -11,7 +11,7 @@ The [RADIO Protocol 1.0 contract](../SPEC.md#1518-pr-09a--approved-coordinated-b
 | M3 · Immutable law and Registry (§15.8, §15.10) | Process Type validator, strict I-JSON, JCS, scanner and immutable admission snapshots. PR-10 persists bounded snapshots and their active pointer. | PostgreSQL unique keys, digest, transaction and row lock. | The PR-11 adapter publishes with the existing validator and supplies the admitted snapshot to the scanner. It reads one historical law for a successor. |
 | M3 · CAS and atomic constitution (§15.9, §15.14–15) | Frozen evaluator and receipt creation. PR-10 adds CAS and authoritative submission, RUN and once claims. | PostgreSQL unique constraints, FKs, transaction and keyed locks. | The PR-11 adapter marshals observed reads and recovers ambiguous acknowledgments by nonce. Retry preserves the admitted time and Registry. |
 | M3 · Bounded ephemeral execution (§15.13, §15.18.6) | Scanner, RUN and signing are runtime-neutral TypeScript. | Edge Functions, WebCrypto and Edge Secrets. | Stage the existing code. Measure worker CPU, memory and bounded evidence reads at the frozen limits. Evaluate native middleware by responsibility. |
-| M4 · Committed radio and tuning (§15.18.4) | Reference receipts and tuning. The preview's Realtime publication is v1 only. | Database-originated Broadcast and private channels with Realtime Authorization. | PR-14 verifies emission after commit, payload size with framing and the maximum authorization lease against a noncooperative listener. |
+| M4 · Committed radio and tuning (§15.18.4) | A v2 receipt insert queues a private hash announcement in the same transaction. Clients resolve and tune on the signed receipt. | Database-originated Broadcast and private channels with Realtime Authorization. | Qualify the protected socket lease, permissions and framing on the project before enabling the channel. |
 | M4 · Durable history (§15.18.4) | Reference recovery and a PostgreSQL late-commit snapshot probe. | PostgreSQL MVCC or another demonstrably closed commit window. Realtime Broadcast Replay can help recent recovery. | PR-15 chooses a cursor design and proves stable pages, late-commit coverage, reconnect and immutable checkpoints under concurrent writes. |
 | M5 · Direct API and MCP (§15.18.3) | The MCP function exposes v2 law discovery, submission and evidence through the official SDK. Submit uses the existing v2 transaction adapter. | Data API, Edge Functions, Auth OAuth and stateless MCP 2026-07-28. | Verify native consent, resource binding and interoperability with actual hosted clients before activation. |
 | M5 · DIPLOMACY (§15.18.5) | The archive validator can produce an operator adoption statement for the MCP catalog. The function serves manifest and verified Skill text. | PostgreSQL adoption records and candidate Storage distribution with access policies. | PR-19 covers archive distribution, protected download lifetime and hosted agent interoperability. |
@@ -29,7 +29,7 @@ The additive `radio_v2` migration stores canonical text, validates content hashe
 - `radio_v2_admit` authorizes submission and result disclosure before recovery. A new admission returns the immutable Registry address, attested time, pseudonym and policy revision. `radio_v2_registry`, `radio_v2_read` and `radio_v2_observe` provide scoped inputs and observations for the adapter.
 - `radio_v2_commit` rechecks the same authority and observations, including absent evidence and claims. It returns `committed`, `replayed`, `submission_conflict`, `retry` or an admission/resource failure. The PR-11 adapter maps these internal outcomes to the transport contract. The [SQL integration harness](../test/postgres-v2.integration.mjs) demonstrates the payload binding.
 
-Only the trusted `service_role` can call these RPCs. The private tables have RLS and no participant grants. Operator-owned permission maps default to deny. They store arrays of operation names keyed by the verified OAuth client UUID or the explicit `direct` policy. Receipt resource grants use the receipt address as key. The Edge boundary will verify Supabase identity and OAuth resource claims and derive the stable HMAC pseudonym. PostgreSQL locks membership and grants during the commit. Public receipt storage contains the signed bytes and their ID. PR-14 will establish committed-only delivery. Existing v1 preview laws and receipts remain in their own schema. Any authorized historical v1 evidence integration needs an explicit materialization decision.
+Only the trusted `service_role` can call these RPCs. The private tables have RLS and no participant grants. Operator-owned permission maps default to deny. They store arrays of operation names keyed by the verified OAuth client UUID or the explicit `direct` policy. Receipt resource grants use the receipt address as key. The Edge boundary will verify Supabase identity and OAuth resource claims and derive the stable HMAC pseudonym. PostgreSQL locks membership and grants during the commit. Public receipt storage contains the signed bytes and their ID. Existing v1 preview laws and receipts remain in their own schema. Any authorized historical v1 evidence integration needs an explicit materialization decision.
 
 The SQL tests run real PostgreSQL transactions with the frozen evaluator, a test identity fixture and overlapping writers.
 
@@ -75,6 +75,47 @@ For an approved Supabase project:
 5. On a disposable hosted project, deploy `mcp` and enable `RADIO_ENABLE_V2=true` and `RADIO_ENABLE_MCP=true`. Install the connector using the exact resource URL in ChatGPT or Claude. Test native authorization code and refresh, correct and wrong resources, and revoked mandates before operational exposure. A generic `aud: authenticated` credential is rejected. Verify that the issuer binds the grant to the intended resource, including an authorization attempt for another resource, before admitting clients.
 
 `npm run test:mcp` uses the same disposable database and PostgREST prerequisites as `test:edge`, plus Deno and ZIP. The official npm client exercises the staged Edge handler and an asymmetric Auth/JWKS fixture locally. This covers the adapter's token checks and PostgreSQL authority. Hosted OAuth grants, refresh and connector registration require the hosted gate above.
+
+### Committed radio signals
+
+The v2 Radio uses the private topic `radio:v2:receipts` and Broadcast event `receipt`. Its payload contains the committed receipt ID as `{"id":"sha256:…"}`. A PostgreSQL trigger inserts one native `realtime.messages` row in the receipt transaction. Insert failure aborts constitution, and rollback removes both rows. The live signal contains only the address, so the frozen receipt size and content fit independently of the Broadcast payload. Supabase owns transport retention and delivery. PostgreSQL remains the source for receipt retrieval and the PR-15 history contract. [Broadcast from the database](https://supabase.com/docs/guides/realtime/broadcast#broadcast-from-the-database)
+
+Use the ordinary API `GET /functions/v1/receipt?id=<receipt-id>` with `LogLine-Version: 2` and the current direct Auth credential, or MCP `read_receipt` with its admitted OAuth credential. Both read the same `{receipt}` under current `read_public` authority. A failed read leaves the signal unresolved. Private evidence uses its separate permission.
+
+Subscribe with the Supabase SDK and `config: {private: true}`. For each signal, use the announced ID in an authorized read. Verify that the returned ID matches and verify the signature with `authenticV2(receipt, pinnedKeys)`. Use `tuned(tuning, receipt.header)` on the verified header. Resolve `by: "me"` to your attested pseudonym before tuning. The client owns deduplication by verified ID, credential refresh and the decision to submit a new Contract.
+
+```js
+import { authenticV2, HASH_RE, tuned } from "@logline/receipt";
+
+const channel = supabase.channel("radio:v2:receipts", {config:{private:true}});
+channel.on("broadcast", {event:"receipt"}, async ({payload}) => {
+  const id = payload?.id;
+  if (typeof id !== "string" || !HASH_RE.test(id)) return;
+  try {
+    const {receipt} = await readReceipt(id);
+    if (receipt.id !== id || !await authenticV2(receipt, pinnedKeys)) return;
+    if (tuned(tuning, receipt.header) && !seen.has(id)) {
+      seen.add(id);
+      await onReceipt(receipt);
+    }
+  } catch (error) {
+    onError(error);
+  }
+}).subscribe();
+```
+
+Supply the signed-in Supabase client, the authorized HTTP or MCP `readReceipt` function, independently pinned keys, and local `tuning`, `seen` and handlers in your application. Each listener resolves announcements independently. Include that read load when measuring fan-out in PR-21.
+
+The migration leaves the channel disabled. Qualify it on a disposable project before activating it. Disable Realtime public channel access and configure native Auth to issue direct-session access tokens of at most 300 seconds. The join policy checks the verified issuer, subject, direct session, anonymous flag, token lifetime and current `read_public` authority. Realtime must stop delivery at token expiry and recheck the policy for an in-band token update. Test both a non-cooperating listener that holds its old token and one that attempts to renew after revocation. Include two authorized listeners, an unauthorized listener, a rolled-back commit, and verification and current-authority lookup of the returned object. The activation row carries the exact issuer, matching `RADIO_AUTH_ISSUER`.
+
+```sql
+insert into radio_v2.broadcast_settings (issuer)
+values ('https://<project-ref>.supabase.co/auth/v1');
+```
+
+In an approved deployment, stage the evaluator and deploy the v2-only `receipt` Edge Function with its existing v2 environment. The activation row enables the channel and signal emission. Remove it to stop new signals and admissions. The protected profile currently uses direct Auth sessions for Realtime. MCP OAuth clients can resolve receipt IDs through MCP under their own admitted mandate. [Realtime Authorization](https://supabase.com/docs/guides/realtime/authorization)
+
+`npm run test:realtime` extends the Edge integration with native WebSocket delivery and revocation. Supply `RADIO_TEST_REALTIME_URL` for a disposable loopback Realtime server connected to the same local database and `RADIO_TEST_REALTIME_JWT_SECRET` for its test signing key. Use the actual Realtime migrations for this run. Stock PostgreSQL uses the separate fixture below to check transactional enqueue and RLS.
 
 ## Preserved v1 hosted preview
 
@@ -154,12 +195,14 @@ LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL=postgresql://postgres:postgr
 For a **fresh disposable stock PostgreSQL 17 database**, the test-only fixture below installs the minimal roles and claim-accessor functions needed by the migration. Never apply this fixture to an actual Supabase project. Use a local database URL and a fresh, isolated database/cluster; no production connections.
 
 ```sh
-psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -f test/postgres-auth-fixture.sql
+psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 \
+  -f test/postgres-auth-fixture.sql -f test/postgres-realtime-fixture.sql
 psql "$LOCAL_TEST_DB" -X -v ON_ERROR_STOP=1 -1 \
   -f supabase/migrations/0001_radio.sql \
   -f supabase/migrations/20261126062956_radio_v2_transactions.sql \
   -f supabase/migrations/20261126064700_radio_v2_edge_inputs.sql \
-  -f supabase/migrations/20261126103336_radio_v2_mcp.sql
+  -f supabase/migrations/20261126103336_radio_v2_mcp.sql \
+  -f supabase/migrations/20261126122327_radio_v2_realtime.sql
 LOGLINE_DISPOSABLE_DB=yes LOGLINE_TEST_DATABASE_URL="$LOCAL_TEST_DB" npm run test:postgres
 ```
 

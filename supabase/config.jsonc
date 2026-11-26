@@ -3,5 +3,8 @@
   "project_id": "radio",
   "api": { "auto_expose_new_tables": false },
   "db": { "major_version": 17 },
-  "functions": { "mcp": { "verify_jwt": false } }
+  "functions": {
+    "mcp": { "verify_jwt": false },
+    "receipt": { "verify_jwt": false }
+  }
 }

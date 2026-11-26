@@ -50,7 +50,8 @@ export function databaseV2(options) {
       catalog: (registry, after) => call("mcp_catalog", {p_registry:registry,p_after:after}, 16384),
       law: (hash, skill) => call("mcp_law", {p_law:hash,p_skill:skill},
         skill === null ? wireLimit(L.MAX_LAW_BYTES) : 5 * 1024 * 1024),
-      disclose: (id, mode) => call("read", {p_id:id,p_mode:mode}, resultLimit + wireLimit(L.MAX_SCAN_INPUT_BYTES)),
+      disclose: (id, mode) => call("read", {p_id:id,p_mode:mode},
+        mode === "public" ? wireLimit(limits.MAX_PUBLIC_RECEIPT_BYTES) : resultLimit + wireLimit(L.MAX_SCAN_INPUT_BYTES)),
       completed: (instance, run, remaining) => call("observe", {p_key:instance,p_role:run,p_cited:null}, wireLimit(remaining)),
       spent: (law, slot, cited) => call("observe", {p_key:law,p_role:slot,p_cited:cited}, 4096),
       commit: p => call("commit", {p}),
@@ -77,6 +78,24 @@ export async function publishV2(db, law) {
   if (!["committed","replayed"].includes(result?.kind)) throw boundaryFailure(result);
   if (result.hash !== hash || !address(result.registry)) throw unavailable();
   return {status:result.kind === "committed" ? 201 : 200, body:{id:law.id,hash,registry:result.registry}};
+}
+
+export async function readReceiptV2(db, keys, id, mode = "public") {
+  if (!address(id)) throw boundaryFailure({kind:"invalid_request"});
+  const row = await db.disclose(id,mode);
+  if (!row) throw boundaryFailure({kind:"not_found"});
+  try {
+    const receipt = L.parseStrict(row.receipt,65);
+    if (receipt.id !== id || !await L.authenticV2(receipt,keys)) throw unavailable();
+    if (mode === "public") return {receipt};
+    const parts = {};
+    for (const [part, expected] of [["tuple",receipt.header.input_hash],
+      ["detail",receipt.header.detail_hash],["context",receipt.header.context_hash]]) {
+      if (typeof row[part] !== "string" || await L.sha256(row[part]) !== expected) throw unavailable();
+      parts[part] = L.parseStrict(row[part]);
+    }
+    return parts;
+  } catch { throw unavailable(); }
 }
 
 async function replay(result, request, hash, actor, keys) {

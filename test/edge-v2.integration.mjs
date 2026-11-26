@@ -22,9 +22,9 @@ const by = await L.pseudonym(secret,principal);
 const {key,privateJwk} = await L.generateMachineKey(), keys = {[key.id]:{jwk:key.public}};
 const jwtSecret = randomBytes(36).toString("base64url");
 const b64 = value => Buffer.from(JSON.stringify(value)).toString("base64url");
-function token(claims) {
+function token(claims, secret = jwtSecret) {
   const data = b64({alg:"HS256",typ:"JWT"})+"."+b64(claims);
-  return data+"."+createHmac("sha256",jwtSecret).update(data).digest("base64url");
+  return data+"."+createHmac("sha256",secret).update(data).digest("base64url");
 }
 const service = token({role:"service_role", exp:Math.floor(Date.now()/1000)+600});
 const processes = new Set();
@@ -187,6 +187,13 @@ try {
     values (${q(principal)},${q(by)},true,array[${perms.map(q)}],${j({direct:perms})});`);
   const publish=await worker("publish");
   let submit=await worker("submit");
+  const receiptReader=await worker("receipt");
+  const fetchReceipt = async (id, authorization=bearer) => {
+    const target=new URL(receiptReader.url);
+    target.searchParams.set("id",id);
+    const r=await fetch(target,{headers:{"logline-version":"2",authorization},signal:AbortSignal.timeout(15000)});
+    return {status:r.status,body:await r.json()};
+  };
   const send = async (target,input,{version="2",authorization=bearer}={}) => {
     const response=await fetch(target.url,{method:"POST",headers:{
       "logline-version":version,"content-type":"application/json",authorization
@@ -285,6 +292,23 @@ try {
   const first=request({edgeLaw:id,value:"escaped\u0000🛰"});
   const entry=(await send(submit,first)).value;
   assert.equal(entry.receipt.header.status,"ok");
+  assert.deepEqual(await fetchReceipt(entry.receipt.id),{status:200,body:{receipt:entry.receipt}});
+  assert.deepEqual(await fetchReceipt(entry.receipt.id,"Bearer invalid"),
+    {status:401,body:{error:"unauthenticated"}});
+  assert.deepEqual(await fetchReceipt("invalid"),{status:400,body:{error:"invalid_request"}});
+  if (process.env.RADIO_TEST_REALTIME === "yes") {
+    const secret=process.env.RADIO_TEST_REALTIME_JWT_SECRET;
+    if (!secret) throw Error("Configure the disposable Realtime JWT fixture");
+    const {probeRealtime}=await import("./realtime-v2-probe.mjs");
+    await probeRealtime({issuer:fixtureClaims.iss,principal,keys,readReceipt:fetchReceipt,
+      mint:(sub,exp)=>token({...fixtureClaims,sub,exp,iat:Math.floor(Date.now()/1000),
+        session_id:randomUUID(),is_anonymous:false},secret),
+      commit:async value=>{
+        const outcome=await send(submit,request({edgeLaw:id,value}));
+        assert.equal(outcome.status,201);
+        return outcome.value.receipt;
+      }});
+  }
   const selected=await scalar(`select public.radio_v2_registry(${q(principal)},null,${q(registry)},true);`);
   const expected=await L.issueV2(key,L.canonicalize(first),{
     by,when:entry.receipt.header.when,registryHash:registry,keys,
@@ -341,6 +365,7 @@ try {
 
   await admin(`update radio_v2.authority set mandates='{}' where principal=${q(principal)};`);
   assert.deepEqual((await send(submit,missing)).value,{error:"forbidden"});
+  assert.deepEqual(await fetchReceipt(entry.receipt.id),{status:404,body:{error:"not_found"}});
   assert.equal(await scalar(`select count(*) from radio_v2.decisions where principal=${q(principal)}
     and submission=${q(lost)};`),1);
   console.log((nativeEdge?"Supabase Edge Runtime":"Deno")+" + PostgREST + PostgreSQL v2: publication, reference parity, RPC grants, native contention, reply loss, replacement and revocation passed.");
