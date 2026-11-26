@@ -2,7 +2,7 @@
 // No import of RADIO. Expected statuses are reviewed against the examples in SPEC.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { createHash, createPublicKey, createPrivateKey, sign, verify } from "node:crypto";
 const bytes = name => readFileSync(new URL("../vectors/" + name, import.meta.url));
 const digest = x => createHash("sha256").update(x).digest("hex");
@@ -25,6 +25,14 @@ test("historical vector files are pinned byte for byte", () => {
     "test-key.json": "bd69db85943a8b2617c2f58fb6c4726bc97fb25f876679aa76846263710ac50a",
   };
   for (const [file, expected] of Object.entries(pins)) assert.equal(digest(bytes(file)), expected, file);
+});
+test("versioned corpus pins every reviewed vector independently of the runtime", () => {
+  const corpus = JSON.parse(bytes("corpus.json"));
+  assert.equal(corpus.logline, "radio-conformance@1");
+  const names = readdirSync(new URL("../vectors/", import.meta.url))
+    .filter(name => name.endsWith(".json") && name !== "corpus.json").sort();
+  assert.deepEqual(Object.keys(corpus.files).sort(), names);
+  for (const name of names) assert.equal(digest(bytes(name)), corpus.files[name], name);
 });
 test("independent SHA-256, Ed25519 signatures, and reviewed outcome of every historical receipt", () => {
   const { crv, kty, x } = fixture.public_jwk;
@@ -62,5 +70,44 @@ test("new law and registry goldens have independently consistent content address
     // These fixed ASCII keys are listed in canonical order by hand.
     assert.deepEqual(types, [...new Set(types)].sort());
     assert.equal(hash(JSON.stringify({ logline, scan_ops, types })), s.expected.hash);
+  }
+});
+
+test("native crypto independently authenticates each reviewed v2 receipt and its evidence addresses", () => {
+  const entries = JSON.parse(bytes("receipt-v2-contract.json")).cases.map(c => {
+    const receipt = c.bundle.objects[c.receipt_id], h = receipt.header;
+    assert.equal(c.receipt_id, receipt.id, c.name);
+    return {name:c.name, request:c.request, receipt, detail:c.bundle.objects[h.detail_hash],
+      context:c.bundle.objects[h.context_hash], keys:c.bundle.keys, submissionKey:c.submission_key};
+  });
+  const outcomes = JSON.parse(bytes("run-v2.json"));
+  for (const {name,request,expected} of outcomes.cases) {
+    entries.push({name,request,receipt:expected.receipt,detail:expected.detail,context:expected.context,
+      keys:outcomes.keys,submissionKey:expected.submission_key});
+  }
+
+  // The fixture oracle covers named members and dense JSON arrays. Refuse
+  // numeric object member names, whose enumeration order differs from JCS.
+  const fixtureJSON = value => JSON.stringify(value, (_,v) => {
+    if (v === null || typeof v !== "object" || Array.isArray(v)) return v;
+    const names = Object.keys(v).sort();
+    assert.ok(names.every(name => !/^\d+$/.test(name)));
+    return Object.fromEntries(names.map(name => [name,v[name]]));
+  });
+  assert.equal(entries.length,31);
+  for (const {name,request,receipt,detail,context,keys,submissionKey} of entries) {
+    const {header:h,id,sig} = receipt;
+    const {jwk} = keys[sig.key];
+    assert.equal(hash(fixtureJSON(jwk)),sig.key,name);
+    assert.equal(hash(fixtureJSON(h)),id,name);
+    assert.equal(hash(fixtureJSON(detail)),h.detail_hash,name);
+    assert.equal(hash(fixtureJSON(context)),h.context_hash,name);
+    assert.equal(hash(fixtureJSON(request.tuple)),h.input_hash,name);
+    assert.equal(hash(fixtureJSON({tuple:request.tuple,continue:request.continue??null})),context.request_hash,name);
+    assert.equal(hash(fixtureJSON({by:h.by,submission:request.submission})),submissionKey,name);
+    const key = createPublicKey({key:jwk,format:"jwk"});
+    const signature = Buffer.from(sig.value,"base64url");
+    assert.equal(verify(null,Buffer.from("logline-receipt-v2:"+id),key,signature),true,name);
+    assert.equal(verify(null,Buffer.from("logline-receipt-v1:"+id),key,signature),false,name);
   }
 });

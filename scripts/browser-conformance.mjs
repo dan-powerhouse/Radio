@@ -16,6 +16,7 @@ const files = {
   "/run-v2-conformance.js": readFileSync(root + "test/run-v2-conformance.mjs", "utf8"),
   "/scanner-conformance.js": readFileSync(root + "test/scanner-conformance.mjs", "utf8"),
   "/kernel-conformance.js": readFileSync(root + "test/kernel-conformance.mjs", "utf8"),
+  "/standards-conformance.js": readFileSync(root + "test/standards-conformance.mjs", "utf8"),
   "/boundary-hardening-conformance.js": readFileSync(root + "test/boundary-hardening-conformance.mjs", "utf8"),
   "/": "<!doctype html><meta charset=utf-8><title>conformance</title>",
 };
@@ -29,7 +30,7 @@ await page.goto("https://conformance.test/");
 const jcs = JSON.parse(readFileSync(root + "vectors/jcs.json", "utf8"));
 const receipts = JSON.parse(readFileSync(root + "vectors/receipts.json", "utf8"));
 const fixture = name => JSON.parse(readFileSync(root + "vectors/" + name + ".json", "utf8"));
-const fixtures = { expressions: fixture("expressions"), strict: fixture("strict-json"), processTypes: fixture("process-types"), recognition: fixture("recognition"), runV2: fixture("run-v2"), receiptV2: fixture("receipt-v2-contract"), testKey: fixture("test-key") };
+const fixtures = { standards: fixture("standards"), expressions: fixture("expressions"), strict: fixture("strict-json"), processTypes: fixture("process-types"), recognition: fixture("recognition"), runV2: fixture("run-v2"), receiptV2: fixture("receipt-v2-contract"), testKey: fixture("test-key") };
 // Playwright object serialization can alter own __proto__ keys. Pass JSON text
 // and parse in the browser to preserve the exact adversarial input.
 const groups = await page.evaluate(async (fixtureText) => {
@@ -43,8 +44,9 @@ const groups = await page.evaluate(async (fixtureText) => {
   const { atomicConformance } = await import("/atomic-conformance.js");
   const { bundleV2Conformance } = await import("/bundle-v2-conformance.js");
   const { continuityConformance } = await import("/continuity-conformance.js");
+  const { standardsConformance } = await import("/standards-conformance.js");
   const { boundaryHardeningConformance } = await import("/boundary-hardening-conformance.js");
-  return { hardening: await boundaryHardeningConformance(L, fixtures.testKey), continuity: await continuityConformance(L, fixtures.testKey), bundlesV2: await bundleV2Conformance(L, fixtures.receiptV2, fixtures.runV2, receipts, fixtures.testKey), atomic: await atomicConformance(L, fixtures.testKey), instances: await processLedgerConformance(L, fixtures.receiptV2, fixtures.runV2, fixtures.testKey), runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
+  return { standards: await standardsConformance(L, fixtures.standards), hardening: await boundaryHardeningConformance(L, fixtures.testKey), continuity: await continuityConformance(L, fixtures.testKey), bundlesV2: await bundleV2Conformance(L, fixtures.receiptV2, fixtures.runV2, receipts, fixtures.testKey), atomic: await atomicConformance(L, fixtures.testKey), instances: await processLedgerConformance(L, fixtures.receiptV2, fixtures.runV2, fixtures.testKey), runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
 }, JSON.stringify([jcs, receipts, fixtures]));
 const ua = await page.evaluate(() => navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0]);
 await browser.close();
