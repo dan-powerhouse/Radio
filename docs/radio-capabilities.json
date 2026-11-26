@@ -74,7 +74,7 @@
       "title": "Start a Process with a Contract",
       "goal": "Ask the Institution to recognize a free tuple and attempt the first RUN.",
       "steps": [
-        "Draft the tuple with the Process Type and any adopted Skill in view. Prefer the LogLine convention `who`, `did`, `this` and `with` where it fits the law.",
+        "Draft the tuple with the Process Type and any adopted Skill in view. LogLine's `who`, `did`, `this` and `with` help the author name the entities, action, object and context. Use the Skill to identify relevant evidence and missing facts before submitting.",
         "Generate a fresh `submission` nonce, for example 16 cryptographically random bytes encoded as unpadded base64url. Authenticate and send the `tuple` and `submission` with `continue` omitted.",
         "Read the committed receipt. Use its ID as the instance ID when an entry RUN succeeds."
       ],
@@ -97,7 +97,7 @@
       ],
       "examples": [
         {
-          "title": "Entry request for `blue@1`",
+          "title": "Entry request for `blue@1` using the LogLine fields its law needs",
           "vector": "receipt-v2-contract.json",
           "case": "entry-A",
           "select": "request",
@@ -406,7 +406,7 @@
       ],
       "outcomes": [
         "The contract includes late commits in a later completed window. The durable history boundary owns the checkpoint.",
-        "The reference exercises listener replacement and local catch-up. A hosted implementation supplies its own evidence for closed windows and lease enforcement."
+        "The local reference exercises listener replacement. The PostgreSQL profile tests closed windows with real concurrent commits and the participant adapter tests overlap with live delivery."
       ],
       "spec": [
         "15.17",
@@ -434,7 +434,8 @@
       "tests": [
         "test/continuity-conformance.test.mjs",
         "test/boundary-contracts.test.mjs",
-        "test/postgres.integration.mjs"
+        "test/postgres-v2.integration.mjs",
+        "test/hosted-v2.test.mjs"
       ]
     },
     {

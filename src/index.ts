@@ -12,6 +12,7 @@ export { inauthentic } from "./authentic.js";
 export * from "./ledger.js";
 export { parseStrict } from "./strict.js";
 export * from './hosted.js';
+export * from './hosted-v2.js';
 
 export * from "./process-type.js";
 

@@ -52,6 +52,8 @@ export function databaseV2(options) {
         skill === null ? wireLimit(L.MAX_LAW_BYTES) : 5 * 1024 * 1024),
       disclose: (id, mode) => call("read", {p_id:id,p_mode:mode},
         mode === "public" ? wireLimit(limits.MAX_PUBLIC_RECEIPT_BYTES) : resultLimit + wireLimit(L.MAX_SCAN_INPUT_BYTES)),
+      history: (scope, after, limit) => call("history", {p_scope:scope,p_after:after,p_limit:limit}, wireLimit(1048576)),
+      archive: id => call("package", {p_id:id}, 12 * 1024 * 1024),
       completed: (instance, run, remaining) => call("observe", {p_key:instance,p_role:run,p_cited:null}, wireLimit(remaining)),
       spent: (law, slot, cited) => call("observe", {p_key:law,p_role:slot,p_cited:cited}, 4096),
       commit: p => call("commit", {p}),
@@ -67,6 +69,8 @@ export function boundaryFailure(result) {
     case "publication_conflict": return new HostedError(409, "invalid_request", "law identifier is bound to other bytes");
     case "invalid_request": return new HostedError(400, "invalid_request", "invalid request");
     case "not_found": return new HostedError(404, "not_found", "resource unavailable");
+    case "cursor_invalid": return new HostedError(400, "cursor_invalid", "history cursor does not match this request");
+    case "cursor_expired": return new HostedError(410, "cursor_expired", "history cursor is no longer retained");
     case "resource_limit": return resourceLimit();
     default: return unavailable();
   }
@@ -78,6 +82,15 @@ export async function publishV2(db, law) {
   if (!["committed","replayed"].includes(result?.kind)) throw boundaryFailure(result);
   if (result.hash !== hash || !address(result.registry)) throw unavailable();
   return {status:result.kind === "committed" ? 201 : 200, body:{id:law.id,hash,registry:result.registry}};
+}
+
+export async function retireV2(db, id) {
+  if (typeof id !== "string" || !/^[a-z0-9][a-z0-9._:@-]{0,127}(?![\s\S])/.test(id))
+    throw boundaryFailure({kind:"invalid_request"});
+  const result = await db.publish(id, null, null);
+  if (!["committed","replayed"].includes(result?.kind)) throw boundaryFailure(result);
+  if (!address(result.hash) || !address(result.registry)) throw unavailable();
+  return {id,hash:result.hash,registry:result.registry};
 }
 
 export async function readReceiptV2(db, keys, id, mode = "public") {
@@ -96,6 +109,16 @@ export async function readReceiptV2(db, keys, id, mode = "public") {
     }
     return parts;
   } catch { throw unavailable(); }
+}
+
+export async function readPackageV2(db,id) {
+  if (!address(id)) throw boundaryFailure({kind:"invalid_request"});
+  const row = await db.archive(id);
+  if (!row) throw boundaryFailure({kind:"not_found"});
+  if (row.id !== id || !address(row.hash) || typeof row.archive !== "string") throw unavailable();
+  const archive = Uint8Array.from(atob(row.archive),value => value.charCodeAt(0));
+  if (archive.length > 8 * 1024 * 1024 || await L.sha256(archive) !== row.hash) throw unavailable();
+  return {archive,hash:row.hash};
 }
 
 async function replay(result, request, hash, actor, keys) {

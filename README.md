@@ -48,7 +48,7 @@ The repository is the executable reference, the rigid protocol contract and conf
 | `processes/` | Historical v1 example laws: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
 | `bin/logline.mjs` | CLI: `logline verify-bundle <bundle.json\|url> [--keys keys.json\|url]` |
-| `src/hosted.ts` | Direct client for the historical v1 Supabase preview |
+| `src/hosted.ts`, `src/hosted-v2.ts` | Historical v1 client and v2 participant adapter for Supabase |
 | `server/` | Optional local HTTP reference: a durable, hash-chained ledger file. Not on the hosted request path |
 | `bin/logline-server.mjs` | `logline-server serve`, `account`, `head` |
 | `vectors/` | Historical v1 goldens and versioned fixtures for portable v2 conformance |
@@ -126,7 +126,7 @@ Supabase Auth provides identity. Edge Functions evaluate and sign with the same 
 
 ### Hosted readiness
 
-The first native paths are merged and exercised locally. Before hosted use, qualify native OAuth consent and resource binding and verify the protected Realtime lease on an approved Supabase project. Durable history and reconnect, DIPLOMACY distribution, capacity and institutional restore remain open. [Native Materialization Matrix](supabase/README.md#native-materialization-matrix) · [Roadmap checkpoint](ROADMAP.md#current-checkpoint)
+The native paths include closed-window history and protected DIPLOMACY downloads. Before hosted use, qualify native OAuth consent and resource binding, the protected Realtime lease and history reconnect on an approved Supabase project. Hosted capacity and institutional restore remain open. [Native Materialization Matrix](supabase/README.md#native-materialization-matrix) · [Roadmap checkpoint](ROADMAP.md#current-checkpoint)
 
 ### Historical v1 hosted client
 

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="radio-auth-origin" content="">
+<meta name="radio-publishable-key" content="">
+<title>RADIO authorization</title>
+<main>
+  <h1>RADIO authorization</h1>
+  <p id="status" role="status"></p>
+  <form id="login" method="post" hidden>
+    <label>Email <input name="email" type="email" autocomplete="username" required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <button>Sign in</button>
+  </form>
+  <section id="consent" hidden>
+    <p id="request"></p>
+    <button id="approve" type="button">Authorize</button>
+    <button id="deny" type="button">Deny</button>
+  </section>
+</main>
+<script defer crossorigin="anonymous"
+  integrity="sha384-A97u3Qnt9GZHURO9YJZRe7VQgGUeFzcv6I1oIGnUTxQrCxnpQMwR0/G8F2zt9abZ2"
+  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.2/dist/umd/supabase.js"></script>
+<script defer src="./consent.js"></script>
+</html>

@@ -9,7 +9,7 @@ test -f dist/index.js
 node scripts/stage-edge.mjs
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
-git archive HEAD supabase/config.jsonc supabase/migrations supabase/functions | tar -xf - -C "$work"
+git archive HEAD supabase/config.jsonc supabase/migrations supabase/functions supabase/consent supabase/README.md | tar -xf - -C "$work"
 mkdir -p "$work/supabase/functions/_shared/core"
 cp -a supabase/functions/_shared/core/. "$work/supabase/functions/_shared/core/"
 diff -r --exclude='*.d.ts' --exclude=browser.js dist "$work/supabase/functions/_shared/core"

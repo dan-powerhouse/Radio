@@ -14,7 +14,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import * as L from "../dist/index.js";
 import { url, q, j, sql, scalar } from "./postgres-harness.mjs";
-import { diplomacyAdoptionSql } from "../bin/diplomacy.mjs";
+import { diplomacyAdoptionSql, validateDiplomacy } from "../bin/diplomacy.mjs";
 
 const admin = statement => sql(statement,"postgres");
 const principal = randomUUID(), session = randomUUID(), secret = randomBytes(32);
@@ -125,7 +125,7 @@ try {
   const mcpResource = gatewayURL+"/functions/v1/mcp";
   const fixtureClaims = {
     sub:principal, role:"authenticated", aud:"authenticated", iss:gatewayURL+"/auth/v1",
-    session_id:session, exp:Math.floor(Date.now()/1000)+600
+    session_id:session, is_anonymous:false, exp:Math.floor(Date.now()/1000)+600
   };
   const authorize = claims => {
     const auth = "Bearer "+token(claims);
@@ -182,15 +182,16 @@ try {
     body:JSON.stringify({p_principal:principal,p_client:null,p:{}})});
   assert.ok([401,403,404].includes(nativeDenied.status),"participant called service-only RPC");
 
-  const perms=["publish","submit","disclose","use_evidence","read_public"];
+  const perms=["publish","retire","submit","disclose","use_evidence","read_public","distribute_package"];
   await admin(`insert into radio_v2.authority(principal,pseudonym,active,permissions,mandates)
     values (${q(principal)},${q(by)},true,array[${perms.map(q)}],${j({direct:perms})});`);
   const publish=await worker("publish");
   let submit=await worker("submit");
   const receiptReader=await worker("receipt");
-  const fetchReceipt = async (id, authorization=bearer) => {
+  const fetchReceipt = async (id, authorization=bearer, view) => {
     const target=new URL(receiptReader.url);
     target.searchParams.set("id",id);
+    if (view) target.searchParams.set("view",view);
     const r=await fetch(target,{headers:{"logline-version":"2",authorization},signal:AbortSignal.timeout(15000)});
     return {status:r.status,body:await r.json()};
   };
@@ -247,7 +248,24 @@ try {
       for (const [path,value] of Object.entries({...files,"diplomacy.json":JSON.stringify(manifest)}))
         writeFileSync(join(directory,path),value);
       execFileSync("zip",["-q","-X","package.zip","diplomacy.json",...Object.keys(files)],{cwd:directory});
-      await admin(await diplomacyAdoptionSql(readFileSync(join(directory,"package.zip"))));
+      const archive=readFileSync(join(directory,"package.zip"));
+      const verified=await validateDiplomacy(archive);
+      const adopt=await diplomacyAdoptionSql(archive,principal);
+      await assert.rejects(sql(adopt,"authenticated"),/permission denied/);
+      assert.deepEqual(await scalar(adopt),{kind:"committed",id:verified.id});
+      assert.deepEqual(await scalar(adopt),{kind:"replayed",id:verified.id});
+      const denied=adopt.replace(`'${principal}',null`,`'${principal}','${reader}'`);
+      assert.deepEqual(await scalar(denied),{kind:"forbidden"});
+      await assert.rejects(admin(`update radio_v2.package_archives set archive=archive where id=${q(verified.id)};`),/immutable/);
+      const distributor=await worker("diplomacy");
+      const resource=new URL(distributor.url);
+      resource.searchParams.set("id",verified.id);
+      const downloaded=await fetch(resource,{headers:{"logline-version":"2",authorization:bearer}});
+      assert.equal(downloaded.status,200);
+      assert.equal(downloaded.headers.get("radio-archive"),await L.sha256(archive));
+      assert.deepEqual(Buffer.from(await downloaded.arrayBuffer()),archive);
+      assert.equal((await fetch(resource,{headers:{"logline-version":"2",authorization:"Bearer invalid"}})).status,401);
+      await stop(distributor);
     } finally { rmSync(directory,{force:true,recursive:true}); }
 
     const mcp=await worker("mcp");
@@ -293,6 +311,9 @@ try {
   const entry=(await send(submit,first)).value;
   assert.equal(entry.receipt.header.status,"ok");
   assert.deepEqual(await fetchReceipt(entry.receipt.id),{status:200,body:{receipt:entry.receipt}});
+  assert.deepEqual(await fetchReceipt(entry.receipt.id,bearer,"evidence"),{
+    status:200,body:{tuple:first.tuple,detail:entry.detail,context:entry.context}
+  });
   assert.deepEqual(await fetchReceipt(entry.receipt.id,"Bearer invalid"),
     {status:401,body:{error:"unauthenticated"}});
   assert.deepEqual(await fetchReceipt("invalid"),{status:400,body:{error:"invalid_request"}});
@@ -363,12 +384,37 @@ try {
   assert.deepEqual(rejected.value,{error:"resource_limit"});
   assert.ok(!audit.some(r=>r.name==="radio_v2_commit"&&r.payload.p.submission===tooLarge.submission));
 
+  const historyWorker=await worker("history");
+  const firstPage=await send(historyWorker,{limit:1,tuning:{by:"me",frequency:id}});
+  assert.equal(firstPage.status,200);
+  assert.ok(firstPage.value.next);
+  assert.equal(firstPage.value.checkpoint,null);
+  assert.deepEqual((await send(historyWorker,{after:firstPage.value.next})).value,{error:"cursor_invalid"});
+  const nextPage=await send(historyWorker,{after:firstPage.value.next,tuning:{frequency:[id],by:[by]}});
+  assert.equal(nextPage.status,200);
+  assert.ok(nextPage.value.checkpoint);
+  assert.ok([...firstPage.value.items,...nextPage.value.items].some(item=>item.id===entry.receipt.id));
+  assert.deepEqual((await send(historyWorker,{after:nextPage.value.checkpoint,tuning:{frequency:id,by:"me"}})).value.items,[]);
+  const retire=async () => {
+    const target=new URL(publish.url);
+    target.searchParams.set("id",id);
+    const response=await fetch(target,{method:"DELETE",headers:{"logline-version":"2",authorization:bearer}});
+    return {status:response.status,body:await response.json()};
+  };
+  const retired=await retire();
+  assert.equal(retired.status,200);
+  assert.equal(retired.body.hash,hash);
+  assert.deepEqual(await retire(),retired);
+  assert.equal((await send(submit,request({edgeLaw:id}))).value.receipt.header.status,"registered");
+
   await admin(`update radio_v2.authority set mandates='{}' where principal=${q(principal)};`);
   assert.deepEqual((await send(submit,missing)).value,{error:"forbidden"});
   assert.deepEqual(await fetchReceipt(entry.receipt.id),{status:404,body:{error:"not_found"}});
+  assert.deepEqual(await fetchReceipt(entry.receipt.id,bearer,"evidence"),{status:404,body:{error:"not_found"}});
+  assert.deepEqual((await send(historyWorker,{after:nextPage.value.checkpoint})).value,{error:"forbidden"});
   assert.equal(await scalar(`select count(*) from radio_v2.decisions where principal=${q(principal)}
     and submission=${q(lost)};`),1);
-  console.log((nativeEdge?"Supabase Edge Runtime":"Deno")+" + PostgREST + PostgreSQL v2: publication, reference parity, RPC grants, native contention, reply loss, replacement and revocation passed.");
+  console.log((nativeEdge?"Supabase Edge Runtime":"Deno")+" + PostgREST + PostgreSQL v2: publication and retirement, reference parity, receipt and evidence reads, history, native contention, reply loss, replacement and revocation passed.");
 } finally {
   await Promise.all([...processes].map(stop));
   if (gateway.listening) await close(gateway);
