@@ -49,7 +49,9 @@ async function start() {
       const decide = allowed => async () => {
         approve.disabled = deny.disabled = true;
         try {
-          const answer = await (allowed ? auth.oauth.approveAuthorization(authorizationId) : auth.oauth.denyAuthorization(authorizationId));
+          const options = {skipBrowserRedirect:true};
+          const answer = await (allowed ? auth.oauth.approveAuthorization(authorizationId,options) :
+            auth.oauth.denyAuthorization(authorizationId,options));
           if (answer.error) throw new Error("The decision could not be saved");
           redirect(answer.data.redirect_url);
         } catch {

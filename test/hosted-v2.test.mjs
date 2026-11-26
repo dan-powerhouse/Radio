@@ -9,23 +9,27 @@ const check = item => ({receipt:item});
 const json = (value,status=200) => Response.json(value,{status,headers:{"logline-version":"2"}});
 
 test("v2 client verifies inputs, signed results and receipt identities on the authorized API", async () => {
-  const fixture=corpus.cases.find(item=>item.name==="free-scalar");
-  const {receipt,detail,context}=fixture.expected;
+  const fixtures=["free-scalar","retired-law-continuation"].map(name=>corpus.cases.find(item=>item.name===name));
+  const {receipt}=fixtures[0].expected;
   let exchanged=0;
   const radio=hostedClientV2({url:"https://radio.example",publishableKey:"sb_publishable_fixture",keys:corpus.keys,
     accessToken:()=> "credential-" + ++exchanged,fetcher:async (url,request) => {
       assert.equal(request.headers.authorization,"Bearer credential-"+exchanged);
       assert.equal(request.headers["logline-version"],"2");
       if (url.pathname.endsWith("/submit")) {
-        assert.deepEqual(JSON.parse(request.body),fixture.request);
+        const input=JSON.parse(request.body);
+        const fixture=fixtures.find(item=>item.request.submission===input.submission);
+        assert.deepEqual(input,fixture.request);
+        const {receipt,detail,context}=fixture.expected;
         return json({receipt,detail,context,replayed:false},201);
       }
       return json({receipt});
     }});
-  assert.deepEqual((await radio.submit(fixture.request)).receipt,receipt);
+  for (const fixture of fixtures)
+    assert.deepEqual((await radio.submit(fixture.request)).receipt,fixture.expected.receipt);
   assert.deepEqual(await radio.receipt(receipt.id),receipt);
   await assert.rejects(radio.receipt(early.id),error=>error.code==="integrity");
-  assert.equal(exchanged,3);
+  assert.equal(exchanged,4);
 });
 
 test("listener merges live and durable reads, keeps a completed checkpoint, and resumes after replacement", async () => {
