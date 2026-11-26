@@ -9,6 +9,7 @@ execSync(`bun build ${root}dist/index.js --outfile ${root}dist/browser.js --form
 const files = {
   "/lib.js": readFileSync(root + "dist/browser.js", "utf8"),
   "/conformance.js": readFileSync(root + "test/conformance.mjs", "utf8"),
+  "/process-ledger-conformance.js": readFileSync(root + "test/process-ledger-conformance.mjs", "utf8"),
   "/run-v2-conformance.js": readFileSync(root + "test/run-v2-conformance.mjs", "utf8"),
   "/scanner-conformance.js": readFileSync(root + "test/scanner-conformance.mjs", "utf8"),
   "/kernel-conformance.js": readFileSync(root + "test/kernel-conformance.mjs", "utf8"),
@@ -34,7 +35,8 @@ const groups = await page.evaluate(async (fixtureText) => {
   const { kernelConformance, receiptEvidenceConformance } = await import("/kernel-conformance.js");
   const { scannerConformance } = await import("/scanner-conformance.js");
   const { runV2Conformance, runV2OutcomeConformance } = await import("/run-v2-conformance.js");
-  return { runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
+  const { processLedgerConformance } = await import("/process-ledger-conformance.js");
+  return { instances: await processLedgerConformance(L, fixtures.receiptV2, fixtures.runV2, fixtures.testKey), runV2: [...await runV2Conformance(L, fixtures.receiptV2, fixtures.testKey), ...await runV2OutcomeConformance(L, fixtures.runV2, fixtures.testKey)], scanner: await scannerConformance(L, fixtures.recognition), legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
 }, JSON.stringify([jcs, receipts, fixtures]));
 const ua = await page.evaluate(() => navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0]);
 await browser.close();

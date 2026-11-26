@@ -195,6 +195,9 @@ export class ProcessTypeRegistry {
     this.#active.delete(hash);
   }
 
+  /** Includes retired laws: a published id is never rebound. */
+  hashForId(id: string): string | null { return this.#ids.get(id) ?? null; }
+
   law(hash: string): ProcessType | null {
     const law = this.#laws.get(hash);
     return law ? structuredClone(law) : null;

@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { kernelConformance, receiptEvidenceConformance } from "../test/kernel-conformance.mjs";
+import { processLedgerConformance } from "../test/process-ledger-conformance.mjs";
 import { runV2Conformance, runV2OutcomeConformance } from "../test/run-v2-conformance.mjs";
 import { scannerConformance } from "../test/scanner-conformance.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -15,8 +16,8 @@ const fixtures = { expressions: load("expressions"), strict: load("strict-json")
 const receipts = load("receipts");
 const recognition = load("recognition");
 const runV2Fixture = load("run-v2"), receiptV2Fixture = load("receipt-v2-contract"), testKey = load("test-key");
-const run = async L => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition), ...await runV2Conformance(L,receiptV2Fixture,testKey), ...await runV2OutcomeConformance(L,runV2Fixture,testKey)];
-const baseline = await run(await import("../dist/index.js"));
+const run = async (L, includeLedger=false) => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition), ...await runV2Conformance(L,receiptV2Fixture,testKey), ...await runV2OutcomeConformance(L,runV2Fixture,testKey), ...(includeLedger ? await processLedgerConformance(L,receiptV2Fixture,runV2Fixture,testKey) : [])];
+const baseline = await run(await import("../dist/index.js"),true);
 assert.deepEqual(baseline.filter(x => !x.ok), [], "clean baseline must pass");
 const mutations = [
   ["inherited operator", "expr.js", "Object.prototype.hasOwnProperty.call(LAZY, op)", "op in LAZY", "expr/inherited-op-constructor"],
@@ -56,6 +57,12 @@ const mutations = [
   ["v2 confuses once slots", "run-v2.js", "await spent(lawHash, slot, id)", 'await spent(lawHash, "one", id)', "run-v2/once-slot-scope"],
   ["v2 wrong signature domain", "keys.js", 'SIGNING_DOMAIN_V2 = "logline-receipt-v2:"', 'SIGNING_DOMAIN_V2 = "logline-receipt-v1:"', "run-v2/entry-A"],
 
+  ["ledger forgets completed RUN", "process-ledger.js", "this.#success.set(prepared.success, entry.receipt.id);", "void 0;", "instance/completed-before-requires"],
+  ["ledger forgets submission key", "process-ledger.js", "this.#submissions.set(submissionKey, { requestHash: entry.context.request_hash, id: entry.receipt.id });", "void 0;", "instance/retry-after-retirement"],
+  ["ledger retirement lost", "process-ledger.js", "this.#registry.retire(id);", "void 0;", "instance/no-match"],
+  ["ledger skips receipt persistence", "process-ledger.js", 'await this.#write({ kind: "receipt-v2", entry, admission_snapshot: s.snapshot });', "void 0;", "instance/restart-history"],
+  ["ledger forgets consumption", "process-ledger.js", "this.#consumed.add(k);", "void 0;", "instance/once-scope-after-restart"],
+
 ];
 let failed = 0;
 for (const [name, file, from, to, killer] of mutations) {
@@ -66,7 +73,7 @@ for (const [name, file, from, to, killer] of mutations) {
     const target = join(dir, "dist", file), source = readFileSync(target, "utf8");
     if (source.split(from).length !== 2) throw Error("mutation anchor missing or ambiguous: " + file);
     writeFileSync(target, source.replace(from, to));
-    const results = await run(await import(pathToFileURL(join(dir, "dist/index.js")).href));
+    const results = await run(await import(pathToFileURL(join(dir, "dist/index.js")).href),file === "process-ledger.js");
     const observed = results.find(r => r.name === killer);
     if (!observed || observed.ok) {
       console.error("SURVIVED", name, "expected killer", killer); failed++;

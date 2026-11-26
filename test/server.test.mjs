@@ -13,8 +13,9 @@ const PROCESSES = ["course.lesson@1.json", "course.certificate.logline-101@1.jso
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), "logline-"));
 
 async function boot(dir, opts = {}) {
-  const m = await openMachine(dir);
-  const server = createServer(m, opts);
+  const { clock, ...httpOptions } = opts;
+  const m = await openMachine(dir, { clock });
+  const server = createServer(m, httpOptions);
   await new Promise((r) => server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${server.address().port}`;
   const call = async (method, p, { token, body, headers = {} } = {}) => {
@@ -140,12 +141,30 @@ test("the radio: tuned, live, and resumable with Last-Event-ID", async () => {
 });
 
 test("identical submissions racing each other decide once", async () => {
-  const s = await fresh();
+  // The historical course law uses time:exact. Exercise the same time bucket
+  // deterministically; crossing a second is a distinct submission in v1.
+  const s = await fresh({ clock: () => "2026-11-25T00:00:00Z" });
   try {
     const rs = await Promise.all(Array.from({ length: 8 }, () => s.call("POST", "/submit", { token: s.tokens.ana, body: lesson(1, 90) })));
     assert.deepEqual(rs.map((r) => r.status).sort(), [200, 200, 200, 200, 200, 200, 200, 201]);
     assert.equal(new Set(rs.map((r) => r.json.receipt.id)).size, 1);
   } finally { await s.stop(); }
+});
+
+test("historical exact-time law distinguishes adjacent seconds over HTTP", async () => {
+  let when = "2026-11-25T00:00:00Z";
+  const s = await fresh({ clock: () => when });
+  try {
+    const first = await s.call("POST", "/submit", { token: s.tokens.ana, body: lesson(1, 90) });
+    when = "2026-11-25T00:00:01Z";
+    const next = await s.call("POST", "/submit", { token: s.tokens.ana, body: lesson(1, 90) });
+    const retry = await s.call("POST", "/submit", { token: s.tokens.ana, body: lesson(1, 90) });
+    assert.equal(first.status, 201);
+    assert.equal(next.status, 201);
+    assert.notEqual(first.json.receipt.id, next.json.receipt.id);
+    assert.equal(retry.status, 200);
+    assert.equal(retry.json.receipt.id, next.json.receipt.id);
+  } finally { await s.stop(); fs.rmSync(s.dir, { recursive: true, force: true }); }
 });
 
 test("a torn last line is dropped; any other change to the log refuses to start", async () => {

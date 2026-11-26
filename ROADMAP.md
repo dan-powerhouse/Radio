@@ -73,7 +73,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 - Acceptance: zero/one/multiple matches per approved contract; snapshot/version changes; deterministic ordering and bounded work; valid scalars/arrays/objects and adversarial keys. No hidden preference based on arrival order.
 
 ### PR-05 — RUN evaluator and signed result
-- [ ] Depends on PR-04. In progress: coordinated machine-readable structural contract and decision boundary approved (2026-11-26), across PR-05–08, using the single schema projection and independent evidence described in SPEC §15.12. Reference RUN evaluation and tentative v2 signing implemented in the PR-05 review branch (SPEC §15.13), including approved diagnostic priority, authorized evidence/claim observation boundary and independent portable signed vectors. Reuse existing expression, field type, citation frequency and signing primitives. Review/merge pending; no durable v2 instance or atomic claim/retry boundary, full replay or hosted route yet.
+- [ ] Depends on PR-04. In progress: coordinated machine-readable structural contract and decision boundary approved (2026-11-26), across PR-05–08, using the single schema projection and independent evidence described in SPEC §15.12. Reference RUN evaluation and tentative v2 signing implemented in the PR-05 review branch (SPEC §15.13), including approved diagnostic priority, authorized evidence/claim observation boundary and independent portable signed vectors. Reuse existing expression, field type, citation frequency and signing primitives. Remote CI passed on GitHub #9; merge pending. Reference ledger integration is PR-06; full portable replay and hosted route remain pending.
 - Acceptance: positive, negative, doubt and registered outcomes, no effects for unmet activation; machine-attested identity, immutable law, independent replay with exact evidence. Versioned vectors; retain v1 tests and vectors.
 
 ## M2 — The Trajectory
@@ -81,7 +81,7 @@ Exit: the rigid core has a pure executable reference and portable conformance ev
 Exit: multiple process instances progress independently, with receipts as the objects, portable evidence of causal history and uniqueness after restart. Provider-independent boundary contracts are complete for the declared 1.0 scope. The rigid-core release has passed all required reference and CI gates and is explicitly approved for freeze. Native PostgreSQL/Edge materialization begins in M3, not as an M2 exit requirement.
 
 ### PR-06 — Instance formation and continuation
-- [ ] Depends on PR-05. Connect first and successor RUNs to instance identity and eligibility in the reference ledger. Use explicit ancestry, not in-memory conversational state.
+- [ ] Depends on PR-05. Implemented on the dependent PR-06 review branch (SPEC §15.14): reference ProcessLedger and file-backed openProcessMachine, receipt-derived instance identity, explicit ancestry and nonlinear joins, immutable publication/retirement, recorded observation replay, local single-writer retry/claim indexes and recovery. Review/merge pending; no additional hosted server, mixed-version persistent import, or full bundle verification. PR-07 remains the concurrency/failure-boundary acceptance gate.
 - Acceptance: two instances of one law; cannot substitute one instance's receipts for another; retry and invalid successor cases. Nonlinear trajectories permitted only as specified.
 
 ### PR-07 — Atomic uniqueness and retry semantics
