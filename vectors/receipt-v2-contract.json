@@ -1,0 +1,653 @@
+{
+  "format": "radio-receipt-v2-contract-review@1",
+  "provenance": "Non-frozen positive fixture from SPEC 15.9.5. Expected decisions specified manually; ASCII JCS subset addresses via Python json/hashlib and signatures via Python cryptography Ed25519, independently of RADIO. Resolved observation encoding is provisional. TEST KEY ONLY.",
+  "cases": [
+    {
+      "name": "entry-A",
+      "request": {
+        "tuple": {
+          "did": "request",
+          "with": {
+            "subject": "A"
+          }
+        },
+        "submission": "AQEBAQEBAQEBAQEBAQEBAQ"
+      },
+      "submission_key": "sha256:a59154aab6b8abcf283658f54503c3c28e365e06d1403df9419ed50c8bc65e30",
+      "receipt_id": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+      "bundle": {
+        "logline": "bundle@2",
+        "head": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+        "keys": {
+          "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b": {
+            "jwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk"
+            }
+          }
+        },
+        "objects": {
+          "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061": {
+            "header": {
+              "logline": "receipt@2",
+              "frequency": "blue@1",
+              "status": "ok",
+              "activated": true,
+              "process": "blue@1",
+              "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+              "run": "open",
+              "instance": null,
+              "input_hash": "sha256:efc33e97945be7e406736b90b187f9097e4e7a32843ee325421b9e118d7046fc",
+              "context_hash": "sha256:bb4cd55a774a178535dabc125c3fe47a1e61b216db3ba17d477998f78d195487",
+              "detail_hash": "sha256:485119c2abce535248bf135b886b0fa310073a4ff29018517e321350b1666116",
+              "when": "2026-11-25T00:00:00Z",
+              "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "prev": [],
+              "public": {}
+            },
+            "id": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "sig": {
+              "alg": "Ed25519",
+              "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+              "value": "mLA030yo8R1ZawAkHtqnl5aRcN1pRrMvgV-H-atKfz84gRQfQyKa50fXTFekkqEUD8kxx0XZ-HXvJmZ2LM0bAA"
+            }
+          },
+          "sha256:485119c2abce535248bf135b886b0fa310073a4ff29018517e321350b1666116": {
+            "logline": "detail@2",
+            "consequence": "Opened",
+            "findings": [],
+            "unmet": null,
+            "grants": {
+              "subject": "A",
+              "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "reason": null,
+            "recognition": {
+              "outcome": "unique",
+              "matches": [
+                "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+              ],
+              "selected": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "diagnostics": [],
+              "ops_used": 5
+            }
+          },
+          "sha256:bb4cd55a774a178535dabc125c3fe47a1e61b216db3ba17d477998f78d195487": {
+            "logline": "context@1",
+            "submission": "AQEBAQEBAQEBAQEBAQEBAQ",
+            "request_hash": "sha256:eccea084c6ce1e6d41a8928560dca089f139b3b795dc759f450e9df697ecc5fd",
+            "continue": null,
+            "spent": [],
+            "completed": null,
+            "resolved": {
+              "root": null,
+              "parents": {},
+              "cites": {}
+            }
+          },
+          "sha256:efc33e97945be7e406736b90b187f9097e4e7a32843ee325421b9e118d7046fc": {
+            "did": "request",
+            "with": {
+              "subject": "A"
+            }
+          },
+          "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59": {
+            "logline": "registry@1",
+            "types": [
+              "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+            ],
+            "scan_ops": 100
+          },
+          "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63": {
+            "logline": "process-type@1",
+            "id": "blue@1",
+            "issuer": "Example",
+            "recognize": {
+              "and": [
+                {
+                  "has": "did"
+                },
+                {
+                  "==": [
+                    {
+                      "var": "did"
+                    },
+                    "request"
+                  ]
+                }
+              ]
+            },
+            "runs": [
+              {
+                "id": "open",
+                "after": [],
+                "requires": {
+                  "with.subject": "string"
+                },
+                "steps": [],
+                "grants": {
+                  "subject": {
+                    "var": "with.subject"
+                  },
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Opened",
+                "if_not": "Not opened",
+                "if_doubt": "Open undecided"
+              },
+              {
+                "id": "review",
+                "after": [
+                  "open"
+                ],
+                "requires": {
+                  "with.score": "integer"
+                },
+                "steps": [
+                  {
+                    "id": "owner",
+                    "check": {
+                      "==": [
+                        {
+                          "var": "$by"
+                        },
+                        {
+                          "var": "$parents.open.detail.grants.owner"
+                        }
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Owner required"
+                  },
+                  {
+                    "id": "score",
+                    "check": {
+                      ">=": [
+                        {
+                          "var": "with.score"
+                        },
+                        70
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Score below 70"
+                  }
+                ],
+                "grants": {
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Reviewed",
+                "if_not": "Not reviewed",
+                "if_doubt": "Review undecided"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "entry-B",
+      "request": {
+        "tuple": {
+          "did": "request",
+          "with": {
+            "subject": "B"
+          }
+        },
+        "submission": "AgICAgICAgICAgICAgICAg"
+      },
+      "submission_key": "sha256:0157ed929421b1b064d7ec5563a5cdf8add848e8040c85d3eaac38fde46661c7",
+      "receipt_id": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096",
+      "bundle": {
+        "logline": "bundle@2",
+        "head": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096",
+        "keys": {
+          "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b": {
+            "jwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk"
+            }
+          }
+        },
+        "objects": {
+          "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096": {
+            "header": {
+              "logline": "receipt@2",
+              "frequency": "blue@1",
+              "status": "ok",
+              "activated": true,
+              "process": "blue@1",
+              "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+              "run": "open",
+              "instance": null,
+              "input_hash": "sha256:b8d23a51e83596814cde73069bc202f961f9651519e7c91e037cc01422aea15d",
+              "context_hash": "sha256:a482cdef193487a63e281b83243447c619e21bf7c022e2daa6013dca7e7017b5",
+              "detail_hash": "sha256:4f0300cdbfc8f9aeb80395152d099f3f2635e2210be0e0b1e7177157a58ac5ab",
+              "when": "2026-11-25T00:00:00Z",
+              "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "prev": [],
+              "public": {}
+            },
+            "id": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096",
+            "sig": {
+              "alg": "Ed25519",
+              "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+              "value": "CqMBH5FnO5ThTZGsKdYLk_rTmYO0aR-WuLf-3WLOPdRM7fSxjVCBp-gfZEOvJvvfuURPuOSqjtRiya2i9luIDA"
+            }
+          },
+          "sha256:4f0300cdbfc8f9aeb80395152d099f3f2635e2210be0e0b1e7177157a58ac5ab": {
+            "logline": "detail@2",
+            "consequence": "Opened",
+            "findings": [],
+            "unmet": null,
+            "grants": {
+              "subject": "B",
+              "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "reason": null,
+            "recognition": {
+              "outcome": "unique",
+              "matches": [
+                "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+              ],
+              "selected": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "diagnostics": [],
+              "ops_used": 5
+            }
+          },
+          "sha256:a482cdef193487a63e281b83243447c619e21bf7c022e2daa6013dca7e7017b5": {
+            "logline": "context@1",
+            "submission": "AgICAgICAgICAgICAgICAg",
+            "request_hash": "sha256:8af78e3d2f92adccfd3d2330bb7e3b98737f560998ceb23bd8c1a61ab28c0924",
+            "continue": null,
+            "spent": [],
+            "completed": null,
+            "resolved": {
+              "root": null,
+              "parents": {},
+              "cites": {}
+            }
+          },
+          "sha256:b8d23a51e83596814cde73069bc202f961f9651519e7c91e037cc01422aea15d": {
+            "did": "request",
+            "with": {
+              "subject": "B"
+            }
+          },
+          "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59": {
+            "logline": "registry@1",
+            "types": [
+              "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+            ],
+            "scan_ops": 100
+          },
+          "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63": {
+            "logline": "process-type@1",
+            "id": "blue@1",
+            "issuer": "Example",
+            "recognize": {
+              "and": [
+                {
+                  "has": "did"
+                },
+                {
+                  "==": [
+                    {
+                      "var": "did"
+                    },
+                    "request"
+                  ]
+                }
+              ]
+            },
+            "runs": [
+              {
+                "id": "open",
+                "after": [],
+                "requires": {
+                  "with.subject": "string"
+                },
+                "steps": [],
+                "grants": {
+                  "subject": {
+                    "var": "with.subject"
+                  },
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Opened",
+                "if_not": "Not opened",
+                "if_doubt": "Open undecided"
+              },
+              {
+                "id": "review",
+                "after": [
+                  "open"
+                ],
+                "requires": {
+                  "with.score": "integer"
+                },
+                "steps": [
+                  {
+                    "id": "owner",
+                    "check": {
+                      "==": [
+                        {
+                          "var": "$by"
+                        },
+                        {
+                          "var": "$parents.open.detail.grants.owner"
+                        }
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Owner required"
+                  },
+                  {
+                    "id": "score",
+                    "check": {
+                      ">=": [
+                        {
+                          "var": "with.score"
+                        },
+                        70
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Score below 70"
+                  }
+                ],
+                "grants": {
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Reviewed",
+                "if_not": "Not reviewed",
+                "if_doubt": "Review undecided"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "name": "review-A",
+      "request": {
+        "tuple": {
+          "with": {
+            "score": 80
+          }
+        },
+        "submission": "AwMDAwMDAwMDAwMDAwMDAw",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "submission_key": "sha256:02a2ab6bbe23388d00a7947f90b48d2a38de4c25abda2cd8c5355cc52e346afa",
+      "receipt_id": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+      "bundle": {
+        "logline": "bundle@2",
+        "head": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+        "keys": {
+          "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b": {
+            "jwk": {
+              "kty": "OKP",
+              "crv": "Ed25519",
+              "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk"
+            }
+          }
+        },
+        "objects": {
+          "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0": {
+            "header": {
+              "logline": "receipt@2",
+              "frequency": "blue@1",
+              "status": "ok",
+              "activated": true,
+              "process": "blue@1",
+              "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+              "run": "review",
+              "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+              "input_hash": "sha256:48ee0d541d9129335e25d5341818a00e148503cb91fd43cbc45c648d30ba63de",
+              "context_hash": "sha256:f604f25c13ca0e55bc7509c9dd319851ba9cfcf050fc9d03d18e9a7839f93524",
+              "detail_hash": "sha256:983f8b7a1f8fb338c78cc8de896631ca329d10e7d32bbeca60ac7a57e3cfe12e",
+              "when": "2026-11-25T00:00:00Z",
+              "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "prev": [
+                "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+              ],
+              "public": {}
+            },
+            "id": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+            "sig": {
+              "alg": "Ed25519",
+              "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+              "value": "noz7Uow4TRzmwdGvPIA8dwx4pcCAlS2XLoRXgUeShTerTItluYDnxNIGtCofFKyM1vIJV0CkhsMbMh9G-0LKCg"
+            }
+          },
+          "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061": {
+            "header": {
+              "logline": "receipt@2",
+              "frequency": "blue@1",
+              "status": "ok",
+              "activated": true,
+              "process": "blue@1",
+              "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+              "run": "open",
+              "instance": null,
+              "input_hash": "sha256:efc33e97945be7e406736b90b187f9097e4e7a32843ee325421b9e118d7046fc",
+              "context_hash": "sha256:bb4cd55a774a178535dabc125c3fe47a1e61b216db3ba17d477998f78d195487",
+              "detail_hash": "sha256:485119c2abce535248bf135b886b0fa310073a4ff29018517e321350b1666116",
+              "when": "2026-11-25T00:00:00Z",
+              "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "prev": [],
+              "public": {}
+            },
+            "id": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "sig": {
+              "alg": "Ed25519",
+              "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+              "value": "mLA030yo8R1ZawAkHtqnl5aRcN1pRrMvgV-H-atKfz84gRQfQyKa50fXTFekkqEUD8kxx0XZ-HXvJmZ2LM0bAA"
+            }
+          },
+          "sha256:485119c2abce535248bf135b886b0fa310073a4ff29018517e321350b1666116": {
+            "logline": "detail@2",
+            "consequence": "Opened",
+            "findings": [],
+            "unmet": null,
+            "grants": {
+              "subject": "A",
+              "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "reason": null,
+            "recognition": {
+              "outcome": "unique",
+              "matches": [
+                "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+              ],
+              "selected": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+              "diagnostics": [],
+              "ops_used": 5
+            }
+          },
+          "sha256:bb4cd55a774a178535dabc125c3fe47a1e61b216db3ba17d477998f78d195487": {
+            "logline": "context@1",
+            "submission": "AQEBAQEBAQEBAQEBAQEBAQ",
+            "request_hash": "sha256:eccea084c6ce1e6d41a8928560dca089f139b3b795dc759f450e9df697ecc5fd",
+            "continue": null,
+            "spent": [],
+            "completed": null,
+            "resolved": {
+              "root": null,
+              "parents": {},
+              "cites": {}
+            }
+          },
+          "sha256:efc33e97945be7e406736b90b187f9097e4e7a32843ee325421b9e118d7046fc": {
+            "did": "request",
+            "with": {
+              "subject": "A"
+            }
+          },
+          "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59": {
+            "logline": "registry@1",
+            "types": [
+              "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+            ],
+            "scan_ops": 100
+          },
+          "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63": {
+            "logline": "process-type@1",
+            "id": "blue@1",
+            "issuer": "Example",
+            "recognize": {
+              "and": [
+                {
+                  "has": "did"
+                },
+                {
+                  "==": [
+                    {
+                      "var": "did"
+                    },
+                    "request"
+                  ]
+                }
+              ]
+            },
+            "runs": [
+              {
+                "id": "open",
+                "after": [],
+                "requires": {
+                  "with.subject": "string"
+                },
+                "steps": [],
+                "grants": {
+                  "subject": {
+                    "var": "with.subject"
+                  },
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Opened",
+                "if_not": "Not opened",
+                "if_doubt": "Open undecided"
+              },
+              {
+                "id": "review",
+                "after": [
+                  "open"
+                ],
+                "requires": {
+                  "with.score": "integer"
+                },
+                "steps": [
+                  {
+                    "id": "owner",
+                    "check": {
+                      "==": [
+                        {
+                          "var": "$by"
+                        },
+                        {
+                          "var": "$parents.open.detail.grants.owner"
+                        }
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Owner required"
+                  },
+                  {
+                    "id": "score",
+                    "check": {
+                      ">=": [
+                        {
+                          "var": "with.score"
+                        },
+                        70
+                      ]
+                    },
+                    "if_not": "not",
+                    "reason": "Score below 70"
+                  }
+                ],
+                "grants": {
+                  "owner": {
+                    "var": "$by"
+                  }
+                },
+                "if_ok": "Reviewed",
+                "if_not": "Not reviewed",
+                "if_doubt": "Review undecided"
+              }
+            ]
+          },
+          "sha256:983f8b7a1f8fb338c78cc8de896631ca329d10e7d32bbeca60ac7a57e3cfe12e": {
+            "logline": "detail@2",
+            "consequence": "Reviewed",
+            "findings": [
+              {
+                "step": "owner",
+                "result": "ok"
+              },
+              {
+                "step": "score",
+                "result": "ok"
+              }
+            ],
+            "unmet": null,
+            "grants": {
+              "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            },
+            "reason": null,
+            "recognition": null
+          },
+          "sha256:f604f25c13ca0e55bc7509c9dd319851ba9cfcf050fc9d03d18e9a7839f93524": {
+            "logline": "context@1",
+            "submission": "AwMDAwMDAwMDAwMDAwMDAw",
+            "request_hash": "sha256:378b33d778c9d43866e8217d7b48fe09085145c41baa7c794abf5edbf91806c8",
+            "continue": {
+              "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+              "run": "review",
+              "parents": {
+                "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+              }
+            },
+            "spent": [],
+            "completed": null,
+            "resolved": {
+              "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+              "parents": {
+                "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+              },
+              "cites": {}
+            }
+          },
+          "sha256:48ee0d541d9129335e25d5341818a00e148503cb91fd43cbc45c648d30ba63de": {
+            "with": {
+              "score": 80
+            }
+          }
+        }
+      }
+    }
+  ]
+}
