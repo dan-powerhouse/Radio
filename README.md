@@ -21,6 +21,8 @@ The Contract is the tuple inside the Submission. The protocol accepts any I-JSON
 
 RADIO Protocol 1.0 and its reference corpus were approved on 26 November 2026. The repository includes the historical v1 reference, the v2 reference and native Supabase materialization checkpoints. [Vision](VISION.md) · [Glossary](GLOSSARY.md) · [Specification](SPEC.md) · [Roadmap and review history](ROADMAP.md) · [Supabase setup and verification](supabase/README.md)
 
+Use the [RADIO Cookbook](COOKBOOK.md) for shared procedures, examples and expected outcomes. Edit the [capability catalog](docs/radio-capabilities.json) to update it, then run `npm run cookbook`. The test suite checks the generated Markdown.
+
 ## Repository organization
 
 The repository is the executable reference, the rigid protocol contract and conformance corpus, and the native Supabase materialization. Root documents have distinct roles; the npm library, full reference ZIP and hosted deployment archive have different delivery boundaries.
