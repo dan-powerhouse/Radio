@@ -1,5 +1,6 @@
 import { LoglineError } from "./errors.js";
-import { canonicalize } from "./jcs.js";
+import { MAX_SCAN_LAWS, MAX_SCAN_LAW_BYTES } from "./profile.js";
+import { canonicalBytes, canonicalize } from "./jcs.js";
 import { hashOf, HASH_RE } from "./hash.js";
 import { parseStrict } from "./strict.js";
 import { OPERATORS } from "./expr.js";
@@ -42,7 +43,7 @@ function fields(o: Record<string, unknown>, required: string[], optional: string
 }
 
 // Bound the object before canonicalization (including direct library calls).
-function checkJSON(v: unknown) {
+function checkJSON(v: unknown, alreadyStrict: boolean) {
   let nodes = 0;
   function visit(x: unknown, depth: number) {
     if (++nodes > MAX_LAW_NODES || depth > 64) fail("$", "law complexity limit");
@@ -63,7 +64,8 @@ function checkJSON(v: unknown) {
     for (const k of Object.keys(o)) visit(o[k], depth + 1);
   }
   visit(v, 0);
-  if (new TextEncoder().encode(canonicalize(v)).length > MAX_LAW_BYTES) fail("$", "law byte limit");
+  canonicalBytes(v, MAX_LAW_BYTES, () => fail("$", "law byte limit"));
+  if (!alreadyStrict) parseStrict(canonicalize(v));
 }
 
 // Syntax only: the original expression evaluator remains the sole runtime.
@@ -93,7 +95,11 @@ function expression(e: unknown, allowed: PathAllowed, path: string, depth = 0): 
 }
 
 export function validateProcessType(value: unknown): asserts value is ProcessType {
-  checkJSON(value);
+  validateLaw(value, false);
+}
+
+function validateLaw(value: unknown, alreadyStrict: boolean): asserts value is ProcessType {
+  checkJSON(value, alreadyStrict);
   const law = record(value, "$");
   fields(law, ["logline", "id", "issuer", "recognize", "runs"], [], "$");
   if (law.logline !== "process-type@1") fail("logline", "expected process-type@1");
@@ -137,14 +143,14 @@ export function validateProcessType(value: unknown): asserts value is ProcessTyp
 }
 
 export function parseProcessType(text: string): ProcessType {
-  if (new TextEncoder().encode(text).length > MAX_LAW_BYTES) fail("$", "law byte limit");
+  if (text.length > MAX_LAW_BYTES || new TextEncoder().encode(text).length > MAX_LAW_BYTES) fail("$", "law byte limit");
   let value: unknown;
   try { value = parseStrict(text); }
   catch (err) {
     if (err instanceof SyntaxError) throw new LoglineError("ijson", "invalid JSON string");
     throw err;
   }
-  validateProcessType(value);
+  validateLaw(value, true);
   return value;
 }
 
@@ -167,12 +173,19 @@ export class ProcessTypeRegistry {
   #ids = new Map<string, string>();
   #laws = new Map<string, ProcessType>();
   #active = new Set<string>();
+  #bytesByHash = new Map<string, number>();
+  #activeBytes = 0;
   #snapshots = new Map<string, RegistrySnapshot>();
   #scanOps: number;
 
   constructor(scanOps = MAX_OPS) {
     validateRegistrySnapshot({ logline: "registry@1", types: [], scan_ops: scanOps });
     this.#scanOps = scanOps;
+  }
+
+  checkCapacity(size: number): void {
+    if (this.#active.size >= MAX_SCAN_LAWS || this.#activeBytes + size > MAX_SCAN_LAW_BYTES)
+      throw new LoglineError("scan_limit", "active registry capacity");
   }
 
   async publish(text: string): Promise<string> {
@@ -183,6 +196,10 @@ export class ProcessTypeRegistry {
       if (previous !== hash) throw new LoglineError("process_exists", "published id cannot be rebound: " + law.id);
       return hash; // idempotent, including after retirement
     }
+    const size = canonicalBytes(law, MAX_LAW_BYTES, () => fail("$", "law byte limit"));
+    this.checkCapacity(size);
+    this.#activeBytes += size;
+    this.#bytesByHash.set(hash, size);
     this.#ids.set(law.id, hash);
     this.#laws.set(hash, law);
     this.#active.add(hash);
@@ -192,7 +209,9 @@ export class ProcessTypeRegistry {
   retire(id: string): void {
     const hash = this.#ids.get(id);
     if (!hash) throw new LoglineError("process_missing", "unknown published id: " + id);
+    const active = this.#active.has(hash);
     this.#active.delete(hash);
+    if (active) this.#activeBytes -= this.#bytesByHash.get(hash)!;
   }
 
   /** Includes retired laws: a published id is never rebound. */

@@ -1,19 +1,22 @@
 import { LoglineError } from "./errors.js";
-import { canonicalize } from "./jcs.js";
+import { canonicalBytes, canonicalize } from "./jcs.js";
 import { hashOf, HASH_RE } from "./hash.js";
 import { parseStrict } from "./strict.js";
 import { b64url, unb64url, utf8 } from "./bytes.js";
 import { evaluate, lookup, Budget } from "./expr.js";
 import { DEFAULT_OPS, FREQUENCY_RE, UNADDRESSED } from "./process.js";
-import { ProcessType, RunDefinition, RegistrySnapshot, parseProcessType, validateRegistrySnapshot } from "./process-type.js";
-import { scan, ScanResult, MAX_SCAN_INPUT_BYTES, MAX_SCAN_SNAPSHOT_BYTES } from "./scanner.js";
+import { ProcessType, RunDefinition } from "./process-type.js";
+import { RegistryEvidence, ScanResult } from "./scanner.js";
+import { MAX_SCAN_INPUT_BYTES, MAX_EVAL_WORK, MAX_PUBLIC_RECEIPT_BYTES, MAX_RESULT_PART_BYTES,
+  MAX_EVIDENCE_BYTES, MAX_EVIDENCE_PAIR_BYTES } from "./profile.js";
+export { MAX_RESULT_PART_BYTES, MAX_PUBLIC_RECEIPT_BYTES } from "./profile.js";
 import { KeyRing, MachineKey, keyId, PublicJwk, signIdV2, verifyIdV2 } from "./keys.js";
 import { Detail, Finding, Receipt, Status, WHEN_RE, typeOk, freqMatch } from "./receipt.js";
 import { verify } from "./verify.js";
 
 // Local admission bound; not a universal protocol limit.
 export const MAX_SUBMISSION_BYTES = 131_072;
-export const MAX_RESULT_PART_BYTES = 1_048_576;
+
 export interface Continuation { instance: string; run: string; parents: Record<string, string> }
 export interface SubmissionV2 { tuple: unknown; submission: string; continue?: Continuation }
 export type ReasonCode =
@@ -82,16 +85,22 @@ const stableReason = new Set<ReasonCode>(["recognition_none","recognition_ambigu
   "cites_unmet","citation_spent","check_not","check_doubt","grants_doubt"]);
 const byteLength = (s: string) => utf8(s).length;
 function copyJSON<T>(v: T, depth = 64): T { return parseStrict(canonicalize(v),depth) as T; }
+const tooLarge = (): never => fail("result_limit","result part byte or depth limit");
+const SIGNATURE_PLACEHOLDER = "A".repeat(86);
+function copyKeyRing(keys: KeyRing): KeyRing {
+  canonicalBytes(keys, MAX_RESULT_PART_BYTES, () => fail("evidence_limit","trusted key ring limit"));
+  return copyJSON(keys);
+}
 function resultPart<T>(v: T): T {
+  canonicalBytes(v, MAX_RESULT_PART_BYTES, tooLarge);
   const json = canonicalize(v);
-  if (byteLength(json) > MAX_RESULT_PART_BYTES) return fail("result_limit","result part byte limit");
   try { return parseStrict(json) as T; }
   catch { return fail("result_limit","result part outside I-JSON bounds"); }
 }
 
 /** Strict transport parsing. No identity, law, time or observations in the request. */
 export function parseSubmissionV2(text: string): SubmissionV2 {
-  if (typeof text !== "string" || byteLength(text) > MAX_SUBMISSION_BYTES)
+  if (typeof text !== "string" || text.length > MAX_SUBMISSION_BYTES || byteLength(text) > MAX_SUBMISSION_BYTES)
     fail("submission_limit","submission byte limit");
   // Envelope nesting adds one level to the free tuple. Check the tuple itself below.
   const v = parseStrict(text,65);
@@ -113,7 +122,8 @@ export function parseSubmissionV2(text: string): SubmissionV2 {
 /** Receipt@2 authenticity only, not replay, authorization or ledger completeness. */
 export async function authenticV2(value: unknown, keys: KeyRing): Promise<boolean> {
   try {
-    const r = copyJSON(value,65), trusted = copyJSON(keys);
+    canonicalBytes(value, MAX_RESULT_PART_BYTES + 512, tooLarge, 65);
+    const r = copyJSON(value,65), trusted = copyKeyRing(keys);
     if (!obj(r) || !keysAre(r,["header","id","sig"]) || !address(r.id) || !obj(r.sig) ||
         !keysAre(r.sig,["alg","key","value"]) || r.sig.alg !== "Ed25519" || !address(r.sig.key) ||
         !canonicalBinary(r.sig.value,64,64) || !obj(r.header)) return false;
@@ -151,7 +161,8 @@ function recognitionOk(scan: unknown, h: HeaderV2, reason: ReasonCode | null): b
   const diagnostics = scan.diagnostics, matched = scan.matches;
   const codes = ["recognize_non_boolean","eval_syntax","eval_operator","eval_type","eval_missing","eval_range","eval_budget","eval_depth"];
   if (!diagnostics.every(d => obj(d) && keysAre(d,["law_hash","code"]) && address(d.law_hash) && codes.includes(d.code as string))) return false;
-  if (!validSet(diagnostics.map(d=>d.law_hash)) || diagnostics.some(d=>matched.includes(d.law_hash))) return false;
+  const matchedSet = new Set(matched);
+  if (!validSet(diagnostics.map(d=>d.law_hash)) || diagnostics.some(d=>matchedSet.has(d.law_hash))) return false;
   if (scan.outcome === "unique") return scan.matches.length === 1 && diagnostics.length === 0 &&
     scan.selected === scan.matches[0] && h.process_hash === scan.selected && h.run !== null;
   return h.frequency === UNADDRESSED && h.status === "registered" && scan.selected === null &&
@@ -203,19 +214,31 @@ const evalCode = (e: unknown): string => {
 
 /** Deterministic tentative result. Does not reserve keys, persist, publish or broadcast. */
 export async function runV2(text: string, options: RunV2Options): Promise<RunV2Result> {
+  const laws = new Map(options.laws), snapshots = new Map(options.snapshots);
+  return runV2WithRegistry(text, options, new RegistryEvidence(hash => snapshots.get(hash), hash => laws.get(hash)));
+}
+
+export async function runV2WithRegistry(text: string, options: Omit<RunV2Options,"laws"|"snapshots">,
+  registryEvidence: RegistryEvidence, chargeReplay?: (work: number) => void): Promise<RunV2Result> {
   const request = parseSubmissionV2(text), tuple = request.tuple, continuation = request.continue ?? null;
   const {when,by,registryHash} = options;
   if (!validWhen(when) || !validBy(by)) fail("admission_invalid","invalid attested time or identity");
-  try { canonicalize(by); } catch { fail("admission_invalid","invalid attested identity"); }
+  try { parseStrict(canonicalize(by)); } catch { fail("admission_invalid","invalid attested identity"); }
   // Capture content and trust inputs before asynchronous resolution.
-  const laws = new Map(options.laws), snapshots = new Map(options.snapshots), keys = copyJSON(options.keys);
+  const keys = copyKeyRing(options.keys);
   const read = options.read.bind(options), completed = options.completed.bind(options), spent = options.spent.bind(options);
   const evidence = new Map<string,Evidence | null>();
+  let evidenceBytes = MAX_EVIDENCE_BYTES;
   async function get(id: string): Promise<Evidence | null> {
     if (evidence.has(id)) return evidence.get(id)!;
     const received = await read(id);
     if (received === null) { evidence.set(id,null); return null; }
+    const evidenceLimit = (): never => fail("evidence_limit","authoritative evidence byte or depth limit");
+    const size = canonicalBytes(received, Math.min(evidenceBytes, MAX_EVIDENCE_PAIR_BYTES), evidenceLimit, 66);
+    evidenceBytes -= size;
+    chargeReplay?.(size);
     const {receipt,detail} = copyJSON(received,66);
+    canonicalBytes(detail, MAX_RESULT_PART_BYTES, evidenceLimit);
     if (!receipt || receipt.id !== id || !receipt.header || !detail) return corrupt("receipt lookup mismatch");
     let ok: boolean;
     if (receipt.header.logline === "receipt@2") ok = await authenticV2(receipt,keys);
@@ -227,23 +250,15 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
     evidence.set(id,found);
     return found;
   }
-  async function snapshot(hash: string): Promise<{snapshot: RegistrySnapshot; json: string}> {
-    const json = snapshots.get(hash);
-    if (!address(hash) || json === undefined || byteLength(json) > MAX_SCAN_SNAPSHOT_BYTES)
-      return corrupt("missing or oversized authoritative snapshot");
-    const v = parseStrict(json);
-    validateRegistrySnapshot(v);
-    if (await hashOf(v) !== hash) return corrupt("snapshot address mismatch");
-    return {snapshot:v,json};
+  async function authoritative<T>(evidence: Promise<T>): Promise<T> {
+    try { return await evidence; }
+    catch (e) {
+      if (e instanceof LoglineError && (e.code.startsWith("scan_registry") || e.code === "ijson"))
+        return corrupt("invalid authoritative registry evidence");
+      throw e;
+    }
   }
-  async function lawAt(hash: string): Promise<ProcessType> {
-    const json = laws.get(hash);
-    if (json === undefined) return corrupt("missing authoritative law");
-    const law = parseProcessType(json);
-    if (await hashOf(law) !== hash) return corrupt("law address mismatch");
-    return law;
-  }
-  const current = await snapshot(registryHash);
+  const current = await authoritative(registryEvidence.snapshot(registryHash));
   let registry = registryHash, lawHash: string | null = null, law: ProcessType | null = null,
     run: RunDefinition | null = null, instance: string | null = null, recognition: ScanResult | null = null;
   const parents = dict<Evidence>(), cites = dict<Evidence>();
@@ -255,13 +270,13 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
   let reason: ReasonCode | null = null, gaps: string[] = [];
   const register = (code: ReasonCode, unmet: string[]) => { reason = code; gaps = unmet; };
   if (continuation === null) {
-    recognition = await scan(canonicalize(tuple),registryHash,current.json,laws);
+    recognition = await registryEvidence.recognize(tuple,registryHash,chargeReplay);
     if (recognition.outcome !== "unique") {
       const code = ("recognition_"+recognition.outcome) as ReasonCode;
       register(code,[code]);
     } else {
       lawHash = recognition.selected;
-      law = await lawAt(lawHash);
+      law = await registryEvidence.law(lawHash);
       run = law.runs[0];
     }
   } else {
@@ -270,9 +285,9 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
         root.header.instance !== null || !root.header.process_hash) {
       register("continuation_unavailable",["continuation"]);
     } else {
-      const rootLaw = await lawAt(root.header.process_hash);
-      const original = await snapshot(root.header.registry_hash);
-      if (rootLaw.id !== root.header.process || !original.snapshot.types.includes(root.header.process_hash))
+      const rootLaw = await authoritative(registryEvidence.law(root.header.process_hash));
+      const original = root.header.registry_hash === registryHash ? current : await authoritative(registryEvidence.snapshot(root.header.registry_hash));
+      if (rootLaw.id !== root.header.process || !original.types.includes(root.header.process_hash))
         return corrupt("root law or registry mismatch");
       if (root.header.run !== rootLaw.runs[0].id) return corrupt("root is not an entry RUN");
       law = rootLaw; lawHash = root.header.process_hash; registry = root.header.registry_hash;
@@ -337,7 +352,7 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
   const activated = reason === null && run !== null;
   if (activated && run) {
     const scope = {tuple,machine:{when,today:when.slice(0,10),by,instance,parents,cites}};
-    const budget: Budget = {left:run.limits?.ops ?? DEFAULT_OPS};
+    const budget: Budget = {left:run.limits?.ops ?? DEFAULT_OPS, work:MAX_EVAL_WORK};
     findings = run.steps.map(s => {
       try {
         return evaluate(s.check,scope,budget) === true ? {step:s.id,result:"ok"} :
@@ -351,12 +366,14 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
       try {
         const computed = dict<unknown>();
         for (const [k,e] of sorted(run.grants)) computed[k] = evaluate(e,scope,budget);
+        canonicalBytes(computed, MAX_RESULT_PART_BYTES, tooLarge);
         grants = copyJSON(computed,63);
       } catch (e) {
         grants = null; status = "doubt"; reason = "grants_doubt";
         findings.push({step:"grants",result:"doubt",reason:"The grants could not be computed.",error:evalCode(e)});
       }
     }
+    chargeReplay?.(MAX_EVAL_WORK - Math.max(0, budget.work!));
   }
   const consequence = status === "registered" ? "Recorded. The RUN did not activate." : run!["if_"+status as "if_ok"|"if_not"|"if_doubt"];
   const detail: DetailV2 = resultPart({logline:"detail@2",consequence,findings,unmet:activated?null:gaps,grants,reason,recognition});
@@ -368,10 +385,13 @@ export async function runV2(text: string, options: RunV2Options): Promise<RunV2R
   }
   const prev = [...new Set([...(instance?[instance]:[]),...Object.values(parents).map(e=>e.id),...Object.values(cites).map(e=>e.id)])].sort();
   const checkedContext = resultPart(context);
-  const header: HeaderV2 = resultPart({logline:"receipt@2",frequency:law?.id ?? UNADDRESSED,status,activated,
+  const candidate: HeaderV2 = {logline:"receipt@2",frequency:law?.id ?? UNADDRESSED,status,activated,
     process:law?.id ?? null,process_hash:lawHash,registry_hash:registry,run:run?.id ?? null,instance,
     input_hash:await hashOf(tuple),context_hash:await hashOf(checkedContext),detail_hash:await hashOf(detail),
-    when,by,prev,public:pub});
+    when,by,prev,public:pub};
+  canonicalBytes({header:candidate,id:candidate.input_hash,sig:{alg:"Ed25519",key:candidate.input_hash,value:SIGNATURE_PLACEHOLDER}},
+    MAX_PUBLIC_RECEIPT_BYTES, tooLarge, 65);
+  const header = resultPart(candidate);
   return {header,detail,context:checkedContext,id:await hashOf(header),submission_key:await hashOf({by,submission:request.submission})};
 }
 

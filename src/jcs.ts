@@ -1,3 +1,4 @@
+import { jsonStringBytes } from "./bytes.js";
 import { LoglineError } from "./errors.js";
 
 /**
@@ -43,4 +44,37 @@ function str(s: string): string {
     } else if (c >= 0xdc00 && c <= 0xdfff) throw new LoglineError("jcs_string", "lone surrogate");
   }
   return JSON.stringify(s);
+}
+
+// Preflight an admitted JSON tree before allocating canonical text. Walk repeated
+// references as separate occurrences, because JCS would serialize each one.
+export function canonicalBytes(value: unknown, limit: number, overflow: () => never, maxDepth = 64): number {
+  let bytes = 0;
+  const add = (n: number) => {
+    bytes += n;
+    if (bytes > limit) overflow();
+  };
+  function visit(v: unknown, depth: number): void {
+    if (depth > maxDepth) overflow();
+    if (typeof v === "string") {
+      add(jsonStringBytes(v, limit - bytes));
+    } else if (Array.isArray(v)) {
+      add(2 + Math.max(0, v.length - 1));
+      for (const x of v) visit(x, depth + 1);
+    } else if (v !== null && typeof v === "object") {
+      add(2);
+      let first = true;
+      for (const k in v) {
+        if (!Object.hasOwn(v,k)) continue;
+        add(first ? 1 : 2);
+        first = false;
+        add(jsonStringBytes(k, limit - bytes));
+        visit((v as Record<string, unknown>)[k], depth + 1);
+      }
+    } else {
+      add(canonicalize(v).length);
+    }
+  }
+  visit(value, 0);
+  return bytes;
 }

@@ -133,7 +133,7 @@ export async function run(process: Process | null, tuple: unknown, opts: RunOpti
   } else gaps = [`no process is published on frequency "${frequencyOf(tuple)}"`];
   const activated = gaps.length === 0;
   const scope = { tuple, machine: { today: opts.when.slice(0, 10), when: opts.when, by: opts.by ?? null, cites: cited } };
-  const budget: Budget = { left: process?.limits?.ops ?? DEFAULT_OPS };
+  const budget: Budget = { left: process?.limits?.ops ?? DEFAULT_OPS, work: null };
   let findings: Finding[] = [];
   let grants: Record<string, unknown> | null = null;
   let status: Status = "registered";

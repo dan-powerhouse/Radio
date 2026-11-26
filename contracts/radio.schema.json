@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:radio:review:core-schema:1",
   "title": "RADIO target core — structural contract review",
-  "description": "Single machine-readable structural projection of SPEC 15.8-15.12. Not a frozen protocol, runtime validator or substitute for semantic conformance. Validate named $defs, not the schema root. Historical v1 semantics are unchanged. DIPLOMACY manifest, exact unresolved wire decisions, authority and hosted interfaces are not silently specified.",
+  "description": "Single structural projection of approved core contracts and separately marked PR-09A boundary review candidates. Not a frozen protocol or runtime validator. Validate named $defs, not the root. Existing definitions and historical v1 semantics are unchanged.",
   "not": {},
   "$defs": {
     "Hash": {
@@ -2470,6 +2470,497 @@
       ],
       "additionalProperties": false,
       "description": "Architect-approved resolved roles. Only actually resolved ids, never caller claims. See SPEC 15.12.1."
+    },
+    "SubmitResult": {
+      "type": "object",
+      "properties": {
+        "receipt": {
+          "$ref": "#/$defs/ReceiptV2"
+        },
+        "detail": {
+          "$ref": "#/$defs/DetailV2"
+        },
+        "context": {
+          "$ref": "#/$defs/ContextV1"
+        },
+        "replayed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "receipt",
+        "detail",
+        "context",
+        "replayed"
+      ],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "PrivateEvidence": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "$ref": "#/$defs/DetailV2"
+        },
+        "tuple": {
+          "$ref": "#/$defs/Tuple"
+        },
+        "context": {
+          "$ref": "#/$defs/ContextV1"
+        }
+      },
+      "required": [
+        "detail",
+        "tuple",
+        "context"
+      ],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "ReceiptNotice": {
+      "description": "Candidate semantic event payload; transport metadata is not receipt evidence.",
+      "$ref": "#/$defs/ReceiptV2",
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "Tuning": {
+      "type": "object",
+      "properties": {
+        "frequency": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/FrequencyPattern"
+                },
+                {
+                  "const": "_unaddressed"
+                }
+              ]
+            },
+            {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/FrequencyPattern"
+                  },
+                  {
+                    "const": "_unaddressed"
+                  }
+                ]
+              },
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Status"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Status"
+              },
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "by": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "process_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/Hash"
+              },
+              "minItems": 1,
+              "maxItems": 32,
+              "uniqueItems": true
+            }
+          ]
+        },
+        "activated": {
+          "type": "boolean"
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "HistoryCursor": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2048,
+      "description": "Opaque review candidate, not a sequence number or an authorization credential.",
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "HistoryRequest": {
+      "type": "object",
+      "properties": {
+        "tuning": {
+          "$ref": "#/$defs/Tuning"
+        },
+        "after": {
+          "$ref": "#/$defs/HistoryCursor"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      },
+      "required": [],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "HistoryPage": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ReceiptV2"
+          },
+          "maxItems": 1000
+        },
+        "next": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistoryCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "checkpoint": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HistoryCursor"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "items",
+        "next",
+        "checkpoint"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "properties": {
+                "next": {
+                  "$ref": "#/$defs/HistoryCursor"
+                },
+                "checkpoint": {
+                  "type": "null"
+                },
+                "items": {
+                  "minItems": 1
+                }
+              }
+            },
+            {
+              "properties": {
+                "next": {
+                  "type": "null"
+                },
+                "checkpoint": {
+                  "$ref": "#/$defs/HistoryCursor"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "MachineDiscovery": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "machine@2"
+        },
+        "versions": {
+          "const": [
+            "2"
+          ]
+        },
+        "keys": {
+          "$ref": "#/$defs/KeyRing"
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "maxBody": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 131072
+            }
+          },
+          "required": [
+            "maxBody"
+          ],
+          "additionalProperties": false
+        },
+        "ttlMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        },
+        "cacheScope": {
+          "const": "public"
+        }
+      },
+      "required": [
+        "logline",
+        "versions",
+        "keys",
+        "limits",
+        "ttlMs",
+        "cacheScope"
+      ],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "BoundaryFailure": {
+      "type": "object",
+      "properties": {
+        "error": {
+          "enum": [
+            "invalid_request",
+            "unauthenticated",
+            "forbidden",
+            "not_found",
+            "unsupported_version",
+            "submission_conflict",
+            "cursor_invalid",
+            "cursor_expired",
+            "resource_limit",
+            "unavailable"
+          ]
+        }
+      },
+      "required": [
+        "error"
+      ],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "SkillName": {
+      "type": "string",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])",
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "DiplomacyPath": {
+      "type": "string",
+      "maxLength": 512,
+      "anyOf": [
+        {
+          "const": "process-type.json"
+        },
+        {
+          "pattern": "^skills/(?=[^/]{1,64}/)[a-z0-9]+(?:-[a-z0-9]+)*/[A-Za-z0-9_][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_][A-Za-z0-9._-]{0,63})*(?![\\s\\S])"
+        }
+      ],
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "ReferenceLimitsV2": {
+      "$comment": "PR-09A candidate reference profile, SPEC 15.18.6. This describes limits enforced by the runtime, including canonical UTF-8 sizes. It is not a discovery or receipt field.",
+      "const": {
+        "active_laws": 4096,
+        "active_law_bytes": 16777216,
+        "eval_work": 4194304,
+        "intermediate_value_bytes": 65536,
+        "result_part_bytes": 1048576,
+        "public_receipt_bytes": 245760,
+        "evidence_bytes": 8388608,
+        "evidence_pair_bytes": 1294400
+      }
+    },
+    "DiplomacyManifest": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "diplomacy@1"
+        },
+        "files": {
+          "type": "object",
+          "minProperties": 2,
+          "maxProperties": 256,
+          "required": [
+            "process-type.json"
+          ],
+          "propertyNames": {
+            "$ref": "#/$defs/DiplomacyPath"
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "not": {
+            "propertyNames": {
+              "not": {
+                "pattern": "^skills/(?=[^/]{1,64}/)[a-z0-9]+(?:-[a-z0-9]+)*/SKILL\\.md(?![\\s\\S])"
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "logline",
+        "files"
+      ],
+      "additionalProperties": false,
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+    },
+    "VerificationVerdict": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "head": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "authenticity": {
+          "enum": [
+            "pass",
+            "fail",
+            "incomplete",
+            "not_checked"
+          ]
+        },
+        "replay": {
+          "enum": [
+            "pass",
+            "fail",
+            "incomplete",
+            "not_checked"
+          ]
+        },
+        "trajectory": {
+          "enum": [
+            "pass",
+            "fail",
+            "incomplete",
+            "not_checked"
+          ]
+        },
+        "checked": {
+          "$ref": "#/$defs/HashSet"
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "id": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/Hash"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "code",
+              "id"
+            ],
+            "additionalProperties": false
+          }
+        }
+      },
+      "required": [
+        "valid",
+        "head",
+        "authenticity",
+        "replay",
+        "trajectory",
+        "checked",
+        "issues"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authenticity": {
+                "const": "pass"
+              },
+              "replay": {
+                "const": "pass"
+              },
+              "trajectory": {
+                "const": "pass"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "valid": {
+                "const": true
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "valid": {
+                "const": false
+              }
+            }
+          }
+        }
+      ],
+      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
     }
   }
 }

@@ -1,14 +1,15 @@
-import { canonicalize } from "./jcs.js";
+import { canonicalBytes, canonicalize } from "./jcs.js";
 import { hashOf, HASH_RE } from "./hash.js";
 import { parseStrict } from "./strict.js";
 import { utf8, b64url, unb64url } from "./bytes.js";
 import { LoglineError } from "./errors.js";
 import { KeyRing, keyId } from "./keys.js";
 import { Process, validateProcess } from "./process.js";
-import { ProcessType, parseProcessType, validateRegistrySnapshot } from "./process-type.js";
+import { MAX_LAW_BYTES } from "./process-type.js";
+import { RegistryEvidence, MAX_SCAN_SNAPSHOT_BYTES } from "./scanner.js";
 import { Receipt, Detail, Store, WHEN_RE } from "./receipt.js";
 import { verify } from "./verify.js";
-import { ReceiptV2, DetailV2, ContextV1, SubmissionV2, authenticV2, runV2 } from "./run-v2.js";
+import { ReceiptV2, DetailV2, ContextV1, SubmissionV2, authenticV2, runV2WithRegistry } from "./run-v2.js";
 
 /** Portable evidence, not a new authoritative object store. */
 export interface BundleV2 {
@@ -28,6 +29,7 @@ export interface BundleV2Verdict {
 export const MAX_BUNDLE_BYTES = 32 * 1024 * 1024;
 export const MAX_BUNDLE_OBJECTS = 32_768;
 export const MAX_BUNDLE_RECEIPTS = 4_096;
+const MAX_BUNDLE_REPLAY_WORK = 256 * 1024 * 1024;
 const obj = (v:unknown):v is Record<string,unknown> => v!==null&&typeof v==="object"&&!Array.isArray(v);
 const own = (v:object,k:string)=>Object.prototype.hasOwnProperty.call(v,k);
 const exact=(v:unknown,fields:string[]):v is Record<string,unknown>=>obj(v)&&
@@ -80,7 +82,7 @@ export async function verifyBundleV2(text:string,trustedKeys:KeyRing):Promise<Bu
   };
   let b:BundleV2,keys:KeyRing;
   try{
-    if(typeof text!=="string"||utf8(text).length>MAX_BUNDLE_BYTES)invalid("bundle_limit");
+    if(typeof text!=="string"||text.length>MAX_BUNDLE_BYTES||utf8(text).length>MAX_BUNDLE_BYTES)invalid("bundle_limit");
     const raw=parseStrict(text,67);
     if(!exact(raw,["logline","head","keys","objects"])||raw.logline!=="bundle@2"||
       !address(raw.head)||!obj(raw.keys)||!obj(raw.objects))return invalid("bundle_shape");
@@ -105,6 +107,16 @@ export async function verifyBundleV2(text:string,trustedKeys:KeyRing):Promise<Bu
     if(roles.has(id)&&roles.get(id)!==r)invalid("address_collision",id);
     roles.set(id,r);
     if(!own(b.objects,id))missing(id);
+  }
+  function registryText(id:string, max:number):string {
+    role(id,"cas");
+    canonicalBytes(b.objects[id],max,()=>invalid("bundle_limit",id));
+    return canonicalize(b.objects[id]);
+  }
+  const registry = new RegistryEvidence(id=>registryText(id,MAX_SCAN_SNAPSHOT_BYTES),id=>registryText(id,MAX_LAW_BYTES));
+  let replayWork = MAX_BUNDLE_REPLAY_WORK;
+  function chargeReplay(work:number):void {
+    if ((replayWork -= work) < 0) invalid("bundle_limit");
   }
   async function data(id:string):Promise<unknown>{
     role(id,"cas");
@@ -148,6 +160,7 @@ export async function verifyBundleV2(text:string,trustedKeys:KeyRing):Promise<Bu
   type Claims={submission:string|null;success:string|null;once:string[]};
   type Replayed={deps:string[];claims:Claims};
   async function replayOne(id:string):Promise<Replayed>{
+    chargeReplay(1);
     const {receipt:r,detail}=await read(id),h=r.header;
     const tuple=await data(h.input_hash);
     if(h.logline==="receipt@1"){
@@ -180,28 +193,24 @@ export async function verifyBundleV2(text:string,trustedKeys:KeyRing):Promise<Bu
     const deps=[...new Set([...resolved,...(c.completed?[c.completed]:[])])].sort();
     if(!same([...resolved].sort(),h.prev))invalid("causal_edges",id);
     for(const dep of deps)await read(dep); // distinguish absent evidence from an attested negative observation
-    const laws=new Map<string,string>(),snapshots=new Map<string,string>(),parsed=new Map<string,ProcessType>();
-    const snap=await data(h.registry_hash);validateRegistrySnapshot(snap);
-    snapshots.set(h.registry_hash,canonicalize(snap));
-    // For a resolved continuation the original snapshot is sufficient: the
-    // current admission snapshot is not part of its signed disposition.
-    for(const lawHash of snap.types){
-      const value=await data(lawHash),json=canonicalize(value);
-      parsed.set(lawHash,parseProcessType(json));laws.set(lawHash,json);
-    }
-    if(h.process_hash!==null&&!laws.has(h.process_hash))invalid("law_not_in_registry",id);
+    const snap=await registry.snapshot(h.registry_hash);
+    await registry.prepare(h.registry_hash);
+    // The signed snapshot is sufficient for replay, including a resolved continuation.
+    if(h.process_hash!==null&&!snap.types.includes(h.process_hash))invalid("law_not_in_registry",id);
     const request:SubmissionV2={tuple,submission:c.submission,...(c.continue===null?{}:{continue:c.continue})};
-    const again=await runV2(canonicalize(request),{
-      when:h.when,by:h.by,registryHash:h.registry_hash,laws,snapshots,keys,
+    const requestText=canonicalize(request);
+    chargeReplay(utf8(requestText).length);
+    const again=await runV2WithRegistry(requestText,{
+      when:h.when,by:h.by,registryHash:h.registry_hash,keys,
       read:async ref=>resolved.has(ref)||ref===c.completed?read(ref):null,
       completed:async()=>c.completed,
       spent:async(law,slot,ref)=>law===h.process_hash&&c.spent.some(p=>p.slot===slot&&p.id===ref)
-    });
+    },registry,chargeReplay);
     if(again.id!==id||!same(again.header,h)||!same(again.detail,detail)||!same(again.context,c))
       invalid("decision_replay",id);
     const claims:Claims={submission:again.submission_key,success:null,once:[]};
     if(h.status==="ok"){
-      const law=parsed.get(h.process_hash!)!,run=law.runs.find(x=>x.id===h.run)!;
+      const law=await registry.law(h.process_hash!),run=law.runs.find(x=>x.id===h.run)!;
       claims.success=canonicalize([h.instance??id,h.run]);
       for(const [slot,rule] of Object.entries(run.cites??{}))
         if(rule.once&&own(c.resolved.cites,slot))claims.once.push(canonicalize([h.process_hash,slot,c.resolved.cites[slot]]));
