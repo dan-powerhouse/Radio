@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:radio:review:core-schema:1",
-  "title": "RADIO target core — structural contract review",
-  "description": "Single structural projection of approved core contracts and separately marked PR-09A boundary review candidates. Not a frozen protocol or runtime validator. Validate named $defs, not the root. Existing definitions and historical v1 semantics are unchanged.",
+  "title": "RADIO Protocol 1.0 — structural contract",
+  "description": "Structural projection of approved RADIO Protocol 1.0 core and boundary contracts. Not a runtime or authorization validator. Validate named $defs, not the root. Schema identifier is retained for compatibility; historical v1 semantics are unchanged.",
   "not": {},
   "$defs": {
     "Hash": {
@@ -2494,7 +2494,7 @@
         "replayed"
       ],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "PrivateEvidence": {
       "type": "object",
@@ -2515,12 +2515,12 @@
         "context"
       ],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "ReceiptNotice": {
       "description": "Candidate semantic event payload; transport metadata is not receipt evidence.",
       "$ref": "#/$defs/ReceiptV2",
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "Tuning": {
       "type": "object",
@@ -2613,14 +2613,14 @@
       },
       "required": [],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "HistoryCursor": {
       "type": "string",
       "minLength": 1,
       "maxLength": 2048,
-      "description": "Opaque review candidate, not a sequence number or an authorization credential.",
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "description": "Opaque history cursor, not a sequence number or an authorization credential.",
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "HistoryRequest": {
       "type": "object",
@@ -2639,7 +2639,7 @@
       },
       "required": [],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "HistoryPage": {
       "type": "object",
@@ -2707,7 +2707,7 @@
           ]
         }
       ],
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "MachineDiscovery": {
       "type": "object",
@@ -2755,7 +2755,7 @@
         "cacheScope"
       ],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "BoundaryFailure": {
       "type": "object",
@@ -2779,13 +2779,13 @@
         "error"
       ],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "SkillName": {
       "type": "string",
       "maxLength": 64,
       "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?![\\s\\S])",
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "DiplomacyPath": {
       "type": "string",
@@ -2798,10 +2798,10 @@
           "pattern": "^skills/(?=[^/]{1,64}/)[a-z0-9]+(?:-[a-z0-9]+)*/[A-Za-z0-9_][A-Za-z0-9._-]{0,63}(?:/[A-Za-z0-9_][A-Za-z0-9._-]{0,63})*(?![\\s\\S])"
         }
       ],
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "ReferenceLimitsV2": {
-      "$comment": "PR-09A candidate reference profile, SPEC 15.18.6. This describes limits enforced by the runtime, including canonical UTF-8 sizes. It is not a discovery or receipt field.",
+      "$comment": "Approved RADIO 1.0 reference profile, SPEC 15.18.6. This describes limits enforced by the runtime, including canonical UTF-8 sizes. It is not a discovery or receipt field.",
       "const": {
         "active_laws": 4096,
         "active_law_bytes": 16777216,
@@ -2846,7 +2846,7 @@
         "files"
       ],
       "additionalProperties": false,
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     },
     "VerificationVerdict": {
       "type": "object",
@@ -2960,7 +2960,7 @@
           }
         }
       ],
-      "$comment": "PR-09A review candidate; not approved or frozen. See SPEC 15.18."
+      "$comment": "Approved RADIO 1.0 boundary contract. See SPEC 15.18."
     }
   }
 }

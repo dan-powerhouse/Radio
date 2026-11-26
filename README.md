@@ -1,6 +1,6 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance (GitHub #11), PR-08 portable bundle export and independent replay (GitHub #12), and PR-09 local continuity (GitHub #13) are merged. PR-09A boundary hardening (GitHub #15) is merged. Protocol freeze approval remains pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
+RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance (GitHub #11), PR-08 portable bundle export and independent replay (GitHub #12), and PR-09 local continuity (GitHub #13) are merged. PR-09A boundary hardening (GitHub #15) is merged. RADIO Protocol 1.0 reference scope and corpus are architect-approved (2026-11-26); the release ref follows final CI. Native materialization remains pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
 
 Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
 
@@ -20,8 +20,8 @@ The repository is the executable reference, the rigid protocol contract and conf
 | `VISION.md` | Purpose, architecture and principles |
 | `SPEC.md` | Single technical contract: existing v1 and target requirements (§15) |
 | `GLOSSARY.md` | Stable institutional and computational vocabulary |
-| `DIPLOMACY.md` | Founding proposal; exact package contract remains open |
-| `bin/diplomacy.mjs` | Reference validator for a proposed DIPLOMACY ZIP (§15.18.5) |
+| `DIPLOMACY.md` | Founding article; approved package contract in SPEC §15.18.5 |
+| `bin/diplomacy.mjs` | Reference validator for DIPLOMACY ZIP (§15.18.5) |
 | `contracts/` | Machine-readable structural projection of the single SPEC; not a second evaluator |
 | `AGENTS.md` | Shared engineering instructions for coding agents |
 | `ROADMAP.md` | Proposed milestones, PR dependencies and acceptance gates |
@@ -54,7 +54,7 @@ npm run example   # the course, start to certificate
 
 `dist/` is prebuilt in the release zip, so `node examples/course.mjs` and `node bin/logline.mjs` work without a build.
 
-Validate a candidate DIPLOMACY archive after `npm ci` and `npm run build`:
+Validate a DIPLOMACY archive after `npm ci` and `npm run build`:
 
 ```sh
 node bin/diplomacy.mjs package.zip
