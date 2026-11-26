@@ -6,7 +6,7 @@ A *machine* takes a free JSON *tuple*, runs it on a published JSON *process*, an
 
 ## 0. Scope and version status
 
-This is the single technical specification for RADIO, the universal protocol for the formation of verifiable trajectories. [VISION.md](VISION.md) explains the purpose. Sections 1–14 retain the existing LogLine Receipt v1 contract (`process@1` and reference HTTP). Section 15 defines the approved RADIO 1.0 target semantics and reference profile. Its provider-independent guarantees and limits are normative; native materialization and explicitly excluded features are not claims of implementation. Where reference profiles differ, §15.18.6 governs the hardened v2 profile. Do not apply target semantics to v1 receipts or laws. The hosted adapter is a gated v1 preview, not a deployed or conformance-tested service.
+This is the single technical specification for RADIO, the universal protocol for the formation of verifiable trajectories. Sections 1–14 retain the LogLine Receipt v1 contract (`process@1` and reference HTTP). Section 15 defines the approved RADIO 1.0 semantics and reference profile. Its provider-independent guarantees and limits are normative. Where reference profiles differ, §15.18.6 governs the hardened v2 profile. Do not apply v2 semantics to v1 receipts or laws. The delivery roadmap records the status and acceptance evidence for the Supabase v2 materialization and the historical v1 preview. [Vision](VISION.md) · [Delivery checkpoint](ROADMAP.md#current-checkpoint)
 
 ## 1. What a receipt proves, and what it does not
 
@@ -311,7 +311,7 @@ The adopted conceptual direction is [DIPLOMACY](DIPLOMACY.md): a portable packag
 
 ### 15.5 Compatibility and verification checkpoint
 
-The existing `process@1` evaluator selects by `tuple.this`, evaluates a single law and supports legacy `on` reactions. The current hosted preview uses root-only writes and a reserved internal outbox; no reaction worker is implemented. The target scanner is implemented in PR-04; PR-05–09 implement the local v2 evaluation, instance, atomicity, verification and continuity reference. Native hosted target materialization remains pending. Version incompatible changes explicitly before coding; retain v1 vectors and do not reinterpret historical signatures.
+The existing `process@1` evaluator selects by `tuple.this`, evaluates a single law and supports legacy `on` reactions. Its hosted preview uses root-only writes and a reserved internal outbox. PR-04 implemented the v2 scanner, and PR-05–09 implemented the local v2 evaluation, instance, atomicity, verification and continuity reference. Version incompatible changes explicitly before coding. Retain v1 vectors and do not reinterpret historical signatures. [Native materialization and evidence](supabase/README.md)
 
 Before this checkpoint, an unfrozen v1 ordering defect was corrected: `requires`, `cites` and `grants` are evaluated in UTF-16 key order. The `registered-free-form` golden changed; receipts affected by the earlier ordering may not replay with the current evaluator. No migration of historical receipts was performed. This is a known compatibility boundary, not a claim that all past v1 receipts replay.
 

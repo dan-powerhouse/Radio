@@ -21,7 +21,7 @@ The Contract is the tuple inside the Submission. The protocol accepts any I-JSON
 
 RADIO Protocol 1.0 and its reference corpus were approved on 26 November 2026. The repository includes the historical v1 reference, the v2 reference and native Supabase materialization checkpoints. [Vision](VISION.md) · [Glossary](GLOSSARY.md) · [Specification](SPEC.md) · [Roadmap and review history](ROADMAP.md) · [Supabase setup and verification](supabase/README.md)
 
-Use the [RADIO Cookbook](COOKBOOK.md) for shared procedures, examples and expected outcomes. Edit the [capability catalog](docs/radio-capabilities.json) to update it, then run `npm run cookbook`. The test suite checks the generated Markdown.
+The RADIO Cookbook explains capabilities common to every conforming implementation. Edit its protocol capability catalog and run `npm run cookbook` to regenerate it. Participants use MCP to discover an Institution's published Process Types and the Skills it adopted for a particular law. [Cookbook](COOKBOOK.md) · [Protocol capability catalog](docs/radio-capabilities.json) · [Stateless MCP guide](supabase/README.md#stateless-mcp)
 
 ## Repository organization
 
@@ -30,13 +30,14 @@ The repository is the executable reference, the rigid protocol contract and conf
 | Path | What |
 |---|---|
 | `VISION.md` | Purpose, architecture and principles |
-| `SPEC.md` | Single technical contract: existing v1 and target requirements (§15) |
+| `SPEC.md` | Single technical contract for historical v1 and RADIO Protocol 1.0 (§15) |
 | `GLOSSARY.md` | Stable institutional and computational vocabulary |
 | `DIPLOMACY.md` | Founding article; approved package contract in SPEC §15.18.5 |
 | `bin/diplomacy.mjs` | Reference validator for DIPLOMACY ZIP (§15.18.5) |
 | `contracts/` | Machine-readable structural projection of the single SPEC; not a second evaluator |
 | `AGENTS.md` | Shared engineering instructions for coding agents |
-| `ROADMAP.md` | Proposed milestones, PR dependencies and acceptance gates |
+| `ROADMAP.md` | Delivered checkpoints, outstanding work and acceptance gates |
+| `COOKBOOK.md` | Generated guide to protocol capabilities and procedures |
 | `CLAUDE.md` | Imports the same instructions for Claude Code |
 | `src/` | Reference library: TypeScript, no dependencies, WebCrypto only; the same code runs in Node, Bun and browsers |
 | `src/process-type.ts` | Process Type validation, immutable reference publication and snapshot capture; no execution or hosted authorization |
@@ -47,14 +48,14 @@ The repository is the executable reference, the rigid protocol contract and conf
 | `processes/` | Historical v1 example laws: a course of 5 lessons, a certificate, and an alumni register that reacts to certificates on its own |
 | `examples/course.mjs` | The course run end to end, with a fork attempt, impersonation and offline verification |
 | `bin/logline.mjs` | CLI: `logline verify-bundle <bundle.json\|url> [--keys keys.json\|url]` |
-| `src/hosted.ts` | Direct Supabase client: native OAuth discovery, ephemeral writes, RLS reads and local verification |
+| `src/hosted.ts` | Direct client for the historical v1 Supabase preview |
 | `server/` | Optional local HTTP reference: a durable, hash-chained ledger file. Not on the hosted request path |
 | `bin/logline-server.mjs` | `logline-server serve`, `account`, `head` |
-| `vectors/` | Frozen v1 goldens, independent portable vectors and v2 contract fixtures (not execution evidence) |
+| `vectors/` | Historical v1 goldens and versioned fixtures for portable v2 conformance |
 | `test/` | Conformance, integration and adversarial tests; reusable cross-runtime harnesses |
 | `scripts/` | Build, staging, packaging and verification tools |
 | `.github/workflows/` | CI and explicitly gated staging delivery |
-| `supabase/` | Hosted target: Auth, transactional ledger, native radio and ephemeral functions; preview, not deployed |
+| `supabase/` | v2 transactions, Edge Functions, MCP and native Radio, alongside the preserved v1 preview |
 
 ```bash
 npm ci            # pinned development tools and the CLI validator’s YAML parser
@@ -82,7 +83,7 @@ A passing kernel job packages the exact tracked migration/function sources and t
 
 ## Evidence and conformance
 
-Do not equate a green test count with a working hosted service.
+At the `6187545` checkpoint on `main`, both CI jobs passed. The kernel job passed 692 checks in Node, 692 in Bun and 398 in Chromium, and detected all 60 targeted mutations. The database job applies the migrations to disposable PostgreSQL 17 with test-only Auth and Realtime fixtures. [Main CI run](https://github.com/dan-powerhouse/Radio/actions/runs/45822718547)
 
 | Layer | Evidence | Limitation |
 |---|---|---|
@@ -99,10 +100,11 @@ Do not equate a green test count with a working hosted service.
 | Targeted mutations | npm run test:mutations: each deliberate regression must fail its named test in an isolated copy | Selected faults, not exhaustive mutation coverage |
 | Boundary hardening | Cross-runtime I-JSON, calendar, work and receipt-size regressions; real ZIPs, independent package IDs and malformed archive cases | Reference profile; native capacity, resource binding and agent interoperability require separate evidence |
 | Actual PostgreSQL | npm run test:postgres: separate real transaction, concurrency, rollback, CAS and RLS tests | Requires an explicitly disposable DB; local claim fixture is not Supabase Auth, and SQL tests do not test OAuth, Edge, PostgREST or Realtime |
+| Local native integration | Edge Runtime and PostgREST for v2 publish/submit, official MCP SDK for discovery and signed RUNs, native Realtime for private signal delivery and lease expiry | The local harness uses Auth fixtures. Native OAuth consent, connector interoperability and protected Radio activation still require a hosted project. |
 
 The new expected values are hand-derived from SPEC; Process Type and scanner canonical bytes and hashes were computed independently on an ASCII/simple-JSON subset with Python json/hashlib, and the native crypto audit checks their content addresses. The regular test command never generates or updates goldens. The historical generator is not an oracle and must not overwrite compatibility evidence during ordinary development.
 
-The three runtimes used for the latest reference verification were Node 22.23.5, Bun 1.4.5 and Chromium 141 (Playwright 1.56.0); TypeScript 5.9.3 and Playwright are pinned development dependencies. See the hosted README for the PostgreSQL-only compatibility fixture and the outstanding hosted gates.
+See the [Supabase verification guide](supabase/README.md#local-verification) for the prerequisites and scope of each native test.
 
 ## The v1 reference example: a course as a trajectory
 
@@ -118,9 +120,17 @@ An alternative law in `examples/alumni.external.logline-101@1.json` has no autom
 - **Idempotency.** The same submission from the same person in the same time window returns the receipt that already exists. A retry never decides twice and never consumes twice.
 - **Strict input.** `submitText` parses I-JSON and refuses duplicate keys, lone surrogates and integers that would be silently rounded.
 
-## Primary architecture: Supabase-native (hosted preview)
+## Supabase-native v2
 
-Supabase Auth provides standing OAuth 2.1 identity service. PostgreSQL holds the durable laws and trajectories, and Realtime supplies communication. Edge Functions evaluate and sign individual submissions in the initial deployment. Each request can run on a replacement executor using the same RUN contract. The OAuth consent surface can be a static browser application. [Hosted architecture](supabase/README.md) · [Execution and scaling](supabase/README.md#execution-and-scaling)
+Supabase Auth provides identity. Edge Functions evaluate and sign with the same RUN contract as the local reference. PostgreSQL stores laws and evidence and commits receipts atomically. Realtime broadcasts the committed receipt ID on a protected channel. The listener resolves it through an authorized HTTP or MCP read, verifies the receipt, tunes locally and chooses whether to submit a new Contract. [Execution and scaling](supabase/README.md#execution-and-scaling) · [Committed Radio signals](supabase/README.md#committed-radio-signals)
+
+### Hosted readiness
+
+The first native paths are merged and exercised locally. Before hosted use, qualify native OAuth consent and resource binding and verify the protected Realtime lease on an approved Supabase project. Durable history and reconnect, DIPLOMACY distribution, capacity and institutional restore remain open. [Native Materialization Matrix](supabase/README.md#native-materialization-matrix) · [Roadmap checkpoint](ROADMAP.md#current-checkpoint)
+
+### Historical v1 hosted client
+
+The following example uses the original hosted preview and its v1 tuple submission.
 
 ```js
 import { hostedClient } from "@logline/receipt";
@@ -132,7 +142,7 @@ const result = await radio.submit(tuple);
 const receipt = await radio.receipt(result.receipt.id);
 ```
 
-This client does not acquire or refresh credentials itself; supply a current token from the native OAuth client. Public receipt reads are unauthenticated; private CAS reads use the caller’s token and RLS. It verifies returned signatures and content addresses without contacting the local server. Hosted root-only writes are still gated by `LOGLINE_ENABLE_PREVIEW`; asynchronous reactions are not implemented.
+Supply a current bearer token for protected requests. The v1 client uses unauthenticated public receipt reads and RLS-bound private CAS reads. It verifies signatures and content addresses locally. Root-only writes require `LOGLINE_ENABLE_PREVIEW`.
 
 ## Run the optional local reference machine
 
@@ -204,10 +214,6 @@ node bin/logline.mjs verify-bundle bundle.json --keys trusted-discovery.json
 ```
 
 The real process/reader replacement scenario runs in test/continuity.test.mjs. The historical server and CLI behavior remain available without --target.
-
-## Hosted readiness
-
-The Supabase-native path is the target, not yet the production implementation. See [supabase/README.md](supabase/README.md) for the transaction boundary and tests; [SPEC.md §15](SPEC.md#15-radio-target-architecture--approved-kernel-contract-staged-implementation) defines the target and unresolved contracts. The optional local server remains the executable reference, never a dependency of the hosted client.
 
 ## Use the library
 

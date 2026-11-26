@@ -4,6 +4,8 @@
 
 **Third Layer / RADIO · Founding proposal · 26 November 2026**
 
+> The founding proposal below records the original design. The approved package contract is in SPEC §15.18.5. The reference CLI validates ZIP archives, and the Supabase MCP adapter serves adopted manifests and verified Skill text. Hosted archive distribution and agent interoperability are tracked in PR-19. [Package contract](SPEC.md#15185-diplomacy-minimal-package) · [Archive validator](bin/diplomacy.mjs) · [Distribution milestone](ROADMAP.md#pr-19--diplomacy-distribution--agent-skills-interoperability)
+
 As agents become better at working independently, a different problem comes into focus: how can independent intelligences work together when they have different interests, responsibilities and authority?
 
 An agent may know how to prepare an offer, evaluate a proposal or negotiate a concession. But knowing how to act does not establish whether it can represent someone, make a commitment on their behalf or constitute an outcome that another participant can rely on. Nor should a commitment disappear when an agent is replaced or a conversation ends.
