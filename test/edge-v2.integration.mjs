@@ -1,15 +1,20 @@
 // Real Deno, PostgREST and disposable PostgreSQL. An HTTP fixture models the
 // identity endpoint and coordinates reply loss and overlapping evaluations.
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
-import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { execFile, execFileSync, spawn } from "node:child_process";
+import { createHmac, generateKeyPairSync, randomBytes, randomUUID, sign } from "node:crypto";
 import { once } from "node:events";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { setTimeout as delay } from "node:timers/promises";
+import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import * as L from "../dist/index.js";
 import { url, q, j, sql, scalar } from "./postgres-harness.mjs";
+import { diplomacyAdoptionSql } from "../bin/diplomacy.mjs";
 
 const admin = statement => sql(statement,"postgres");
 const principal = randomUUID(), session = randomUUID(), secret = randomBytes(32);
@@ -24,6 +29,13 @@ function token(claims) {
 const service = token({role:"service_role", exp:Math.floor(Date.now()/1000)+600});
 const processes = new Set();
 const nativeEdge = process.env.RADIO_TEST_NATIVE_EDGE === "yes";
+const testMcp = process.env.RADIO_TEST_MCP === "yes";
+const oauth = testMcp ? generateKeyPairSync("ec",{namedCurve:"P-256"}) : null;
+const jwk = oauth && {...oauth.publicKey.export({format:"jwk"}),kid:"oauth-fixture",alg:"ES256"};
+function oauthToken(claims) {
+  const data = b64({alg:"ES256",kid:jwk.kid,typ:"JWT"})+"."+b64(claims);
+  return data+"."+sign("sha256",Buffer.from(data),{key:oauth.privateKey,dsaEncoding:"ieee-p1363"}).toString("base64url");
+}
 
 function start(bin,args,env) {
   const process = spawn(bin,args,{env,stdio:["ignore","pipe","pipe"]});
@@ -65,6 +77,11 @@ let lost, dropped = 0, race = null;
 const audit = [], authenticated = new Set();
 const gateway = createServer(async (req,res) => {
   try {
+    if (jwk && req.url === "/auth/v1/.well-known/jwks.json") {
+      res.writeHead(200,{"content-type":"application/json"});
+      res.end(JSON.stringify({keys:[jwk]}));
+      return;
+    }
     if (req.url === "/auth/v1/user") {
       const valid = authenticated.has(req.headers.authorization);
       res.writeHead(valid?200:401,{"content-type":"application/json"});
@@ -105,6 +122,7 @@ const gateway = createServer(async (req,res) => {
 });
 try {
   const gatewayURL = "http://127.0.0.1:"+await listening(gateway);
+  const mcpResource = gatewayURL+"/functions/v1/mcp";
   const fixtureClaims = {
     sub:principal, role:"authenticated", aud:"authenticated", iss:gatewayURL+"/auth/v1",
     session_id:session, exp:Math.floor(Date.now()/1000)+600
@@ -120,6 +138,7 @@ try {
   const env = {
     ...process.env,LOGLINE_ENABLE_PREVIEW:"false",RADIO_ENABLE_V2:"true",RADIO_AUTH_ISSUER:fixtureClaims.iss,
     SUPABASE_URL:gatewayURL,LOGLINE_SERVICE_KEY:service,LOGLINE_PUBLISHABLE_KEY:"test-public",
+    RADIO_ENABLE_MCP:"true",RADIO_MCP_RESOURCE:mcpResource,
     LOGLINE_MACHINE_JWK:JSON.stringify(privateJwk),LOGLINE_PSEUDONYM_SECRET:L.b64url(secret)
   };
   async function worker(action) {
@@ -138,6 +157,8 @@ try {
       throw Error(state.diagnostic || "Edge Runtime did not start");
     }
     const state=start("deno",["run","--allow-env","--allow-net=127.0.0.1",
+      ...(action === "mcp" ? ["--allow-read="+fileURLToPath(new URL("../supabase/functions/",import.meta.url)),
+        "--config",fileURLToPath(new URL("../supabase/functions/mcp/deno.json",import.meta.url))] : []),
       fileURLToPath(new URL("edge-v2-serve.ts",import.meta.url)),action],env);
     const lines=createInterface({input:state.process.stdout});
     try {
@@ -195,6 +216,72 @@ try {
 
   const request = (tuple,continuation) => ({tuple,submission:L.b64url(randomBytes(16)),
     ...(continuation ? {continue:continuation} : {})});
+  if (testMcp) {
+    const client=randomUUID(), reader=randomUUID(), other=randomUUID();
+    const readers=["read_public"], participant=["read_public","submit","disclose","use_evidence"];
+    await admin(`insert into radio_v2.oauth_resources values (${q(client)},${q(mcpResource)}),
+      (${q(reader)},${q(mcpResource)}),(${q(other)},${q(mcpResource)});
+      update radio_v2.authority set mandates=${j({direct:perms,[client]:participant,[reader]:readers})}
+      where principal=${q(principal)};`);
+    const claims = {...fixtureClaims,is_anonymous:false,client_id:client};
+    const bound=await scalar(`select public.radio_v2_oauth_audience(${j({claims})});`,"supabase_auth_admin");
+    assert.deepEqual(bound.claims,{...claims,aud:mcpResource});
+    assert.deepEqual(await scalar(`select public.radio_v2_oauth_audience(${j({claims:fixtureClaims})});`,
+      "supabase_auth_admin"),{claims:fixtureClaims});
+    await assert.rejects(sql(`select public.radio_v2_oauth_audience('{}');`,"authenticated"),/permission denied/);
+    const directory=mkdtempSync(join(tmpdir(),"radio-mcp-fixture-"));
+    const skillPath="skills/participant/SKILL.md";
+    const markdown="---\nname: participant\ndescription: Draft an example Contract\n---\nAgree on the tuple with the human.\n";
+    try {
+      const files={"process-type.json":L.canonicalize(law),[skillPath]:markdown};
+      const manifest={logline:"diplomacy@1",files:Object.fromEntries(await Promise.all(
+        Object.entries(files).map(async ([path,value])=>[path,await L.sha256(value)])))};
+      mkdirSync(join(directory,"skills/participant"),{recursive:true});
+      for (const [path,value] of Object.entries({...files,"diplomacy.json":JSON.stringify(manifest)}))
+        writeFileSync(join(directory,path),value);
+      execFileSync("zip",["-q","-X","package.zip","diplomacy.json",...Object.keys(files)],{cwd:directory});
+      await admin(await diplomacyAdoptionSql(readFileSync(join(directory,"package.zip"))));
+    } finally { rmSync(directory,{force:true,recursive:true}); }
+
+    const mcp=await worker("mcp");
+    const raw = (authorization, text = "{}") => fetch(mcp.url+"/functions/v1/mcp",{method:"POST",
+      headers:{authorization,"content-type":"application/json"},body:text,signal:AbortSignal.timeout(15000)});
+    const malformed=await raw("Bearer "+oauthToken(bound.claims),'{"jsonrpc":"2.0","jsonrpc":"2.0"}');
+    assert.equal(malformed.status,400);
+    assert.equal((await malformed.json()).error.data.error,"invalid_request");
+    const tooBig=await raw("Bearer "+oauthToken(bound.claims)," ".repeat(2*L.MAX_SUBMISSION_BYTES+1));
+    assert.equal(tooBig.status,413);
+    for (const invalid of [claims,{...bound.claims,aud:mcpResource+"/other"},{...bound.claims,iss:mcpResource},
+      {...bound.claims,client_id:undefined},{...bound.claims,is_anonymous:true},{...bound.claims,exp:1}]) {
+      const rejected=await raw("Bearer "+oauthToken(invalid));
+      assert.equal(rejected.status,401);
+      assert.match(rejected.headers.get("www-authenticate"),/resource_metadata/);
+    }
+    const metadata=await fetch(mcp.url+"/functions/v1/mcp/oauth-protected-resource");
+    assert.equal((await metadata.json()).resource,mcpResource);
+    const initial=request(JSON.parse(JSON.stringify({who:"participant",did:"request",this:"participation",
+      with:{evidence:"a\u0000b"},edgeLaw:id}).replace('"with":{','"with":{"__proto__":0,')));
+    async function probe(target,phase) {
+      const {stdout}=await promisify(execFile)("deno",["run","--node-modules-dir=none","--no-lock",
+        "--allow-env=RADIO_MCP_PROBE","--allow-net=127.0.0.1",
+        fileURLToPath(new URL("mcp-v2-client.mjs",import.meta.url))],{
+        env:{...env,RADIO_MCP_PROBE:JSON.stringify({phase,url:target.url+"/functions/v1/mcp",
+          allowed:oauthToken(bound.claims),readOnly:oauthToken({...bound.claims,client_id:reader}),
+          noMandate:oauthToken({...bound.claims,client_id:other}),law:hash,markdown,initial,by})}
+      });
+      return stdout.trim();
+    }
+    const committed=await probe(mcp,"initial");
+    await stop(mcp);
+    const replacement=await worker("mcp");
+    assert.equal(await probe(replacement,"replay"),committed);
+    await admin(`update radio_v2.authority set mandates=mandates-${q(client)} where principal=${q(principal)};`);
+    await probe(replacement,"revoked");
+    await stop(replacement);
+    assert.equal(await scalar(`select count(*) from radio_v2.decisions where client=${q(client)}
+      and principal=${q(principal)} and submission=${q(initial.submission)};`),1);
+    console.log("MCP 2026-07-28 and stateless 2025 compatibility, authorized DIPLOMACY, signed RUN, replay and revocation passed.");
+  }
   const first=request({edgeLaw:id,value:"escaped\u0000🛰"});
   const entry=(await send(submit,first)).value;
   assert.equal(entry.receipt.header.status,"ok");

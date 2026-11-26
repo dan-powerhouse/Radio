@@ -2,5 +2,6 @@
   "$schema": "https://supabase.com/schemas/config/v1.json",
   "project_id": "radio",
   "api": { "auto_expose_new_tables": false },
-  "db": { "major_version": 17 }
+  "db": { "major_version": 17 },
+  "functions": { "mcp": { "verify_jwt": false } }
 }

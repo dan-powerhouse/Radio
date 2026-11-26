@@ -28,7 +28,7 @@ export function databaseV2(options) {
     async function call(name, fields, limit = resultLimit) {
       let response, value;
       try {
-        response = await send("rpc/radio_v2_" + name, { p_principal: actor.owner, p_client: null, ...fields }, signal);
+        response = await send("rpc/radio_v2_" + name, { p_principal: actor.owner, p_client: actor.client ?? null, ...fields }, signal);
         const text = await bodyText(response, response.ok ? limit : 8192,{signal});
         value = text ? JSON.parse(text) : null;
       } catch (error) {
@@ -47,6 +47,10 @@ export function databaseV2(options) {
       registry: (hash, selection) => call("registry_inputs", {p_hash:hash,p_selection:selection},
         selection === "all" ? registryLimit : wireLimit(limits.MAX_SCAN_SNAPSHOT_BYTES + (selection ? L.MAX_LAW_BYTES : 0))),
       read: (id, remaining) => call("read", {p_id:id,p_mode:"use"}, wireLimit(remaining)),
+      catalog: (registry, after) => call("mcp_catalog", {p_registry:registry,p_after:after}, 16384),
+      law: (hash, skill) => call("mcp_law", {p_law:hash,p_skill:skill},
+        skill === null ? wireLimit(L.MAX_LAW_BYTES) : 5 * 1024 * 1024),
+      disclose: (id, mode) => call("read", {p_id:id,p_mode:mode}, resultLimit + wireLimit(L.MAX_SCAN_INPUT_BYTES)),
       completed: (instance, run, remaining) => call("observe", {p_key:instance,p_role:run,p_cited:null}, wireLimit(remaining)),
       spent: (law, slot, cited) => call("observe", {p_key:law,p_role:slot,p_cited:cited}, 4096),
       commit: p => call("commit", {p}),
@@ -55,7 +59,7 @@ export function databaseV2(options) {
   };
 }
 
-function boundaryFailure(result) {
+export function boundaryFailure(result) {
   switch (result?.kind) {
     case "forbidden": return new HostedError(403, "forbidden", "current authority denies the request");
     case "submission_conflict": return new HostedError(409, "submission_conflict", "submission is bound to different input");

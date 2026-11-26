@@ -17,8 +17,9 @@ declare const EdgeRuntime: {
 const servicePath = Deno.env.get("RADIO_TEST_FUNCTION_DIR")!;
 const envVars: [string,string][] = [
   "RADIO_ENABLE_V2","RADIO_AUTH_ISSUER","SUPABASE_URL","LOGLINE_SERVICE_KEY",
-  "LOGLINE_PUBLISHABLE_KEY","LOGLINE_MACHINE_JWK","LOGLINE_PSEUDONYM_SECRET"
-].map(name => [name,Deno.env.get(name)!]);
+  "LOGLINE_PUBLISHABLE_KEY","LOGLINE_MACHINE_JWK","LOGLINE_PSEUDONYM_SECRET",
+  "RADIO_ENABLE_MCP","RADIO_MCP_RESOURCE"
+].filter(name => Deno.env.has(name)).map(name => [name,Deno.env.get(name)!]);
 
 Deno.serve(async request => {
   if (new URL(request.url).pathname === "/ready") return new Response("ok");

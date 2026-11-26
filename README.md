@@ -1,15 +1,25 @@
 # RADIO — LogLine Receipt
 
-RADIO is a universal protocol for the formation of verifiable trajectories, an application of Third Layer. Read [VISION.md](VISION.md) for the purpose and [SPEC.md](SPEC.md) for the single versioned technical contract. The implementation below is the existing v1 reference and hosted preview; the target Process Type parser and local publication registry are implemented in PR-03. The target scanner is implemented in PR-04. The coordinated machine-readable structural contract and decision boundary are approved and merged (GitHub #7); request-scoped v2 evaluation and candidate signing are implemented and merged (GitHub #9). The merged PR-06 reference (GitHub #10) implements durable v2 instance formation and recovery; PR-07 reference concurrency/failure acceptance (GitHub #11), PR-08 portable bundle export and independent replay (GitHub #12), and PR-09 local continuity (GitHub #13) are merged. PR-09A boundary hardening (GitHub #15) is merged. RADIO Protocol 1.0 reference scope and corpus are architect-approved (2026-11-26); the release ref follows final CI. Native materialization remains pending. Read [GLOSSARY.md](GLOSSARY.md) for terminology and [DIPLOMACY.md](DIPLOMACY.md) for the founding format proposal.
+RADIO grew out of LogLine, a way for people and agents to express an event or intention by naming the entities, the action and its context. The machine evaluates the expression under the Institution's published Process Type and records the result in a signed receipt. Receipts can refer to earlier receipts, forming a trajectory that participants can verify with the appropriate evidence.
 
-Run a free JSON tuple on a published JSON process. Get a signed receipt whose authenticity can be checked with a trusted machine key and whose decision can be replayed with the necessary evidence. Receipts can cite other receipts by hash, so runs chain into **trajectories**, and every receipt is broadcast on its **frequency**.
+## Start with a LogLine
 
+LogLine is the preferred authoring convention. A participant can use `who`, `did`, `this` and `with` as prompts when writing a Contract. The course example opens with a request to enroll.
+
+```json
+{
+  "who": "learner:ana",
+  "did": "enroll",
+  "this": "course@2",
+  "with": { "course": "RADIO" }
+}
 ```
-tuple + process + when ──▶ machine ──▶ receipt
-                                        ├─ header: public, signed, on air
-                                        └─ detail: private, bound by hash
-receipt ──cited by──▶ next tuple ──▶ next receipt ──▶ …   (a trajectory)
-```
+
+The example law recognizes `did: "enroll"` and reads `with.course`. The machine gets the actor from the authenticated request. A Skill can help the author identify the right entities and gather the references the law expects.
+
+The Contract is the tuple inside the Submission. The protocol accepts any I-JSON value within its limits. In the same example, the completion RUN accepts `{"with":{"score":95}}` when the Submission supplies the required continuation and parents. Run both course examples with `npm run example` after installing the dependencies. [Executable v2 example](examples/trajectory.mjs)
+
+RADIO Protocol 1.0 and its reference corpus were approved on 26 November 2026. The repository includes the historical v1 reference, the v2 reference and native Supabase materialization checkpoints. [Vision](VISION.md) · [Glossary](GLOSSARY.md) · [Specification](SPEC.md) · [Roadmap and review history](ROADMAP.md) · [Supabase setup and verification](supabase/README.md)
 
 ## Repository organization
 
@@ -172,7 +182,7 @@ The library's ProcessLedger invokes the same request-scoped evaluator and adopts
 
 ## Portable target trajectory
 
-Run the standalone course trajectory example with npm run example (after the historical example). ProcessLedger.bundle(id) returns private portable evidence; it is not an authorization API. Supply verifyBundleV2 with the raw JSON text and an independently obtained trusted key ring. A valid verdict requires authenticity, decision replay and recursive closure verification, not only a valid signature. Do not treat bundle.keys as a trust anchor or a successful replay as proof of global ledger completeness. See SPEC §15.16.
+The course example uses `ProcessLedger.bundle(id)` to export private evidence. The caller must authorize access before exporting it. Supply `verifyBundleV2` with the raw JSON text and an independently trusted key ring. The verifier checks authenticity, decision replay and completeness of the required evidence for the supplied trajectory. [Portable verification contract](SPEC.md#1516-pr-08--portable-trajectory-verification)
 
 ## Local target continuity
 
@@ -195,7 +205,7 @@ The real process/reader replacement scenario runs in test/continuity.test.mjs. T
 
 ## Hosted readiness
 
-The Supabase-native path is the target, not yet the production implementation. See [supabase/README.md](supabase/README.md) for the transaction boundary and tests; [SPEC.md §15](SPEC.md#15-radio-target-architecture--design-requirements-not-yet-a-wire-specification) defines the target and unresolved contracts. The optional local server remains the executable reference, never a dependency of the hosted client.
+The Supabase-native path is the target, not yet the production implementation. See [supabase/README.md](supabase/README.md) for the transaction boundary and tests; [SPEC.md §15](SPEC.md#15-radio-target-architecture--approved-kernel-contract-staged-implementation) defines the target and unresolved contracts. The optional local server remains the executable reference, never a dependency of the hosted client.
 
 ## Use the library
 

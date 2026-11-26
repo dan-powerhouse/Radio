@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { ProcessLedger, generateMachineKey, canonicalize, verifyBundleV2 } from "../dist/index.js";
 const {key}=await generateMachineKey();
 const ledger=new ProcessLedger(key);
-const law={logline:"process-type@1",id:"course@2",issuer:"Example school",recognize:{"==":[{var:"did"},"enroll"]},runs:[
-  {id:"open",after:[],requires:{course:"string"},steps:[],grants:{course:{var:"course"},owner:{var:"$by"}},if_ok:"Enrolled",if_not:"Not enrolled",if_doubt:"Pending"},
-  {id:"complete",after:["open"],requires:{score:"integer"},steps:[
+const law={logline:"process-type@1",id:"course@2",issuer:"Example school",recognize:{and:[{has:"did"},{"==":[{var:"did"},"enroll"]}]},runs:[
+  {id:"open",after:[],requires:{"with.course":"string"},steps:[],grants:{course:{var:"with.course"},owner:{var:"$by"}},if_ok:"Enrolled",if_not:"Not enrolled",if_doubt:"Pending"},
+  {id:"complete",after:["open"],requires:{"with.score":"integer"},steps:[
     {id:"owner",check:{"==":[{var:"$by"},{var:"$parents.open.detail.grants.owner"}]},if_not:"not",reason:"Only the learner may complete"},
-    {id:"passed",check:{">=":[{var:"score"},70]},if_not:"not",reason:"Score below threshold"}
+    {id:"passed",check:{">=":[{var:"with.score"},70]},if_not:"not",reason:"Score below threshold"}
   ],grants:{course:{var:"$parents.open.detail.grants.course"},completed:true},if_ok:"Course completed",if_not:"Not completed",if_doubt:"Pending"}
 ]};
 await ledger.publish(JSON.stringify(law));
@@ -16,10 +16,17 @@ const nonce=()=>Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString
 const send=(tuple,continuation)=>ledger.submitText(JSON.stringify({tuple,submission:nonce(),...(continuation?{continue:continuation}:{})}),access);
 const trustedKeys=ledger.keys;
 const bundles=[];
-for(const score of [80,95]){
-  const entry=await send({did:"enroll",course:"RADIO"});
+// Both completion tuples provide the score required by the law.
+const enrollment={who:"learner:ana",did:"enroll",this:law.id,with:{course:"RADIO"}};
+const completions=[
+  {who:"learner:ana",did:"complete",this:law.id,with:{score:80}},
+  {with:{score:95}}
+];
+for(const tuple of completions){
+  const entry=await send(enrollment);
+  assert.equal(entry.receipt.header.status,"ok");
   const id=entry.receipt.id;
-  const complete=await send({score},{instance:id,run:"complete",parents:{open:id}});
+  const complete=await send(tuple,{instance:id,run:"complete",parents:{open:id}});
   assert.equal(complete.receipt.header.status,"ok");
   bundles.push(canonicalize(await ledger.bundle(complete.receipt.id)));
 }
