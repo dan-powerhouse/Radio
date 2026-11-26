@@ -85,7 +85,7 @@ Exit: multiple process instances progress independently, with receipts as the ob
 - Acceptance: two instances of one law; cannot substitute one instance's receipts for another; retry and invalid successor cases. Nonlinear trajectories permitted only as specified.
 
 ### PR-07 — Atomic uniqueness and retry semantics
-- [ ] Depends on PR-06. Implement contract-scoped idempotency and once claims in the reference commit boundary; no automatic external reactions for target laws. Define atomicity and conflict behavior independently of physical storage; PR-10 will map these guarantees to native PostgreSQL after freeze.
+- [ ] Depends on PR-06. Reference acceptance implemented on the PR-07 review branch (SPEC §15.15): forced concurrent retries, success/once conflicts, blocked commit visibility, publication ordering, ambiguous acknowledgement and process replacement; guarded recovery visibility. Reference single-writer commit and independent conflict re-evaluation scenarios, no automatic reactions. Review/merge pending. PR-10/11 must reproduce the frozen outcomes with native PostgreSQL transactions and ephemeral Edge invocations after freeze.
 - Acceptance: competing claims produce only permitted effects; failed activation consumes nothing; replay returns the same result; failed persistence emits nothing and creates no phantom claim.
 
 ### PR-08 — Portable trajectory and independent verification
