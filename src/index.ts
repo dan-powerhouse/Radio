@@ -20,3 +20,5 @@ export * from "./scanner.js";
 export * from "./run-v2.js";
 
 export * from "./process-ledger.js";
+
+export * from "./bundle-v2.js";

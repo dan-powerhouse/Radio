@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { kernelConformance, receiptEvidenceConformance } from "../test/kernel-conformance.mjs";
+import { bundleV2Conformance } from "../test/bundle-v2-conformance.mjs";
 import { atomicConformance } from "../test/atomic-conformance.mjs";
 import { processLedgerConformance } from "../test/process-ledger-conformance.mjs";
 import { runV2Conformance, runV2OutcomeConformance } from "../test/run-v2-conformance.mjs";
@@ -19,7 +20,7 @@ const recognition = load("recognition");
 const runV2Fixture = load("run-v2"), receiptV2Fixture = load("receipt-v2-contract"), testKey = load("test-key");
 const run = async (L, includeLedger=false) => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition), ...await runV2Conformance(L,receiptV2Fixture,testKey), ...await runV2OutcomeConformance(L,runV2Fixture,testKey), ...(includeLedger ? await processLedgerConformance(L,receiptV2Fixture,runV2Fixture,testKey) : [])];
 const baselineLibrary=await import("../dist/index.js");
-const baseline = [...await run(baselineLibrary,true),...await atomicConformance(baselineLibrary,testKey)];
+const baseline = [...await run(baselineLibrary,true),...await atomicConformance(baselineLibrary,testKey),...await bundleV2Conformance(baselineLibrary,receiptV2Fixture,runV2Fixture,receipts,testKey)];
 assert.deepEqual(baseline.filter(x => !x.ok), [], "clean baseline must pass");
 const mutations = [
   ["inherited operator", "expr.js", "Object.prototype.hasOwnProperty.call(LAZY, op)", "op in LAZY", "expr/inherited-op-constructor"],
@@ -70,6 +71,12 @@ const mutations = [
   ["atomic continues after ambiguous sink error", "process-ledger.js", "if (this.#failed)", "if (false)", "atomic/failed-write-no-phantom"],
   ["atomic exposes recovery prefix", "process-ledger.js", "if (this.#restoring)", "if (false)", "atomic/recovery-visibility"],
 
+  ["bundle trusts its own keys", "bundle-v2.js", "keys = parseStrict(canonicalize(trustedKeys));", "keys = b.keys;", "bundle-v2/untrusted-convenience-keys"],
+  ["bundle accepts signed wrong decision", "bundle-v2.js", "if (again.id !== id || !same(again.header, h) || !same(again.detail, detail) || !same(again.context, c))", "if (false)", "bundle-v2/signed-wrong-projection"],
+  ["bundle omits recursive verification", "bundle-v2.js", "await walk(dep);", "void dep;", "bundle-v2/missing-parent-tuple"],
+  ["bundle treats extra objects as admitted", "bundle-v2.js", "resolved.has(ref) || ref === c.completed ? read(ref) : null", "Object.hasOwn(b.objects, ref) ? read(ref) : null", "bundle-v2/outcome/denied-root"],
+  ["bundle ignores conflicting claims", "bundle-v2.js", "if (set.has(k)) {", "if (false) {", "bundle-v2/conflicting-success-closure"],
+
 ];
 let failed = 0;
 for (const [name, file, from, to, killer] of mutations) {
@@ -81,7 +88,7 @@ for (const [name, file, from, to, killer] of mutations) {
     if (source.split(from).length !== 2) throw Error("mutation anchor missing or ambiguous: " + file);
     writeFileSync(target, source.replace(from, to));
     const library=await import(pathToFileURL(join(dir, "dist/index.js")).href);
-    const results = killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
+    const results = killer.startsWith("bundle-v2/") ? await bundleV2Conformance(library,receiptV2Fixture,runV2Fixture,receipts,testKey) : killer.startsWith("atomic/") ? await atomicConformance(library,testKey,killer) : await run(library,file === "process-ledger.js");
     const observed = results.find(r => r.name === killer);
     if (!observed || observed.ok) {
       console.error("SURVIVED", name, "expected killer", killer); failed++;
