@@ -1,5 +1,6 @@
 // Opt-in, actual PostgreSQL contract test. Requires a DISPOSABLE local Supabase
-// DB with 0001_radio.sql already applied. Never runs against a remote URL.
+// DB with 0001_radio.sql already applied (or stock PostgreSQL with the test-only
+// auth fixture). Never runs against a remote URL.
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
@@ -34,7 +35,33 @@ const roots=await Promise.all(Array.from({length:8},()=>submit(tuple(1,90))));
 assert.equal(roots.filter(r=>!r.replayed).length,1);assert.equal(new Set(roots.map(r=>r.receipt.id)).size,1);
 const root=roots[0].receipt.id;
 const bad=await submit(tuple(2,10,root));assert.equal(bad.receipt.header.status,"not");
-const forks=await Promise.all([submit(tuple(2,91,root)),submit(tuple(2,92,root))]);
+// Force both requests to reach the real transaction with a stale, unspent
+// observation. A Promise.all alone does not prove the conflicting window ran.
+let release;
+const gate = new Promise(resolve => { release = resolve; });
+let arrived = 0;
+const commits = [];
+const racing = { ...db, commit: async p => {
+  if (++arrived <= 2) {
+    assert.deepEqual(p.spent, []);
+    assert.equal(p.status, "ok");
+    if (arrived === 2) release();
+    let timer;
+    try { await Promise.race([gate, new Promise((_, reject) => {
+      timer = setTimeout(() => reject(Error("both real transactions did not reach the race barrier")), 10000);
+    })]); } finally { clearTimeout(timer); }
+  }
+  const result = await db.commit(p);
+  commits.push({ payload: p, result });
+  return result;
+}};
+const racingSubmit = t => submitRoot({db:racing,key,keys,tuple:t,owner,by,when});
+const forks=await Promise.all([racingSubmit(tuple(2,91,root)),racingSubmit(tuple(2,92,root))]);
+assert.equal(arrived, 3, "two original commits plus one reevaluation");
+assert.equal(commits.filter(c => c.result.kind === "retry").length, 1);
+const rolledBack = commits.find(c => c.result.kind === "retry").payload;
+assert.equal(await scalar(`select count(*) from public.receipts where id=${q(rolledBack.id)};`), 0);
+assert.equal(await scalar(`select count(*) from public.outbox where receipt_id=${q(rolledBack.id)};`), 0);
 assert.deepEqual(forks.map(r=>r.receipt.header.status).sort(),["ok","registered"]);
 assert.match(forks.find(r=>r.receipt.header.status==="registered").detail.unmet.join(),/already been used/);
 assert.equal(await scalar(`select count(*) from public.consumptions where process_id=${q(law.id)};`),1);
@@ -47,4 +74,39 @@ assert.equal(await scalar(`select count(*) from public.objects where hash=${q(de
 assert.equal(await scalar(`select count(*) from public.receipts where id=${q(root)};`,"anon"),1);
 await assert.rejects(sql(`select public.logline_commit('{}'::jsonb);`,"authenticated",{sub:owner}),/permission denied/);
 await assert.rejects(sql(`update public.receipts set status='not' where id=${q(root)};`),/permission denied|immutable/);
-console.log("PostgreSQL integration: concurrent idempotency, once, outbox, RLS, immutable receipt and RPC authorization passed.");
+// Inject a failure after CAS writes, receipt and outbox insert, but before the
+// access row is written. The real SQL transaction must roll everything back.
+const counts = async () => scalar(`select json_build_array(
+  (select count(*) from public.objects), (select count(*) from public.receipts),
+  (select count(*) from public.receipt_access), (select count(*) from public.submissions),
+  (select count(*) from public.consumptions), (select count(*) from public.outbox));`);
+const before = await counts();
+const winner = forks.find(r => r.receipt.header.status === "ok");
+const next = {...tuple(3,94,winner.receipt.id), fault_probe:randomUUID()};
+let failedPayload;
+const fault = {...db, commit: async p => {
+  failedPayload = p;
+  return db.commit({...p, owner:"not-a-uuid"});
+}};
+await assert.rejects(submitRoot({db:fault,key,keys,tuple:next,owner,by,when}), /invalid input syntax for type uuid/);
+assert.ok(failedPayload);
+assert.equal(failedPayload.status,"ok");
+assert.deepEqual(await counts(),before,"no phantom CAS, receipt, access, submission, claim or outbox row");
+assert.equal(await scalar(`select count(*) from public.objects where hash=${q(failedPayload.input_hash)};`),0);
+assert.equal(await scalar(`select count(*) from public.submissions where cache_key=${q(failedPayload.cache_key)};`),0);
+const recovered = await submit(next);
+assert.equal(recovered.replayed,false);
+assert.equal(recovered.receipt.id,failedPayload.id,"same deterministic decision after rollback");
+assert.equal(recovered.receipt.header.status,"ok");
+assert.equal(await scalar(`select count(*) from public.consumptions where process_id=${q(law.id)};`),2);
+assert.equal(await scalar(`select count(*) from public.outbox o join public.receipts r on r.id=o.receipt_id where r.frequency=${q(law.id)};`),5);
+
+// CAS collision and failed amendment must not change or leave orphan law bytes.
+const canonicalLaw=L.canonicalize(law);
+await assert.rejects(sql(`select public.logline_put(${q(hash)},'different bytes');`),/CAS address collision/);
+assert.equal(await sql(`select body from public.objects where hash=${q(hash)};`),canonicalLaw);
+const amended={...law,issuer:randomUUID()}, amendedHash=await L.hashOf(amended);
+await assert.rejects(sql(`select public.logline_publish(${q(law.id)},${q(amendedHash)},${q(L.canonicalize(amended))});`),/duplicate key/);
+assert.equal(await scalar(`select count(*) from public.objects where hash=${q(amendedHash)};`),0);
+assert.equal(await sql(`select hash from public.processes where id=${q(law.id)};`),hash);
+console.log("PostgreSQL integration: concurrent idempotency, forced once race, transactional rollback/retry, CAS collision, rejected amendment, outbox, RLS, immutable receipt and RPC authorization passed.");

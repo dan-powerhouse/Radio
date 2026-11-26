@@ -9,6 +9,7 @@ execSync(`bun build ${root}dist/index.js --outfile ${root}dist/browser.js --form
 const files = {
   "/lib.js": readFileSync(root + "dist/browser.js", "utf8"),
   "/conformance.js": readFileSync(root + "test/conformance.mjs", "utf8"),
+  "/kernel-conformance.js": readFileSync(root + "test/kernel-conformance.mjs", "utf8"),
   "/": "<!doctype html><meta charset=utf-8><title>conformance</title>",
 };
 const browser = await chromium.launch();
@@ -20,14 +21,22 @@ await page.route("https://conformance.test/**", (r) => {
 await page.goto("https://conformance.test/");
 const jcs = JSON.parse(readFileSync(root + "vectors/jcs.json", "utf8"));
 const receipts = JSON.parse(readFileSync(root + "vectors/receipts.json", "utf8"));
-const results = await page.evaluate(async ([jcs, receipts]) => {
+const fixture = name => JSON.parse(readFileSync(root + "vectors/" + name + ".json", "utf8"));
+const fixtures = { expressions: fixture("expressions"), strict: fixture("strict-json"), processTypes: fixture("process-types") };
+// Playwright object serialization can alter own __proto__ keys. Pass JSON text
+// and parse in the browser to preserve the exact adversarial input.
+const groups = await page.evaluate(async (fixtureText) => {
+  const [jcs, receipts, fixtures] = JSON.parse(fixtureText);
   const L = await import("/lib.js");
   const { conformance } = await import("/conformance.js");
-  return conformance(L, jcs, receipts);
-}, [jcs, receipts]);
+  const { kernelConformance, receiptEvidenceConformance } = await import("/kernel-conformance.js");
+  return { legacy: await conformance(L, jcs, receipts), kernel: await kernelConformance(L, fixtures), evidence: await receiptEvidenceConformance(L, receipts) };
+}, JSON.stringify([jcs, receipts, fixtures]));
 const ua = await page.evaluate(() => navigator.userAgent.match(/Chrome\/[\d.]+/)?.[0]);
 await browser.close();
+const results = Object.values(groups).flat();
 const bad = results.filter((r) => !r.ok);
-console.log(`chromium (${ua}): ${results.length - bad.length}/${results.length} conformance vectors pass`);
+console.log(`chromium (${ua}): ${results.length - bad.length}/${results.length} conformance/evidence checks pass`);
+for (const [name, group] of Object.entries(groups)) console.log(name + ": " + group.filter(r => r.ok).length + "/" + group.length);
 for (const b of bad) console.log("FAIL", b.name, b.msg);
 process.exit(bad.length ? 1 : 0);
