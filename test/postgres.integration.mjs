@@ -7,16 +7,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import * as L from "../dist/index.js";
 import { submitRoot } from "../supabase/functions/_shared/ledger.mjs";
-const url = new URL(process.env.LOGLINE_TEST_DATABASE_URL ?? "postgresql://postgres:postgres@127.0.0.1:54322/postgres");
-if (process.env.LOGLINE_DISPOSABLE_DB !== "yes" || !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) || !["postgresql:","postgres:"].includes(url.protocol)) throw Error("Set LOGLINE_DISPOSABLE_DB=yes with a disposable local Supabase database only");
-const q = x => x === null ? "NULL" : "'" + String(x).replaceAll("'", "''") + "'";
-const j = x => q(JSON.stringify(x)) + "::jsonb";
-const sql = (statement, role = "service_role", claims = {}) => new Promise((resolve,reject) => {
-  const p = spawn("psql", ["-X", "-qAt", "-v", "ON_ERROR_STOP=1", url.href], {stdio:["pipe","pipe","pipe"]});
-  let out="", err="";p.stdout.on("data",x=>out+=x);p.stderr.on("data",x=>err+=x);p.on("error",reject);p.on("close",c=>c===0?resolve(out.trim()):reject(Error(err)));
-  p.stdin.end(`SET standard_conforming_strings=on; SET ROLE ${role}; SET request.jwt.claims = ${q(JSON.stringify(claims))};\n${statement}\n`);
-});
-const scalar = async (s,role,claims) => JSON.parse(await sql(s,role,claims));
+import { url, q, j, sql, scalar } from "./postgres-harness.mjs";
 const db = {
   process: id => scalar(`select coalesce((select o.body from public.processes p join public.objects o on o.hash=p.hash where p.id=${q(id)}),'null');`),
   citation: id => scalar(`select coalesce((select jsonb_build_object('receipt',r.receipt::jsonb,'detail',o.body::jsonb)::text from public.receipts r join public.receipt_access a on a.receipt_id=r.id join public.objects o on o.hash=a.detail_hash where r.id=${q(id)}),'null');`),
