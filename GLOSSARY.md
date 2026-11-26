@@ -10,7 +10,7 @@ The six primary concepts distinguish institutional context, reusable definitions
 
 | Dimension | Term | Definition |
 |---|---|---|
-| Context | **Institution** | The context of authority and participation within which one or more Diplomacies may be adopted. An institution may be an organization or another community operating under shared rules. It is not a Process Type, a trajectory or necessarily a deployment. |
+| Context | **Institution** | The living context of authority and participation within which one or more Diplomacies may be adopted. Its laws, commitments and constituted trajectories remain durable even when no institutional computation is active. An Institution is a persistent institutional presence (a living server in the Third Layer sense), not a resident application process, a Process Type, a trajectory or necessarily a deployment. |
 | Definition | **Diplomacy** | A portable institutional artifact combining exactly one Process Type with one or more participant-facing Skills. It defines the rite and distributes the knowledge and law needed for participation. DIPLOMACY names the proposed open format, inspired by Agent Skills. |
 | Definition | **Process Type** | An immutable, content-addressed law defining a kind of trajectory: its recognition predicate, possible RUNs, conditions, causal dependencies and consequences. |
 | Definition | **Skill** | Portable knowledge for action and participation. Skills may express different perspectives, responsibilities or strategies under a common law. They guide participants without conferring authority or altering the law. |

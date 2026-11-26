@@ -26,6 +26,16 @@ Authority is not intelligence or technical ability. A participant may be able to
 
 Continuity is not just persistence or memory. A computation may end without erasing the commitment that it was intended to fulfill. The protocol preserves the history and conditions of a commitment; it cannot promise that a participant will actually fulfill it.
 
+## The Institution as a Living Server
+
+An Institution is a persistent institutional presence, not a continuously running application. In the Third Layer architecture, identity is the only standing application server: the persistent reference for authentication and participation. Authority remains a separate, enforceable condition; an authenticated identity is not a mandate. The identity authority is not the machine's receipt-signing key.
+
+The computational mechanisms of an Institution are ephemeral. Its laws, commitments and constituted trajectories are durable. Between movements the Institution may remain computationally dormant without losing its continuity. A new Contract invokes computation under the applicable law, with explicit causal evidence; it does not resume a suspended application program. No instance requires a resident worker, open conversational session or central workflow orchestrator.
+
+This borrows the economic insight of stateless and durable workflow architectures while preserving something different: institutional continuity rather than continuity of a particular execution. Persistence and communication still require infrastructure and resources. The single-server principle refers to the logical application architecture, not a claim that a deployment contains one physical machine or has no managed data services or idle costs.
+
+**Persistent identity. Ephemeral computation. Continuous institutions.**
+
 ## Elegance is a security and scaling property
 
 Keep the machine small enough to understand and independently reproduce. Use one deterministic evaluator, content-addressed immutable laws and objects, signed receipts and authoritative transactional uniqueness. Keep translation probabilistic and external. Do not duplicate semantic rules in SQL or add a universal workflow controller. Refusals explain what was missing. A machine's key holder remains a trusted authority for issuance and the ledger remains an authority for shared uniqueness; independent replay does not establish external truth or ledger completeness.
