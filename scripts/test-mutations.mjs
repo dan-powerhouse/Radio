@@ -7,11 +7,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { kernelConformance, receiptEvidenceConformance } from "../test/kernel-conformance.mjs";
+import { scannerConformance } from "../test/scanner-conformance.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const load = name => JSON.parse(readFileSync(join(root, "vectors", name + ".json"), "utf8"));
 const fixtures = { expressions: load("expressions"), strict: load("strict-json"), processTypes: load("process-types") };
 const receipts = load("receipts");
-const run = async L => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts)];
+const recognition = load("recognition");
+const run = async L => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition)];
 const baseline = await run(await import("../dist/index.js"));
 assert.deepEqual(baseline.filter(x => !x.ok), [], "clean baseline must pass");
 const mutations = [
@@ -30,6 +32,17 @@ const mutations = [
   ["historical law discarded", "process-type.js", "this.#active.delete(hash);", "this.#active.delete(hash); this.#laws.delete(hash);", "registry/11/historical-law"],
   ["snapshot depends on publication order", "process-type.js", "[...this.#active].sort()", "[...this.#active]", "registry/15/snapshot"],
   ["signature check bypassed", "verify.js", "await verifyId(k.jwk, r.id, r.sig.value)", "true", "evidence/signature-bit-change"],
+  ["scanner returns first match", "scanner.js", "matches.push(hash);", "{ matches.push(hash); break; }", "scan/later-match-not-skipped"],
+  ["scanner promotes partial match", "scanner.js", "if (diagnostics.length)", "if (diagnostics.length && matches.length === 0)", "scan/partial-match-not-authority"],
+  ["scanner ignores non-boolean predicate", "scanner.js", 'else if (recognized !== false)', 'else if (false)', "scan/error-before-match"],
+  ["scanner does not charge candidate", "scanner.js", "budget.left--; // charge even a literal predicate", "/* no candidate charge */", "scan/literal-true"],
+  ["scanner resets shared budget", "scanner.js", "budget.left--; // charge even a literal predicate", "budget.left = snapshot.scan_ops - 1;", "scan/shared-operator-budget"],
+  ["scanner ignores predicate errors", "scanner.js", "diagnostics.push({ law_hash: hash, code: err.code });", "/* swallow predicate errors */", "scan/match-plus-error"],
+  ["scanner skips registry address verification", "scanner.js", "if (await hashOf(snapshot) !== registryHash)", "if (false)", "scan/wrong-snapshot-hash"],
+  ["scanner skips law address verification", "scanner.js", "if (await hashOf(law) !== hash)", "if (false)", "scan/valid-law-wrong-address"],
+  ["scanner permits active id collision", "scanner.js", "if (ids.has(law.id))", "if (false)", "scan/duplicate-active-id"],
+  ["scanner accepts unordered registry", "process-type.js", "h <= previous", "false", "scan/reversed-hashes"],
+
 ];
 let failed = 0;
 for (const [name, file, from, to, killer] of mutations) {

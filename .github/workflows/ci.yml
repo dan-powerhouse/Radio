@@ -1,7 +1,7 @@
 name: RADIO CI
 on:
   pull_request:
-    branches: [main]
+    branches: [main, 'radio/**']
   push:
     branches: [main]
   workflow_call:

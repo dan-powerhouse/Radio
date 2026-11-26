@@ -1,0 +1,790 @@
+{
+  "format": "radio-recognition-vectors@1",
+  "provenance": "Manually derived from SPEC 15.8. Candidate/operator costs counted by hand; ASCII canonical bytes and addresses computed independently using Python json/hashlib. No RADIO output used.",
+  "laws": {
+    "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2": "{\"id\":\"blue@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"and\":[{\"has\":\"did\"},{\"==\":[{\"var\":\"did\"},\"request\"]}]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": "{\"id\":\"green@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"and\":[{\"has\":\"with.green\"},{\"==\":[{\"var\":\"with.green\"},true]}]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d": "{\"id\":\"true@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":true,\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:633c0ca662abcf31812ff2caf6043498154d3643e2c4d662162a282367009e5d": "{\"id\":\"false@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":false,\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:d26574bc5d42251584800076e88726516193a2df01315f616e0209fc0703ca0c": "{\"id\":\"missing@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"var\":\"absent\"},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:33b9bb4223718620eecfc86061cd63dba9bf9924b162545dd07a0b9d6a6c90c9": "{\"id\":\"number@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":1,\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:caaecc10cd92f42065fc8915bae7740f84d0ce443d9e43a8588e93f63d391428": "{\"id\":\"type-error@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"<\":[\"1\",2]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:c5d2758c5c14f8cfe205c9a5d01997ccbef213832ffb31c53bb348ef9910293a": "{\"id\":\"own-key@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"==\":[{\"var\":\"__proto__.x\"},5]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:d11e421b0eb5be8b963d86296a87dcf070f89abd271a1b397d2677a425fba2c9": "{\"id\":\"inherited-key@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"has\":\"constructor\"},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:6458170743392979f0d1483838df93f368fcb904f2fad7bb42496076b4d0bdda": "{\"id\":\"array-result@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":[true],\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:a4499b5a82a8cd10be90b189bfdbddc7ecc049d6aa2950c96d81757b5fcd1f37": "{\"id\":\"literal-this@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"==\":[{\"var\":\"this\"},\"blue@1\"]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:21367dbd4791c7170bf634315cdcafb341265fcc04c65bf700e5daa7fd42cb26": "{\"id\":\"blue@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":true,\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882": "{\"id\":\"zero-budget-op@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"not\":false},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}",
+    "sha256:f6d3aeddb1b57271721828d4b105b63b19b181dee793224796e301785dc1d27b": "{\"logline\":\"process@1\"}"
+  },
+  "snapshots": {
+    "empty": {
+      "hash": "sha256:9d3b102da8b46e61344e1a88bc65e3aebe65f72ad35b9fafeafb2e968b76c307",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[]}"
+    },
+    "colors": {
+      "hash": "sha256:de0a74610778297250e26f36eedc3cb57e66b2b4458fcf18ea207acd28e01c8e",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94\"]}"
+    },
+    "blue": {
+      "hash": "sha256:3685ee3347bd57db8bcbb8e6c9da9b907ab935c9056c021ea20eb9b263694d92",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"]}"
+    },
+    "literal-true": {
+      "hash": "sha256:68e09fd5d6fc900f3ea3076cf5132dd840658341d997ecf0b64e12c5933099b4",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[\"sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d\"]}"
+    },
+    "literal-false": {
+      "hash": "sha256:34d8f6c88f85ee251d42318213f9bc9829229592582e12e969b05c089dc8a312",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[\"sha256:633c0ca662abcf31812ff2caf6043498154d3643e2c4d662162a282367009e5d\"]}"
+    },
+    "one-op-exact": {
+      "hash": "sha256:fa1fb2d8fedd95381b1bc4bf340763fd26a0bba6ca19a9616d16d8e05328f6cd",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":2,\"types\":[\"sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882\"]}"
+    },
+    "one-op-short": {
+      "hash": "sha256:ab8a60d70f00f160c72f1f950454f93d1c0dbbd97e05ac9236ea1784e2f40435",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[\"sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882\"]}"
+    },
+    "two-constants": {
+      "hash": "sha256:d4d9c0e63f578e4a68dc53162789e2f6a821359d865238c18fd5cba47276fb39",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":2,\"types\":[\"sha256:633c0ca662abcf31812ff2caf6043498154d3643e2c4d662162a282367009e5d\",\"sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d\"]}"
+    },
+    "two-constants-short": {
+      "hash": "sha256:d10d052f178dfe509b67d4ec0e741d31c975c46a3fb8b85d107b1612b34a113b",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[\"sha256:633c0ca662abcf31812ff2caf6043498154d3643e2c4d662162a282367009e5d\",\"sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d\"]}"
+    },
+    "overlap": {
+      "hash": "sha256:81375301e68c919d7c9c68ec6571d229c0d23be7f594f0a3a433190f9302987f",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":10,\"types\":[\"sha256:633c0ca662abcf31812ff2caf6043498154d3643e2c4d662162a282367009e5d\",\"sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d\",\"sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882\"]}"
+    },
+    "error-with-match": {
+      "hash": "sha256:d2270a7fed102abd33d4215514251403525713e5b9824ec4893f2ea7e04f8a54",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:d26574bc5d42251584800076e88726516193a2df01315f616e0209fc0703ca0c\"]}"
+    },
+    "errors": {
+      "hash": "sha256:665706ac1cb22052e347da463ccea2a9cb697b6b58cc2aca52fe252117c0921c",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:33b9bb4223718620eecfc86061cd63dba9bf9924b162545dd07a0b9d6a6c90c9\",\"sha256:6458170743392979f0d1483838df93f368fcb904f2fad7bb42496076b4d0bdda\",\"sha256:caaecc10cd92f42065fc8915bae7740f84d0ce443d9e43a8588e93f63d391428\",\"sha256:d26574bc5d42251584800076e88726516193a2df01315f616e0209fc0703ca0c\"]}"
+    },
+    "own-key": {
+      "hash": "sha256:dc60c6ae2c48d39e313016daf7ab8e49ca97396eac750209b27db448fee94e42",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":3,\"types\":[\"sha256:c5d2758c5c14f8cfe205c9a5d01997ccbef213832ffb31c53bb348ef9910293a\"]}"
+    },
+    "inherited-key": {
+      "hash": "sha256:1e7388d1590873423e5879401d6a337779f45ad155fad16c70fcf39d314ba2bd",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":2,\"types\":[\"sha256:d11e421b0eb5be8b963d86296a87dcf070f89abd271a1b397d2677a425fba2c9\"]}"
+    },
+    "literal-this": {
+      "hash": "sha256:ae59cfe69912ed7f70fbc7c6bf336f18d80699ea7944e9437868b752a590ec52",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":3,\"types\":[\"sha256:a4499b5a82a8cd10be90b189bfdbddc7ecc049d6aa2950c96d81757b5fcd1f37\"]}"
+    },
+    "duplicate": {
+      "hash": "sha256:bef93541ff9244024f4b353cad39edc557e086ec4c28afcf00cc22ac2b4b0835",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:21367dbd4791c7170bf634315cdcafb341265fcc04c65bf700e5daa7fd42cb26\"]}"
+    },
+    "colors-short": {
+      "hash": "sha256:782a6e1ef2c845d7952f5c5c973e0a6f9ca3b0366dbd6c739005039742d95999",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":5,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94\"]}"
+    },
+    "colors-exact": {
+      "hash": "sha256:4dcb92acee6b0ec6031dc725779b2906169579eeb6a1a005a1009a21c8f51cdf",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":10,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94\"]}"
+    },
+    "error-before-match": {
+      "hash": "sha256:ab9b0fc353ef28c470524e094a49ddd7b88d44f1a9507e33077c55f03eea6125",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":2,\"types\":[\"sha256:33b9bb4223718620eecfc86061cd63dba9bf9924b162545dd07a0b9d6a6c90c9\",\"sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d\"]}"
+    },
+    "authentic-malformed-law": {
+      "hash": "sha256:ece8ae3106e72e029037c44b478c5f5d73a0feeb0718910f7e91ced27c29b209",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"types\":[\"sha256:f6d3aeddb1b57271721828d4b105b63b19b181dee793224796e301785dc1d27b\"]}"
+    },
+    "repeated-hash": {
+      "hash": "sha256:8adaab192243bd036e6411e4d151f9b1ab62394a7b35e9175667dc7deed88c84",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":10,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"]}"
+    },
+    "zero-ops": {
+      "hash": "sha256:72be8fb9083961b50571607e72c598452d2550c17888063b9a9fe8fb4cb52c47",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":0,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"]}"
+    },
+    "over-ops": {
+      "hash": "sha256:24fce209dd8a8a88e7d0d9b515737c4beac480aa5f3c37260c3adce97da882b2",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":1000001,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"]}"
+    },
+    "colors-nine": {
+      "hash": "sha256:f1046280415e47df590a9b0da51e23886048b4e24cb9130071322d2091cae0b4",
+      "json": "{\"logline\":\"registry@1\",\"scan_ops\":9,\"types\":[\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\",\"sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94\"]}"
+    }
+  },
+  "cases": [
+    {
+      "name": "empty-registry",
+      "snapshot": "empty",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 0
+      }
+    },
+    {
+      "name": "free-null",
+      "snapshot": "colors",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "free-array",
+      "snapshot": "colors",
+      "tuple_json": "[]",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "free-string",
+      "snapshot": "colors",
+      "tuple_json": "\"request\"",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "free-boolean",
+      "snapshot": "colors",
+      "tuple_json": "true",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "free-number",
+      "snapshot": "colors",
+      "tuple_json": "42",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "free-empty-object",
+      "snapshot": "colors",
+      "tuple_json": "{}",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "none",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"other\"}",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 8
+      }
+    },
+    {
+      "name": "blue-only",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 8
+      }
+    },
+    {
+      "name": "green-only",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"other\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94"
+        ],
+        "selected": "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94",
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "ambiguous",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "ambiguous",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+          "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94"
+        ],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "this-not-selector",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"this\":\"green@1\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 8
+      }
+    },
+    {
+      "name": "who-not-authority",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"who\":\"admin\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 8
+      }
+    },
+    {
+      "name": "no-coercion",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":1}}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "reordered-tuple",
+      "snapshot": "colors",
+      "tuple_json": "{\"with\":{\"green\":true}, \"did\":\"request\"}",
+      "expected": {
+        "outcome": "ambiguous",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+          "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94"
+        ],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "new-snapshot-after-retirement",
+      "snapshot": "blue",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 5
+      }
+    },
+    {
+      "name": "historical-snapshot-after-retirement",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "ambiguous",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+          "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94"
+        ],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "literal-true",
+      "snapshot": "literal-true",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d"
+        ],
+        "selected": "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d",
+        "diagnostics": [],
+        "ops_used": 1
+      }
+    },
+    {
+      "name": "literal-false",
+      "snapshot": "literal-false",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 1
+      }
+    },
+    {
+      "name": "exact-operator-budget",
+      "snapshot": "one-op-exact",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882"
+        ],
+        "selected": "sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882",
+        "diagnostics": [],
+        "ops_used": 2
+      }
+    },
+    {
+      "name": "exhausted-operator-budget",
+      "snapshot": "one-op-short",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882",
+            "code": "eval_budget"
+          }
+        ],
+        "ops_used": 1
+      }
+    },
+    {
+      "name": "shared-candidate-budget",
+      "snapshot": "two-constants",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d"
+        ],
+        "selected": "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d",
+        "diagnostics": [],
+        "ops_used": 2
+      }
+    },
+    {
+      "name": "exhausted-candidate-budget",
+      "snapshot": "two-constants-short",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d",
+            "code": "eval_budget"
+          }
+        ],
+        "ops_used": 1
+      }
+    },
+    {
+      "name": "later-match-not-skipped",
+      "snapshot": "overlap",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "ambiguous",
+        "matches": [
+          "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d",
+          "sha256:82069ba0935e52b43da14b55ad63ec705d6bad8900b95924b28b029efba57882"
+        ],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 4
+      }
+    },
+    {
+      "name": "match-plus-error",
+      "snapshot": "error-with-match",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:d26574bc5d42251584800076e88726516193a2df01315f616e0209fc0703ca0c",
+            "code": "eval_missing"
+          }
+        ],
+        "ops_used": 7
+      }
+    },
+    {
+      "name": "all-errors-in-hash-order",
+      "snapshot": "errors",
+      "tuple_json": "{}",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:33b9bb4223718620eecfc86061cd63dba9bf9924b162545dd07a0b9d6a6c90c9",
+            "code": "recognize_non_boolean"
+          },
+          {
+            "law_hash": "sha256:6458170743392979f0d1483838df93f368fcb904f2fad7bb42496076b4d0bdda",
+            "code": "recognize_non_boolean"
+          },
+          {
+            "law_hash": "sha256:caaecc10cd92f42065fc8915bae7740f84d0ce443d9e43a8588e93f63d391428",
+            "code": "eval_type"
+          },
+          {
+            "law_hash": "sha256:d26574bc5d42251584800076e88726516193a2df01315f616e0209fc0703ca0c",
+            "code": "eval_missing"
+          }
+        ],
+        "ops_used": 6
+      }
+    },
+    {
+      "name": "own-prototype-key",
+      "snapshot": "own-key",
+      "tuple_json": "{\"__proto__\":{\"x\":5}}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:c5d2758c5c14f8cfe205c9a5d01997ccbef213832ffb31c53bb348ef9910293a"
+        ],
+        "selected": "sha256:c5d2758c5c14f8cfe205c9a5d01997ccbef213832ffb31c53bb348ef9910293a",
+        "diagnostics": [],
+        "ops_used": 3
+      }
+    },
+    {
+      "name": "inherited-key-absent",
+      "snapshot": "inherited-key",
+      "tuple_json": "{}",
+      "expected": {
+        "outcome": "none",
+        "matches": [],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 2
+      }
+    },
+    {
+      "name": "explicit-this-law",
+      "snapshot": "literal-this",
+      "tuple_json": "{\"this\":\"blue@1\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:a4499b5a82a8cd10be90b189bfdbddc7ecc049d6aa2950c96d81757b5fcd1f37"
+        ],
+        "selected": "sha256:a4499b5a82a8cd10be90b189bfdbddc7ecc049d6aa2950c96d81757b5fcd1f37",
+        "diagnostics": [],
+        "ops_used": 3
+      }
+    },
+    {
+      "name": "partial-match-not-authority",
+      "snapshot": "colors-short",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94",
+            "code": "eval_budget"
+          }
+        ],
+        "ops_used": 5
+      }
+    },
+    {
+      "name": "exact-total-budget",
+      "snapshot": "colors-exact",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "ambiguous",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+          "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94"
+        ],
+        "selected": null,
+        "diagnostics": [],
+        "ops_used": 10
+      }
+    },
+    {
+      "name": "duplicate-tuple-key",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\",\"did\":\"other\"}",
+      "expected": {
+        "error": "ijson"
+      }
+    },
+    {
+      "name": "unsafe-tuple-integer",
+      "snapshot": "colors",
+      "tuple_json": "9007199254740992e0",
+      "expected": {
+        "error": "ijson"
+      }
+    },
+    {
+      "name": "invalid-tuple-escape",
+      "snapshot": "colors",
+      "tuple_json": "\"\\q\"",
+      "expected": {
+        "error": "ijson"
+      }
+    },
+    {
+      "name": "duplicate-active-id",
+      "snapshot": "duplicate",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    },
+    {
+      "name": "wrong-snapshot-hash",
+      "snapshot": "colors",
+      "tuple_json": "{}",
+      "expected": {
+        "error": "scan_registry_invalid"
+      },
+      "snapshot_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+    },
+    {
+      "name": "reversed-hashes",
+      "snapshot": "colors",
+      "tuple_json": "{}",
+      "expected": {
+        "error": "scan_registry_invalid"
+      },
+      "snapshot_json": "{\"logline\":\"registry@1\",\"scan_ops\":20,\"types\":[\"sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94\",\"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"]}",
+      "snapshot_hash": "sha256:88151abec1db964b8bffb9f1357d9d88285f29bcdd43f07ed945de9470632380"
+    },
+    {
+      "name": "missing-law",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "error": "scan_registry_missing"
+      },
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": null
+      }
+    },
+    {
+      "name": "wrong-law-hash",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "error": "scan_registry_invalid"
+      },
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": "{\"id\":\"blue@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"and\":[{\"has\":\"did\"},{\"==\":[{\"var\":\"did\"},\"request\"]}]},\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}"
+      }
+    },
+    {
+      "name": "invalid-law-despite-budget",
+      "snapshot": "colors-short",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "error": "scan_registry_invalid"
+      },
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": "{\"logline\":\"process@1\"}"
+      }
+    },
+    {
+      "name": "missing-law-despite-budget",
+      "snapshot": "colors-short",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "error": "scan_registry_missing"
+      },
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": null
+      }
+    },
+    {
+      "name": "unreferenced-law-ignored",
+      "snapshot": "blue",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "diagnostics": [],
+        "ops_used": 5
+      },
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": "not json"
+      }
+    },
+    {
+      "name": "error-before-match",
+      "snapshot": "error-before-match",
+      "tuple_json": "null",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [
+          "sha256:75d02beacbd3e6abe2145e3d2f8b7ea11d3e9d75e77ba198477bd5dc0b324d3d"
+        ],
+        "selected": null,
+        "ops_used": 2,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:33b9bb4223718620eecfc86061cd63dba9bf9924b162545dd07a0b9d6a6c90c9",
+            "code": "recognize_non_boolean"
+          }
+        ]
+      }
+    },
+    {
+      "name": "hash-valid-malformed-law",
+      "snapshot": "authentic-malformed-law",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    },
+    {
+      "name": "duplicate-snapshot-hash",
+      "snapshot": "repeated-hash",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    },
+    {
+      "name": "zero-snapshot-budget",
+      "snapshot": "zero-ops",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    },
+    {
+      "name": "excess-snapshot-budget",
+      "snapshot": "over-ops",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    },
+    {
+      "name": "reordered-evidence",
+      "snapshot": "blue",
+      "tuple_json": "{\"did\":\"request\"}",
+      "expected": {
+        "outcome": "unique",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2",
+        "ops_used": 5,
+        "diagnostics": []
+      },
+      "snapshot_json": "{\n \"logline\": \"registry@1\",\n \"scan_ops\": 20,\n \"types\": [\n  \"sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2\"\n ]\n}",
+      "law_overrides": {
+        "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2": "{\n \"id\": \"blue@1\",\n \"issuer\": \"Example\",\n \"logline\": \"process-type@1\",\n \"recognize\": {\n  \"and\": [\n   {\n    \"has\": \"did\"\n   },\n   {\n    \"==\": [\n     {\n      \"var\": \"did\"\n     },\n     \"request\"\n    ]\n   }\n  ]\n },\n \"runs\": [\n  {\n   \"after\": [],\n   \"id\": \"open\",\n   \"if_doubt\": \"doubt\",\n   \"if_not\": \"not\",\n   \"if_ok\": \"ok\",\n   \"requires\": {},\n   \"steps\": []\n  }\n ]\n}"
+      }
+    },
+    {
+      "name": "malformed-registry-json",
+      "snapshot": "blue",
+      "tuple_json": "null",
+      "expected": {
+        "error": "scan_registry_invalid"
+      },
+      "snapshot_json": "{\"logline\":\"registry@1\",\"scan_ops\":1,\"scan_ops\":2,\"types\":[]}"
+    },
+    {
+      "name": "shared-operator-budget",
+      "snapshot": "colors-nine",
+      "tuple_json": "{\"did\":\"request\",\"with\":{\"green\":true}}",
+      "expected": {
+        "outcome": "indeterminate",
+        "matches": [
+          "sha256:09c15618befb0a7427fa2cc695ea1b43bf8dc62b96e37f6a31ac73ac80350af2"
+        ],
+        "selected": null,
+        "diagnostics": [
+          {
+            "law_hash": "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94",
+            "code": "eval_budget"
+          }
+        ],
+        "ops_used": 9
+      }
+    },
+    {
+      "name": "valid-law-wrong-address",
+      "snapshot": "colors",
+      "tuple_json": "{\"did\":\"request\"}",
+      "law_overrides": {
+        "sha256:9443c1b602cc389a6de97d5773348c279268ae0492f9db7781c9d92a61512f94": "{\"id\":\"green@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":true,\"runs\":[{\"after\":[],\"id\":\"open\",\"if_doubt\":\"doubt\",\"if_not\":\"not\",\"if_ok\":\"ok\",\"requires\":{},\"steps\":[]}]}"
+      },
+      "expected": {
+        "error": "scan_registry_invalid"
+      }
+    }
+  ]
+}
