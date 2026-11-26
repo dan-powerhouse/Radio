@@ -1,0 +1,1517 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:radio:review:core-schema:1",
+  "title": "RADIO target core — structural contract review",
+  "description": "Single machine-readable structural projection of SPEC 15.8-15.11. Not a frozen protocol, runtime validator or substitute for semantic conformance. Validate named $defs, not the schema root. Historical v1 semantics are unchanged. DIPLOMACY manifest, exact unresolved wire decisions, authority and hosted interfaces are not silently specified.",
+  "not": {},
+  "$defs": {
+    "Hash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "RunId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+    },
+    "Frequency": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}$"
+    },
+    "FrequencyPattern": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}(\\.\\*)?$"
+    },
+    "Path": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+    },
+    "Text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "Status": {
+      "enum": [
+        "registered",
+        "ok",
+        "not",
+        "doubt"
+      ]
+    },
+    "When": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+    },
+    "Nonce": {
+      "type": "string",
+      "minLength": 22,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_-]+$",
+      "description": "Encoding/length only. Entropy, decoded length and canonical base64url require admission validation."
+    },
+    "HashSet": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Hash"
+      },
+      "uniqueItems": true,
+      "description": "Must also be in ascending UTF-16 order where the SPEC specifies a canonical set."
+    },
+    "Tuple": {
+      "description": "Any I-JSON value. Strict raw-byte parsing and numeric/Unicode/depth checks precede this structural schema. No reserved routing or authority fields."
+    },
+    "RecognitionExpression": {
+      "anyOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RecognitionExpression"
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "var",
+              "has"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^[^$]"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^[^$]"
+                },
+                "minItems": 1,
+                "maxItems": 1
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "not",
+              "len"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RecognitionExpression"
+                },
+                "minItems": 1,
+                "maxItems": 1
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "==",
+              "!=",
+              "<",
+              "<=",
+              ">",
+              ">=",
+              "-",
+              "in",
+              "days_between",
+              "add_days"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/RecognitionExpression"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "if"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/RecognitionExpression"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "min",
+              "max"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RecognitionExpression"
+                },
+                "minItems": 1
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "and",
+              "or",
+              "+",
+              "*",
+              "concat"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RecognitionExpression"
+                },
+                "minItems": 0
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Static expression syntax; evaluate with the sole RADIO evaluator. RUN machine paths must additionally refer only to declared parent/cite roles."
+    },
+    "RunExpression": {
+      "anyOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "null"
+          ]
+        },
+        {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RunExpression"
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "var",
+              "has"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)$|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id$|(?:header|detail)(?:\\.[^.]+)*$))"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)$|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id$|(?:header|detail)(?:\\.[^.]+)*$))"
+                },
+                "minItems": 1,
+                "maxItems": 1
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "not",
+              "len"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RunExpression"
+                },
+                "minItems": 1,
+                "maxItems": 1
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RunExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "==",
+              "!=",
+              "<",
+              "<=",
+              ">",
+              ">=",
+              "-",
+              "in",
+              "days_between",
+              "add_days"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/RunExpression"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "if"
+            ]
+          },
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/RunExpression"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "min",
+              "max"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RunExpression"
+                },
+                "minItems": 1
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RunExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "type": "object",
+          "minProperties": 1,
+          "maxProperties": 1,
+          "propertyNames": {
+            "enum": [
+              "and",
+              "or",
+              "+",
+              "*",
+              "concat"
+            ]
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/RunExpression"
+                },
+                "minItems": 0
+              },
+              {
+                "allOf": [
+                  {
+                    "$ref": "#/$defs/RunExpression"
+                  },
+                  {
+                    "not": {
+                      "type": "array"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "Static expression syntax; evaluate with the sole RADIO evaluator. RUN machine paths must additionally refer only to declared parent/cite roles."
+    },
+    "Citation": {
+      "type": "object",
+      "properties": {
+        "frequency": {
+          "$ref": "#/$defs/FrequencyPattern"
+        },
+        "status": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Status"
+          }
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "once": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "frequency"
+      ],
+      "additionalProperties": false
+    },
+    "Step": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Path"
+        },
+        "check": {
+          "$ref": "#/$defs/RunExpression"
+        },
+        "if_not": {
+          "enum": [
+            "not",
+            "doubt"
+          ]
+        },
+        "reason": {
+          "$ref": "#/$defs/Text"
+        }
+      },
+      "required": [
+        "id",
+        "check",
+        "if_not",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "Run": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/RunId"
+        },
+        "requires": {
+          "type": "object",
+          "additionalProperties": {
+            "enum": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "date",
+              "object",
+              "array"
+            ]
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/Path"
+          }
+        },
+        "after": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/RunId"
+          },
+          "uniqueItems": true
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Step"
+          }
+        },
+        "cites": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Citation"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          },
+          "maxProperties": 16
+        },
+        "grants": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/RunExpression"
+          }
+        },
+        "if_ok": {
+          "$ref": "#/$defs/Text"
+        },
+        "if_doubt": {
+          "$ref": "#/$defs/Text"
+        },
+        "if_not": {
+          "$ref": "#/$defs/Text"
+        },
+        "broadcast": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(detail|tuple)\\.[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+          }
+        },
+        "limits": {
+          "type": "object",
+          "properties": {
+            "ops": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 1000000
+            }
+          },
+          "required": [],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "id",
+        "requires",
+        "after",
+        "steps",
+        "if_ok",
+        "if_doubt",
+        "if_not"
+      ],
+      "additionalProperties": false
+    },
+    "ProcessType": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "process-type@1"
+        },
+        "id": {
+          "$ref": "#/$defs/Frequency"
+        },
+        "issuer": {
+          "$ref": "#/$defs/Text"
+        },
+        "recognize": {
+          "$ref": "#/$defs/RecognitionExpression"
+        },
+        "runs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "prefixItems": [
+            {
+              "allOf": [
+                {
+                  "$ref": "#/$defs/Run"
+                },
+                {
+                  "properties": {
+                    "after": {
+                      "maxItems": 0
+                    }
+                  }
+                }
+              ]
+            }
+          ],
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/Run"
+              },
+              {
+                "properties": {
+                  "after": {
+                    "minItems": 1
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      "required": [
+        "logline",
+        "id",
+        "issuer",
+        "recognize",
+        "runs"
+      ],
+      "additionalProperties": false,
+      "description": "SPEC 15.8-15.10. Semantic validation also requires unique ids, earlier declared predecessors, distinct step ids, path scope, I-JSON and resource limits."
+    },
+    "Registry": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "registry@1"
+        },
+        "types": {
+          "$ref": "#/$defs/HashSet"
+        },
+        "scan_ops": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "logline",
+        "types",
+        "scan_ops"
+      ],
+      "additionalProperties": false,
+      "description": "Validate ordering, evidence hashes, distinct active law ids and authority separately."
+    },
+    "Diagnostic": {
+      "type": "object",
+      "properties": {
+        "law_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "law_hash",
+        "code"
+      ],
+      "additionalProperties": false
+    },
+    "Recognition": {
+      "type": "object",
+      "properties": {
+        "outcome": {
+          "enum": [
+            "none",
+            "unique",
+            "ambiguous",
+            "indeterminate"
+          ]
+        },
+        "matches": {
+          "$ref": "#/$defs/HashSet"
+        },
+        "selected": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "diagnostics": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Diagnostic"
+          }
+        },
+        "ops_used": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1000000
+        }
+      },
+      "required": [
+        "outcome",
+        "matches",
+        "selected",
+        "diagnostics",
+        "ops_used"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "unique"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "matches": {
+                "minItems": 1,
+                "maxItems": 1
+              },
+              "selected": {
+                "$ref": "#/$defs/Hash"
+              },
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "none"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "matches": {
+                "maxItems": 0
+              },
+              "selected": {
+                "const": null
+              },
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "ambiguous"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "matches": {
+                "minItems": 2
+              },
+              "selected": {
+                "const": null
+              },
+              "diagnostics": {
+                "maxItems": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "indeterminate"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "properties": {
+              "selected": {
+                "const": null
+              },
+              "diagnostics": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ],
+      "description": "Existing scanner result shape. Selected must equal the unique match; ordering and diagnostic semantics require runtime verification."
+    },
+    "Continuation": {
+      "type": "object",
+      "properties": {
+        "instance": {
+          "$ref": "#/$defs/Hash"
+        },
+        "run": {
+          "$ref": "#/$defs/RunId"
+        },
+        "parents": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          }
+        }
+      },
+      "required": [
+        "instance",
+        "run",
+        "parents"
+      ],
+      "additionalProperties": false
+    },
+    "Submission": {
+      "type": "object",
+      "properties": {
+        "tuple": {
+          "$ref": "#/$defs/Tuple"
+        },
+        "submission": {
+          "$ref": "#/$defs/Nonce"
+        },
+        "continue": {
+          "$ref": "#/$defs/Continuation"
+        }
+      },
+      "required": [
+        "tuple",
+        "submission"
+      ],
+      "additionalProperties": false,
+      "description": "SPEC 15.9.2 transport body only. Version at transport boundary; authenticated by/time/observations are not caller fields."
+    },
+    "RequestHashInput": {
+      "type": "object",
+      "properties": {
+        "tuple": {
+          "$ref": "#/$defs/Tuple"
+        },
+        "continue": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Continuation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "tuple",
+        "continue"
+      ],
+      "additionalProperties": false
+    },
+    "SubmissionKeyInput": {
+      "type": "object",
+      "properties": {
+        "by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "submission": {
+          "$ref": "#/$defs/Nonce"
+        }
+      },
+      "required": [
+        "by",
+        "submission"
+      ],
+      "additionalProperties": false
+    },
+    "Signature": {
+      "type": "object",
+      "properties": {
+        "alg": {
+          "const": "Ed25519"
+        },
+        "key": {
+          "$ref": "#/$defs/Hash"
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{86}$"
+        }
+      },
+      "required": [
+        "alg",
+        "key",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "HeaderV2": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "receipt@2"
+        },
+        "frequency": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frequency"
+            },
+            {
+              "const": "_unaddressed"
+            }
+          ]
+        },
+        "status": {
+          "$ref": "#/$defs/Status"
+        },
+        "activated": {
+          "type": "boolean"
+        },
+        "process": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Frequency"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "process_hash": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registry_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "run": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RunId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "instance": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "input_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "context_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "detail_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "when": {
+          "$ref": "#/$defs/When"
+        },
+        "by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "prev": {
+          "$ref": "#/$defs/HashSet"
+        },
+        "public": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Tuple"
+          }
+        }
+      },
+      "required": [
+        "logline",
+        "frequency",
+        "status",
+        "activated",
+        "process",
+        "process_hash",
+        "registry_hash",
+        "run",
+        "instance",
+        "input_hash",
+        "context_hash",
+        "detail_hash",
+        "when",
+        "by",
+        "prev",
+        "public"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "registered"
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "activated": {
+                "const": false
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "ok",
+                  "not",
+                  "doubt"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "properties": {
+              "activated": {
+                "const": true
+              },
+              "process": {
+                "$ref": "#/$defs/Frequency"
+              },
+              "process_hash": {
+                "$ref": "#/$defs/Hash"
+              },
+              "run": {
+                "$ref": "#/$defs/RunId"
+              },
+              "frequency": {
+                "$ref": "#/$defs/Frequency"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "frequency": {
+                "const": "_unaddressed"
+              }
+            },
+            "required": [
+              "frequency"
+            ]
+          },
+          "then": {
+            "properties": {
+              "status": {
+                "const": "registered"
+              },
+              "process": {
+                "const": null
+              },
+              "process_hash": {
+                "const": null
+              },
+              "run": {
+                "const": null
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "process": {
+                "const": null
+              }
+            },
+            "required": [
+              "process"
+            ]
+          },
+          "then": {
+            "properties": {
+              "frequency": {
+                "const": "_unaddressed"
+              },
+              "process_hash": {
+                "const": null
+              },
+              "run": {
+                "const": null
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "process": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "process"
+            ]
+          },
+          "then": {
+            "properties": {
+              "frequency": {
+                "$ref": "#/$defs/Frequency"
+              },
+              "process_hash": {
+                "$ref": "#/$defs/Hash"
+              },
+              "run": {
+                "$ref": "#/$defs/RunId"
+              }
+            }
+          }
+        }
+      ],
+      "description": "SPEC 15.9.4. Shape and local relationships only. Frequency must equal selected law id; entry/continuation/nullability, ancestry, public projection, authenticated identity, calendar validity and evidence require replay."
+    },
+    "ReceiptV2": {
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/$defs/HeaderV2"
+        },
+        "id": {
+          "$ref": "#/$defs/Hash"
+        },
+        "sig": {
+          "$ref": "#/$defs/Signature"
+        }
+      },
+      "required": [
+        "header",
+        "id",
+        "sig"
+      ],
+      "additionalProperties": false,
+      "description": "Signature domain UTF-8 logline-receipt-v2: + id; id = hash(header). Schema validity never establishes authenticity."
+    },
+    "Finding": {
+      "type": "object",
+      "properties": {
+        "step": {
+          "type": "string",
+          "minLength": 1
+        },
+        "result": {
+          "enum": [
+            "ok",
+            "not",
+            "doubt"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "error": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "step",
+        "result"
+      ],
+      "additionalProperties": false
+    },
+    "DetailV2": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "detail@2"
+        },
+        "consequence": {
+          "type": "string"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Finding"
+          }
+        },
+        "unmet": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grants": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/Tuple"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "recognition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Recognition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "logline",
+        "consequence",
+        "findings",
+        "unmet",
+        "grants",
+        "reason",
+        "recognition"
+      ],
+      "additionalProperties": false,
+      "description": "Review projection: exact stable reason code vocabulary and diagnostic ordering still to be frozen in PR-05. Cross-object status/activation relationships require replay."
+    },
+    "SpentClaim": {
+      "type": "object",
+      "properties": {
+        "slot": {
+          "$ref": "#/$defs/RunId"
+        },
+        "id": {
+          "$ref": "#/$defs/Hash"
+        }
+      },
+      "required": [
+        "slot",
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "ResolvedObservationsDraft": {
+      "type": "object",
+      "properties": {
+        "root": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parents": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          }
+        },
+        "cites": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Hash"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/RunId"
+          }
+        }
+      },
+      "required": [
+        "root",
+        "parents",
+        "cites"
+      ],
+      "additionalProperties": false,
+      "description": "Proposed exact encoding of resolved roles for review, not a frozen wire decision. Only actually resolved ids, never caller claims."
+    },
+    "ContextV1": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "context@1"
+        },
+        "submission": {
+          "$ref": "#/$defs/Nonce"
+        },
+        "request_hash": {
+          "$ref": "#/$defs/Hash"
+        },
+        "continue": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Continuation"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "spent": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SpentClaim"
+          },
+          "uniqueItems": true
+        },
+        "completed": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Hash"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resolved": {
+          "$ref": "#/$defs/ResolvedObservationsDraft"
+        }
+      },
+      "required": [
+        "logline",
+        "submission",
+        "request_hash",
+        "continue",
+        "spent",
+        "completed",
+        "resolved"
+      ],
+      "additionalProperties": false,
+      "description": "Review projection of SPEC 15.9.4: resolved subshape is explicitly provisional. Spent order, evidence integrity, availability and authoritative claim observations require semantic checks."
+    },
+    "PublicKey": {
+      "type": "object",
+      "properties": {
+        "kty": {
+          "const": "OKP"
+        },
+        "crv": {
+          "const": "Ed25519"
+        },
+        "x": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{43}$"
+        }
+      },
+      "required": [
+        "kty",
+        "crv",
+        "x"
+      ],
+      "additionalProperties": false
+    },
+    "KeyRing": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "jwk": {
+            "$ref": "#/$defs/PublicKey"
+          },
+          "not_before": {
+            "$ref": "#/$defs/When"
+          },
+          "not_after": {
+            "$ref": "#/$defs/When"
+          }
+        },
+        "required": [
+          "jwk"
+        ],
+        "additionalProperties": false
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/Hash"
+      }
+    },
+    "BundleV2": {
+      "type": "object",
+      "properties": {
+        "logline": {
+          "const": "bundle@2"
+        },
+        "head": {
+          "$ref": "#/$defs/Hash"
+        },
+        "keys": {
+          "$ref": "#/$defs/KeyRing"
+        },
+        "objects": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/Tuple"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/Hash"
+          }
+        }
+      },
+      "required": [
+        "logline",
+        "head",
+        "keys",
+        "objects"
+      ],
+      "additionalProperties": false,
+      "description": "Objects may include any I-JSON tuple, including values that resemble envelopes. Resolve expected types by reference; verify address domains, duplicate raw keys, ancestry, trust and completeness. Bundled keys are convenience only."
+    }
+  }
+}
