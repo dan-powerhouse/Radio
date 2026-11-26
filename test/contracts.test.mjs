@@ -7,7 +7,7 @@ import { parseProcessType, validateRegistrySnapshot } from "../dist/index.js";
 const read = name => JSON.parse(readFileSync(new URL("../" + name, import.meta.url), "utf8"));
 const schema = read("contracts/radio.schema.json");
 // prefixItems intentionally describes entry plus an arbitrary number of successors.
-const ajv = new Ajv2020({ strict: true, strictTypes: false, strictTuples: false, ownProperties: true });
+const ajv = new Ajv2020({ strict: true, strictTypes: false, strictTuples: false, strictRequired: false, ownProperties: true });
 ajv.addSchema(schema);
 const validators = Object.fromEntries(Object.keys(schema.$defs).map(name => [
   name, ajv.getSchema(schema.$id + "#/$defs/" + name)
@@ -191,4 +191,122 @@ for (const f of fixtures.cases) test("contract: independent v2 signed fixture " 
   const h = objects[head].header;
   assert.equal(h.input_hash, hash(f.request.tuple));
   assert.equal(f.submission_key, hash({by:h.by,submission:f.request.submission}));
+});
+
+// Review regressions: these were accepted by the first projection.
+test("contract: binary encodings have one canonical spelling", () => {
+  for (const n of [23, 24, 26, 27, 28, 128]) {
+    check("Nonce", "A".repeat(n));
+  }
+  for (const n of [21, 25, 29, 125, 129]) check("Nonce", "A".repeat(n), false);
+  check("Nonce", "A".repeat(21) + "B", false); // nonzero unused bits
+  check("Nonce", "A".repeat(22) + "B", false);
+  check("Signature", { ...receipt.sig, value: "A".repeat(85) + "B" }, false);
+  check("PublicKey", { ...publicJwk, x: "A".repeat(42) + "B" }, false);
+});
+test("contract: scanner diagnostics are closed to specified codes", () => {
+  check("Diagnostic", { law_hash: h("b"), code: "eval_missing" });
+  check("Diagnostic", { law_hash: h("b"), code: "recognize_non_boolean" });
+  check("Diagnostic", { law_hash: h("b"), code: "database connection failed" }, false);
+});
+test("contract: public projection names are law paths, not arbitrary header keys", () => {
+  check("HeaderV2", { ...entry, public: { "detail.grants.owner": "p:example", "tuple.did": "request" } });
+  check("HeaderV2", { ...entry, public: { account_uuid: "private" } }, false);
+});
+test("contract: initial context cannot carry continuation observations", () => {
+  check("ContextV1", { ...context, completed: h("a") }, false);
+  check("ContextV1", { ...context, resolved: { ...context.resolved, root: h("a") } }, false);
+  check("ContextV1", { ...context, resolved: { ...context.resolved, parents: { open: h("a") } } }, false);
+});
+test("contract: finding result and explanatory fields agree", () => {
+  check("Finding", { step: "score", result: "ok", error: "eval_missing" }, false);
+  check("Finding", { step: "score", result: "not" }, false);
+  check("Finding", { step: "score", result: "doubt", reason: "Missing evidence" });
+  check("Finding", { step: "score", result: "not", reason: "Rejected", error: "eval_missing" }, false);
+});
+test("contract: nonempty unmet implies no findings or grants", () => {
+  check("DetailV2", { ...detail, unmet: [] }, false);
+  check("DetailV2", { ...detail, unmet: ["Missing required evidence"], grants: {} }, false);
+  check("DetailV2", { ...detail, unmet: ["Missing required evidence"], grants: null, findings: [{ step: "s", result: "ok" }] }, false);
+});
+
+const decision = { header: entry, detail, context };
+const unmet = { ...detail, reason: "requires_unmet", unmet: ["with.subject"], grants: null };
+const refused = { ...detail, recognition: null, grants: null, reason: "check_not",
+  findings: [{ step: "owner", result: "not", reason: "Owner required" }] };
+const continuationContext = { ...context, continue: cont, resolved: { root: h("a"), parents: { open: h("a") }, cites: {} } };
+const continuationHeader = { ...entry, run: "review", instance: h("a"), prev: [h("a")] };
+const noMatch = { outcome: "none", matches: [], selected: null, diagnostics: [], ops_used: 0 };
+const unaddressed = { ...entry, status: "registered", activated: false, frequency: "_unaddressed",
+  process: null, process_hash: null, run: null };
+const parts = [
+  ["successful entry", decision, true],
+  ["successful successor", { header: continuationHeader, detail: { ...detail, recognition: null }, context: continuationContext }, true],
+  ["registered with unmet", { header: { ...entry, status: "registered", activated: false }, detail: unmet, context }, true],
+  ["registered without match", { header: unaddressed, detail: { ...unmet, recognition: noMatch, reason: "recognition_none" }, context }, true],
+  ["refused successor", { header: { ...continuationHeader, status: "not" }, detail: refused, context: continuationContext }, true],
+  ["doubt with error", { header: { ...continuationHeader, status: "doubt" }, detail: { ...refused, reason: "check_doubt", findings: [{ step: "score", result: "doubt", reason: "Score unavailable", error: "eval_missing" }] }, context: continuationContext }, true],
+  ["success with failure reason", { ...decision, detail: { ...detail, reason: "check_not" } }, false],
+  ["success with unmet", { ...decision, detail: unmet }, false],
+  ["success with negative finding", { ...decision, detail: { ...detail, findings: [{ step: "owner", result: "not", reason: "Owner required" }] } }, false],
+  ["registered with successful detail", { ...decision, header: { ...entry, status: "registered", activated: false } }, false],
+  ["refused with grants", { header: { ...continuationHeader, status: "not" }, detail: { ...refused, grants: {} }, context: continuationContext }, false],
+  ["not without negative finding", { header: { ...continuationHeader, status: "not" }, detail: { ...refused, findings: [] }, context: continuationContext }, false],
+  ["doubt with higher priority not", { header: { ...continuationHeader, status: "doubt" }, detail: { ...refused, findings: [...refused.findings, { step: "score", result: "doubt", reason: "Unknown" }] }, context: continuationContext }, false],
+  ["entry with successor instance", { ...decision, header: continuationHeader }, false],
+  ["entry without recognition", { ...decision, detail: { ...detail, recognition: null } }, false],
+  ["successor scanned again", { header: continuationHeader, detail, context: continuationContext }, false],
+  ["no match but selected law", { header: { ...entry, status: "registered", activated: false }, detail: { ...unmet, recognition: noMatch }, context }, false],
+  ["no match but consumed citation", { header: unaddressed, detail: { ...unmet, recognition: noMatch }, context: { ...context, spent: [{ slot: "proof", id: h("a") }] } }, false],
+  ["no match but causal ancestor", { header: { ...unaddressed, prev: [h("a")] }, detail: { ...unmet, recognition: noMatch }, context }, false]
+];
+for (const [name, value, expected] of parts)
+  test("contract assembly: " + name, () => check("DecisionParts", value, expected));
+for (const f of fixtures.cases) test("contract assembly: signed fixture " + f.name, () => {
+  const { objects, head } = f.bundle;
+  const header = objects[head].header;
+  check("DecisionParts", { header, detail: objects[header.detail_hash], context: objects[header.context_hash] });
+});
+
+test("contract: absolute end of identifiers and encodings", () => {
+  for (const [name, value] of [
+    ["Hash", h("a")], ["RunId", "open"], ["Frequency", "blue@1"],
+    ["Nonce", nonce], ["When", entry.when], ["BroadcastPath", "tuple.did"]
+  ]) {
+    for (const ending of ["\n", "\r", "\r\n", "\u2028", "\u2029"]) check(name, value + ending, false);
+  }
+  check("RunExpression", { var: "$by\n" }, false);
+  check("RunExpression", { var: "$parents.open.id\n" }, false);
+  check("RunExpression", { var: "$parents.open.detail." }, false);
+  check("RunExpression", { var: "$parents.open.detail.grants.owner" });
+});
+test("contract review: known law but unknown requested RUN", () => {
+  const request = { ...cont, run: "unknown" };
+  const c = { ...context, continue: request, resolved: { root: h("a"), parents: {}, cites: {} } };
+  const header = { ...continuationHeader, status: "registered", activated: false, run: null };
+  const d = { ...unmet, recognition: null, reason: "run_unavailable" };
+  check("DecisionParts", { header, detail: d, context: c });
+  check("DecisionParts", { header: { ...header, instance: null }, detail: d, context: c }, false);
+  check("DecisionParts", { header: { ...header, run: null, status: "ok", activated: true }, detail: d, context: c }, false);
+  check("DecisionParts", { header, detail: unmet, context }, false);
+});
+test("contract: unresolved continuation has no invented ancestry or claims", () => {
+  const c = { ...context, continue: cont };
+  const d = { ...unmet, recognition: null, reason: "continuation_unavailable" };
+  check("DecisionParts", { header: unaddressed, detail: d, context: c });
+  check("DecisionParts", { header: { ...unaddressed, instance: h("a") }, detail: d, context: c }, false);
+  check("DecisionParts", { header: unaddressed, detail: d, context: { ...c, completed: h("a") } }, false);
+  check("DecisionParts", { header: unaddressed, detail: d, context: continuationContext }, false);
+});
+test("contract review: primary reason codes do not contain host messages", () => {
+  for (const value of ["recognition_ambiguous", "run_unavailable", "cites_unmet", "grants_doubt"])
+    check("ReasonCodeDraft", value);
+  check("ReasonCodeDraft", "relation receipts does not exist", false);
+});
+test("contract assembly: selection, root and conflicts constrain disposition", () => {
+  check("DecisionParts", { header: unaddressed, detail: unmet, context }, false);
+  check("DecisionParts", { header: continuationHeader, detail: { ...detail, recognition: null }, context: { ...context, continue: cont } }, false);
+  check("DecisionParts", { header: { ...continuationHeader, instance: null }, detail: { ...detail, recognition: null }, context: continuationContext }, false);
+  check("DecisionParts", { header: continuationHeader, detail: { ...detail, recognition: null }, context: { ...continuationContext, completed: h("b") } }, false);
+  check("DecisionParts", { ...decision, context: { ...context, spent: [{ slot: "proof", id: h("a") }] } }, false);
 });

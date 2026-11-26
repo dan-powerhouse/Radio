@@ -7,23 +7,23 @@
   "$defs": {
     "Hash": {
       "type": "string",
-      "pattern": "^sha256:[0-9a-f]{64}$"
+      "pattern": "^sha256:[0-9a-f]{64}(?![\\s\\S])"
     },
     "RunId": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]{1,64}$"
+      "pattern": "^[A-Za-z0-9_-]{1,64}(?![\\s\\S])"
     },
     "Frequency": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}$"
+      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}(?![\\s\\S])"
     },
     "FrequencyPattern": {
       "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}(\\.\\*)?$"
+      "pattern": "^[a-z0-9][a-z0-9._:@-]{0,127}(\\.\\*)?(?![\\s\\S])"
     },
     "Path": {
       "type": "string",
-      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+      "pattern": "^[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*(?![\\s\\S])"
     },
     "Text": {
       "type": "string",
@@ -40,14 +40,14 @@
     },
     "When": {
       "type": "string",
-      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z(?![\\s\\S])"
     },
     "Nonce": {
       "type": "string",
       "minLength": 22,
       "maxLength": 128,
-      "pattern": "^[A-Za-z0-9_-]+$",
-      "description": "Encoding/length only. Entropy, decoded length and canonical base64url require admission validation."
+      "pattern": "^(?:[A-Za-z0-9_-]{4})*(?:[A-Za-z0-9_-][AQgw]|[A-Za-z0-9_-]{2}[AEIMQUYcgkosw048])?(?![\\s\\S])",
+      "description": "Canonical unpadded base64url of 16–96 bytes. The caller must generate unpredictable nonces; shape cannot establish entropy or authority."
     },
     "HashSet": {
       "type": "array",
@@ -129,12 +129,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RecognitionExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
                   }
                 ]
               }
@@ -208,12 +208,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RecognitionExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
                   }
                 ]
               }
@@ -245,12 +245,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RecognitionExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RecognitionExpression"
                   }
                 ]
               }
@@ -291,14 +291,14 @@
               {
                 "type": "string",
                 "minLength": 1,
-                "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)$|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id$|(?:header|detail)(?:\\.[^.]+)*$))"
+                "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)(?![\\s\\S])|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id(?![\\s\\S])|(?:header|detail)(?:\\.[^.]+)*(?![\\s\\S])))"
               },
               {
                 "type": "array",
                 "items": {
                   "type": "string",
                   "minLength": 1,
-                  "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)$|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id$|(?:header|detail)(?:\\.[^.]+)*$))"
+                  "pattern": "^(?:[^$]|\\$(?:when|today|by|instance)(?![\\s\\S])|\\$(?:parents|cites)\\.[A-Za-z0-9_-]{1,64}\\.(?:id(?![\\s\\S])|(?:header|detail)(?:\\.[^.]+)*(?![\\s\\S])))"
                 },
                 "minItems": 1,
                 "maxItems": 1
@@ -329,12 +329,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RunExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RunExpression"
                   }
                 ]
               }
@@ -408,12 +408,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RunExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RunExpression"
                   }
                 ]
               }
@@ -445,12 +445,12 @@
               {
                 "allOf": [
                   {
-                    "$ref": "#/$defs/RunExpression"
-                  },
-                  {
                     "not": {
                       "type": "array"
                     }
+                  },
+                  {
+                    "$ref": "#/$defs/RunExpression"
                   }
                 ]
               }
@@ -575,8 +575,7 @@
         "broadcast": {
           "type": "array",
           "items": {
-            "type": "string",
-            "pattern": "^(detail|tuple)\\.[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*$"
+            "$ref": "#/$defs/BroadcastPath"
           }
         },
         "limits": {
@@ -694,8 +693,16 @@
           "$ref": "#/$defs/Hash"
         },
         "code": {
-          "type": "string",
-          "minLength": 1
+          "enum": [
+            "recognize_non_boolean",
+            "eval_syntax",
+            "eval_operator",
+            "eval_type",
+            "eval_missing",
+            "eval_range",
+            "eval_budget",
+            "eval_depth"
+          ]
         }
       },
       "required": [
@@ -947,7 +954,7 @@
         },
         "value": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_-]{86}$"
+          "pattern": "^[A-Za-z0-9_-]{85}[AQgw](?![\\s\\S])"
         }
       },
       "required": [
@@ -1045,6 +1052,9 @@
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/Tuple"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/BroadcastPath"
           }
         }
       },
@@ -1195,13 +1205,20 @@
                 "$ref": "#/$defs/Hash"
               },
               "run": {
-                "$ref": "#/$defs/RunId"
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/RunId"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             }
           }
         }
       ],
-      "description": "SPEC 15.9.4. Shape and local relationships only. Frequency must equal selected law id; entry/continuation/nullability, ancestry, public projection, authenticated identity, calendar validity and evidence require replay."
+      "description": "SPEC 15.9.4. Shape and local relationships only. Frequency must equal selected law id; entry/continuation/nullability, ancestry, public projection, authenticated identity, calendar validity and evidence require replay. Review proposal: known-law unknown/invalid RUN registrations may have run:null; the cross-part assembly requires continuation and a resolved root for this case. Pending approval."
     },
     "ReceiptV2": {
       "type": "object",
@@ -1228,8 +1245,7 @@
       "type": "object",
       "properties": {
         "step": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "#/$defs/Path"
         },
         "result": {
           "enum": [
@@ -1249,7 +1265,67 @@
         "step",
         "result"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "ok"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "reason"
+                  ]
+                },
+                {
+                  "required": [
+                    "error"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "enum": [
+                  "not",
+                  "doubt"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "reason"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "not"
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "required": [
+                "error"
+              ]
+            }
+          }
+        }
+      ]
     },
     "DetailV2": {
       "type": "object",
@@ -1324,7 +1400,34 @@
         "recognition"
       ],
       "additionalProperties": false,
-      "description": "Review projection: exact stable reason code vocabulary and diagnostic ordering still to be frozen in PR-05. Cross-object status/activation relationships require replay."
+      "description": "Review projection: exact stable reason code vocabulary and diagnostic ordering still to be frozen in PR-05. Cross-object status/activation relationships require replay.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "unmet": {
+                "type": "array"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "unmet": {
+                "minItems": 1
+              },
+              "findings": {
+                "maxItems": 0
+              },
+              "grants": {
+                "const": null
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      ]
     },
     "SpentClaim": {
       "type": "object",
@@ -1435,7 +1538,35 @@
         "resolved"
       ],
       "additionalProperties": false,
-      "description": "Review projection of SPEC 15.9.4: resolved subshape is explicitly provisional. Spent order, evidence integrity, availability and authoritative claim observations require semantic checks."
+      "description": "Review projection of SPEC 15.9.4: resolved subshape is explicitly provisional. Spent order, evidence integrity, availability and authoritative claim observations require semantic checks.",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "continue": {
+                "const": null
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "completed": {
+                "const": null
+              },
+              "resolved": {
+                "properties": {
+                  "root": {
+                    "const": null
+                  },
+                  "parents": {
+                    "maxProperties": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "PublicKey": {
       "type": "object",
@@ -1448,7 +1579,7 @@
         },
         "x": {
           "type": "string",
-          "pattern": "^[A-Za-z0-9_-]{43}$"
+          "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048](?![\\s\\S])"
         }
       },
       "required": [
@@ -1512,6 +1643,601 @@
       ],
       "additionalProperties": false,
       "description": "Objects may include any I-JSON tuple, including values that resemble envelopes. Resolve expected types by reference; verify address domains, duplicate raw keys, ancestry, trust and completeness. Bundled keys are convenience only."
+    },
+    "BroadcastPath": {
+      "type": "string",
+      "pattern": "^(detail|tuple)\\.[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*(?![\\s\\S])"
+    },
+    "DecisionParts": {
+      "description": "Review-only assembly of three existing content-addressed parts. Never serialized, hashed or stored as a new protocol object. Local cross-part relationships only; replay checks exact equality and causal references.",
+      "type": "object",
+      "properties": {
+        "header": {
+          "$ref": "#/$defs/HeaderV2"
+        },
+        "detail": {
+          "$ref": "#/$defs/DetailV2"
+        },
+        "context": {
+          "$ref": "#/$defs/ContextV1"
+        }
+      },
+      "required": [
+        "header",
+        "detail",
+        "context"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "ok"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "const": null
+                  },
+                  "unmet": {
+                    "const": null
+                  },
+                  "findings": {
+                    "items": {
+                      "properties": {
+                        "result": {
+                          "const": "ok"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "unmet": {
+                    "type": "array",
+                    "minItems": 1
+                  },
+                  "findings": {
+                    "maxItems": 0
+                  },
+                  "grants": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "enum": [
+                      "not",
+                      "doubt"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  },
+                  "unmet": {
+                    "const": null
+                  },
+                  "grants": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "not"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "findings": {
+                    "contains": {
+                      "properties": {
+                        "result": {
+                          "const": "not"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "doubt"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "findings": {
+                    "contains": {
+                      "properties": {
+                        "result": {
+                          "const": "doubt"
+                        }
+                      }
+                    },
+                    "items": {
+                      "properties": {
+                        "result": {
+                          "enum": [
+                            "ok",
+                            "doubt"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "continue": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "instance": {
+                    "const": null
+                  }
+                }
+              },
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "$ref": "#/$defs/Recognition"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "continue": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "enum": [
+                          "none",
+                          "ambiguous",
+                          "indeterminate"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  },
+                  "frequency": {
+                    "const": "_unaddressed"
+                  },
+                  "process": {
+                    "const": null
+                  },
+                  "process_hash": {
+                    "const": null
+                  },
+                  "run": {
+                    "const": null
+                  },
+                  "instance": {
+                    "const": null
+                  },
+                  "prev": {
+                    "maxItems": 0
+                  }
+                }
+              },
+              "context": {
+                "properties": {
+                  "spent": {
+                    "maxItems": 0
+                  },
+                  "resolved": {
+                    "properties": {
+                      "cites": {
+                        "maxProperties": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "process": {
+                    "type": "string"
+                  },
+                  "run": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  },
+                  "instance": {
+                    "$ref": "#/$defs/Hash"
+                  }
+                }
+              },
+              "context": {
+                "properties": {
+                  "continue": {
+                    "type": "object"
+                  },
+                  "resolved": {
+                    "properties": {
+                      "root": {
+                        "$ref": "#/$defs/Hash"
+                      },
+                      "parents": {
+                        "maxProperties": 0
+                      },
+                      "cites": {
+                        "maxProperties": 0
+                      }
+                    }
+                  },
+                  "spent": {
+                    "maxItems": 0
+                  },
+                  "completed": {
+                    "const": null
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "frequency": {
+                    "const": "_unaddressed"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "instance": {
+                    "const": null
+                  },
+                  "prev": {
+                    "maxItems": 0
+                  },
+                  "public": {
+                    "maxProperties": 0
+                  }
+                }
+              },
+              "context": {
+                "properties": {
+                  "spent": {
+                    "maxItems": 0
+                  },
+                  "completed": {
+                    "const": null
+                  },
+                  "resolved": {
+                    "properties": {
+                      "root": {
+                        "const": null
+                      },
+                      "parents": {
+                        "maxProperties": 0
+                      },
+                      "cites": {
+                        "maxProperties": 0
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "detail": {
+                "properties": {
+                  "recognition": {
+                    "type": "object",
+                    "properties": {
+                      "outcome": {
+                        "const": "unique"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "process": {
+                    "$ref": "#/$defs/Frequency"
+                  },
+                  "process_hash": {
+                    "$ref": "#/$defs/Hash"
+                  },
+                  "run": {
+                    "$ref": "#/$defs/RunId"
+                  },
+                  "frequency": {
+                    "$ref": "#/$defs/Frequency"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "continue": {
+                    "type": "object"
+                  },
+                  "resolved": {
+                    "properties": {
+                      "root": {
+                        "const": null
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "frequency": {
+                    "const": "_unaddressed"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "resolved": {
+                    "properties": {
+                      "root": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "instance": {
+                    "$ref": "#/$defs/Hash"
+                  },
+                  "process": {
+                    "$ref": "#/$defs/Frequency"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "completed": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "context": {
+                "properties": {
+                  "spent": {
+                    "minItems": 1
+                  }
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "header": {
+                "properties": {
+                  "status": {
+                    "const": "registered"
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ReasonCodeDraft": {
+      "description": "Proposed closed primary reason vocabulary for PR-05 review; not yet a normative restriction on DetailV2.",
+      "enum": [
+        "recognition_none",
+        "recognition_ambiguous",
+        "recognition_indeterminate",
+        "continuation_unavailable",
+        "run_unavailable",
+        "parents_unmet",
+        "run_completed",
+        "requires_unmet",
+        "cites_unmet",
+        "citation_spent",
+        "check_not",
+        "check_doubt",
+        "grants_doubt"
+      ]
     }
   }
 }
