@@ -56,7 +56,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => v !== null && typeof
 // must use the same UTF-16 ordering as JCS.
 const ordered = <T>(o: Record<string, T>): [string, T][] => Object.keys(o).sort().map(k => [k, o[k]]);
 
-function typeOk(v: unknown, t: FieldType): boolean {
+export function typeOk(v: unknown, t: FieldType): boolean {
   switch (t) {
     case "date": return isDate(v);
     case "integer": return Number.isInteger(v);
@@ -80,7 +80,7 @@ export function activationGaps(process: Process, tuple: unknown): string[] {
   return gaps;
 }
 
-const freqMatch = (pattern: string, f: string) => pattern.endsWith(".*") ? f.startsWith(pattern.slice(0, -1)) : pattern === f;
+export const freqMatch = (pattern: string, f: string) => pattern.endsWith(".*") ? f.startsWith(pattern.slice(0, -1)) : pattern === f;
 
 /** Resolve and check the receipts a tuple cites. Every problem is an unmet activation condition. */
 export async function resolveCites(process: Process, tuple: unknown, opts: RunOptions): Promise<{ gaps: string[]; cited: Record<string, Cited> }> {

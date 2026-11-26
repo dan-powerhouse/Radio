@@ -16,3 +16,5 @@ export * from './hosted.js';
 export * from "./process-type.js";
 
 export * from "./scanner.js";
+
+export * from "./run-v2.js";
