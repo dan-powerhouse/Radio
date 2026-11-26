@@ -57,6 +57,7 @@ export class ProcessLedger {
   #listeners = new Set<{tuning:Tuning;fn:(r:ReceiptV2,seq:number)=>void}>();
   #tail: Promise<unknown> = Promise.resolve();
   #failed = false;
+  #restoring = false;
   #used = false;
   #key: MachineKey;
   #keys: KeyRing;
@@ -71,7 +72,10 @@ export class ProcessLedger {
     this.#sink = opts.sink;
   }
   get keys(): KeyRing { return clone(this.#keys); }
-  get length(): number { return this.#entries.length; }
+  #readable(): void {
+    if (this.#restoring) err("unavailable","reference recovery is not yet validated");
+  }
+  get length(): number { this.#readable(); return this.#entries.length; }
   #serial<T>(fn:()=>Promise<T>): Promise<T> {
     const next = this.#tail.then(async()=>{
       if (this.#failed) return err("unavailable","reference ledger requires recovery");
@@ -118,14 +122,16 @@ export class ProcessLedger {
       this.#registry.retire(id);
     });
   }
-  law(hash: string) { return this.#registry.law(hash); }
-  snapshotByHash(hash: string) { return this.#registry.snapshotByHash(hash); }
-  entry(id: string): ProcessEntry | null { const e=this.#byId.get(id); return e?clone(e):null; }
+  law(hash: string) { this.#readable(); return this.#registry.law(hash); }
+  snapshotByHash(hash: string) { this.#readable(); return this.#registry.snapshotByHash(hash); }
+  entry(id: string): ProcessEntry | null { this.#readable(); const e=this.#byId.get(id); return e?clone(e):null; }
   history(tuning: Tuning = {}): ReceiptV2[] {
+    this.#readable();
     return this.#entries.filter(e=>tuned(tuning,e.receipt.header)).map(e=>clone(e.receipt));
   }
   /** Causal ancestry, not a list of all attempts or an inferred current state. */
   trajectory(id: string): HeaderV2[] {
+    this.#readable();
     const seen=new Set<string>(), stack=[id];
     while(stack.length){
       const x=stack.pop()!;
@@ -227,6 +233,7 @@ export class ProcessLedger {
     return this.#serial(async()=>{
       if(this.#used)return err("restore","restore requires an unused reference ledger");
       this.#used=true;
+      this.#restoring=true;
       try{
         for(const raw of records){
           const rec=clone(raw);
@@ -245,7 +252,7 @@ export class ProcessLedger {
           if(rec.kind!=="receipt-v2"||!exact(rec,["kind","entry","admission_snapshot"]))
             return err("restore","unknown reference record");
           const e=rec.entry;
-          if(!exact(e,["seq","receipt","detail","context","tuple"])||e.seq!==this.length+1||
+          if(!exact(e,["seq","receipt","detail","context","tuple"])||e.seq!==this.#entries.length+1||
              !await authenticV2(e.receipt,this.#keys))return err("restore","invalid committed receipt");
           const s=await this.#capture(),h=e.receipt.header,c=e.context;
           if(!same(s.snapshot,rec.admission_snapshot))return err("restore","admission snapshot does not match publication history");
@@ -265,7 +272,7 @@ export class ProcessLedger {
         this.#laws.clear();this.#snapshots.clear();this.#entries=[];this.#byId.clear();
         this.#submissions.clear();this.#success.clear();this.#consumed.clear();
         throw e;
-      }
+      }finally{this.#restoring=false;}
     });
   }
 }
