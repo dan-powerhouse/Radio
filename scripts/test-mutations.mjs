@@ -7,13 +7,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { kernelConformance, receiptEvidenceConformance } from "../test/kernel-conformance.mjs";
+import { runV2Conformance, runV2OutcomeConformance } from "../test/run-v2-conformance.mjs";
 import { scannerConformance } from "../test/scanner-conformance.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const load = name => JSON.parse(readFileSync(join(root, "vectors", name + ".json"), "utf8"));
 const fixtures = { expressions: load("expressions"), strict: load("strict-json"), processTypes: load("process-types") };
 const receipts = load("receipts");
 const recognition = load("recognition");
-const run = async L => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition)];
+const runV2Fixture = load("run-v2"), receiptV2Fixture = load("receipt-v2-contract"), testKey = load("test-key");
+const run = async L => [...await kernelConformance(L, fixtures), ...await receiptEvidenceConformance(L, receipts), ...await scannerConformance(L, recognition), ...await runV2Conformance(L,receiptV2Fixture,testKey), ...await runV2OutcomeConformance(L,runV2Fixture,testKey)];
 const baseline = await run(await import("../dist/index.js"));
 assert.deepEqual(baseline.filter(x => !x.ok), [], "clean baseline must pass");
 const mutations = [
@@ -42,6 +44,17 @@ const mutations = [
   ["scanner skips law address verification", "scanner.js", "if (await hashOf(law) !== hash)", "if (false)", "scan/valid-law-wrong-address"],
   ["scanner permits active id collision", "scanner.js", "if (ids.has(law.id))", "if (false)", "scan/duplicate-active-id"],
   ["scanner accepts unordered registry", "process-type.js", "h <= previous", "false", "scan/reversed-hashes"],
+
+  ["v2 checks accept truthy values", "run-v2.js", "evaluate(s.check, scope, budget) === true ?", "evaluate(s.check, scope, budget) ?", "run-v2/truthy-not-ok"],
+  ["v2 doubt outranks not", "run-v2.js", 'findings.some(f => f.result === "not") ? "not" : findings.some(f => f.result === "doubt") ? "doubt" : "ok"', 'findings.some(f => f.result === "doubt") ? "doubt" : findings.some(f => f.result === "not") ? "not" : "ok"', "run-v2/not-precedes-doubt"],
+  ["v2 grants evaluated after rejection", "run-v2.js", "else if (run.grants) {", "if (run.grants) {", "run-v2/not-precedes-doubt"],
+  ["v2 trusts tuple actor", "run-v2.js", "by, instance, parents, cites } };", "by: tuple.who, instance, parents, cites } };", "run-v2/attested-not-tuple-identity"],
+  ["v2 accepts foreign parent instance", "run-v2.js", "e.header.run !== role || effectiveInstance(e) !== instance", "e.header.run !== role", "run-v2/cross-instance-parent"],
+  ["v2 uses current registry for continuation", "run-v2.js", "registry = root.header.registry_hash;", "registry = registryHash;", "run-v2/retired-law-continuation"],
+  ["v2 skips completion observation", "run-v2.js", "if (conflict !== null)", "if (false)", "run-v2/completed-before-requires"],
+  ["v2 ignores spent claims", "run-v2.js", "if (consumed)", "if (false)", "run-v2/spent-citation"],
+  ["v2 confuses once slots", "run-v2.js", "await spent(lawHash, slot, id)", 'await spent(lawHash, "one", id)', "run-v2/once-slot-scope"],
+  ["v2 wrong signature domain", "keys.js", 'SIGNING_DOMAIN_V2 = "logline-receipt-v2:"', 'SIGNING_DOMAIN_V2 = "logline-receipt-v1:"', "run-v2/entry-A"],
 
 ];
 let failed = 0;

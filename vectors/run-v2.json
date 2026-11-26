@@ -1,0 +1,3129 @@
+{
+  "format": "radio-run-v2-vectors@1",
+  "provenance": "Outcomes, scan costs, causal observations and diagnostics manually specified from approved SPEC 15.9/15.12.1 and the PR-05 fixed diagnostic profile. ASCII/small-integer canonical addresses via Python json/hashlib; Ed25519 signatures via Python cryptography. No RADIO outputs used. Existing signed evidence reused without changes. TEST KEY ONLY.",
+  "keys": {
+    "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b": {
+      "jwk": {
+        "kty": "OKP",
+        "crv": "Ed25519",
+        "x": "5ovhTJFa8POdpmqTp5qsMPJvvu5zTfR4MR42lrhu3bk"
+      }
+    }
+  },
+  "laws": {
+    "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63": {
+      "logline": "process-type@1",
+      "id": "blue@1",
+      "issuer": "Example",
+      "recognize": {
+        "and": [
+          {
+            "has": "did"
+          },
+          {
+            "==": [
+              {
+                "var": "did"
+              },
+              "request"
+            ]
+          }
+        ]
+      },
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {
+            "with.subject": "string"
+          },
+          "steps": [],
+          "grants": {
+            "subject": {
+              "var": "with.subject"
+            },
+            "owner": {
+              "var": "$by"
+            }
+          },
+          "if_ok": "Opened",
+          "if_not": "Not opened",
+          "if_doubt": "Open undecided"
+        },
+        {
+          "id": "review",
+          "after": [
+            "open"
+          ],
+          "requires": {
+            "with.score": "integer"
+          },
+          "steps": [
+            {
+              "id": "owner",
+              "check": {
+                "==": [
+                  {
+                    "var": "$by"
+                  },
+                  {
+                    "var": "$parents.open.detail.grants.owner"
+                  }
+                ]
+              },
+              "if_not": "not",
+              "reason": "Owner required"
+            },
+            {
+              "id": "score",
+              "check": {
+                ">=": [
+                  {
+                    "var": "with.score"
+                  },
+                  70
+                ]
+              },
+              "if_not": "not",
+              "reason": "Score below 70"
+            }
+          ],
+          "grants": {
+            "owner": {
+              "var": "$by"
+            }
+          },
+          "if_ok": "Reviewed",
+          "if_not": "Not reviewed",
+          "if_doubt": "Review undecided"
+        }
+      ]
+    },
+    "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c": {
+      "logline": "process-type@1",
+      "id": "literal@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:f037dff7bf6bc093225cffd6eac6b77f5f14a7212b515a4db101da269b9dd1a6": {
+      "logline": "process-type@1",
+      "id": "overlap@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:555048949783049d8ee51a0f0c317cb8ab4b0518c52f6f7b86e22a67518c54d6": {
+      "logline": "process-type@1",
+      "id": "bad@1",
+      "issuer": "Example",
+      "recognize": {
+        "var": "missing"
+      },
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:9a31c1e283ff6a2a0cdd3aff839d3fd71e74eff48c4c69d44700c1894ab6ba44": {
+      "logline": "process-type@1",
+      "id": "requires@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {
+            "z": "integer",
+            "a": "string"
+          },
+          "steps": [
+            {
+              "id": "not-run",
+              "check": {
+                "var": "missing"
+              },
+              "if_not": "not",
+              "reason": "Condition not met"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:9d96129e378ed537187dbbb56497281eeec3c253e8d3ca63f7edf99f148f2370": {
+      "logline": "process-type@1",
+      "id": "precedence@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "unknown",
+              "check": {
+                "var": "missing"
+              },
+              "if_not": "not",
+              "reason": "Unknown"
+            },
+            {
+              "id": "denied",
+              "check": false,
+              "if_not": "not",
+              "reason": "Denied"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "grants": {
+            "forbidden": {
+              "var": "missing"
+            }
+          }
+        }
+      ]
+    },
+    "sha256:18db7698f2f048fc5057d675610e3fba66d1488f36debf4eff8ddea1556aefec": {
+      "logline": "process-type@1",
+      "id": "doubt@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "uncertain",
+              "check": {
+                "var": "private"
+              },
+              "if_not": "not",
+              "reason": "Cannot decide"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:7225d25e13d0c7d0cd1b19ec2c55be06dcd9937cc3b9905d0f846f7fce361261": {
+      "logline": "process-type@1",
+      "id": "grants@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "truth",
+              "check": true,
+              "if_not": "not",
+              "reason": "Condition not met"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "grants": {
+            "a": {
+              "var": "missing"
+            },
+            "z": {
+              "var": "also_missing"
+            }
+          }
+        }
+      ]
+    },
+    "sha256:ed5547907235150876544b94266ca0924e1bac5442915e48366f34de94a05176": {
+      "logline": "process-type@1",
+      "id": "budget@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "one",
+              "check": {
+                "not": false
+              },
+              "if_not": "not",
+              "reason": "Condition not met"
+            },
+            {
+              "id": "two",
+              "check": {
+                "not": false
+              },
+              "if_not": "not",
+              "reason": "Budget"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "limits": {
+            "ops": 1
+          }
+        }
+      ]
+    },
+    "sha256:29cb346578b99f80e1a906896976845f06e675b834b3fc7558a23eb0465ee69a": {
+      "logline": "process-type@1",
+      "id": "identity@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "grants": {
+            "owner": {
+              "var": "$by"
+            },
+            "__proto__": {
+              "var": "who"
+            }
+          },
+          "broadcast": [
+            "detail.grants.owner",
+            "tuple.did"
+          ]
+        }
+      ]
+    },
+    "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36": {
+      "logline": "process-type@1",
+      "id": "consume@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "cites": {
+            "proof": {
+              "frequency": "course.lesson@1",
+              "status": [
+                "ok"
+              ],
+              "once": true
+            },
+            "optional": {
+              "frequency": "course.lesson@1",
+              "optional": true
+            }
+          },
+          "grants": {
+            "proof": {
+              "var": "$cites.proof.id"
+            }
+          }
+        }
+      ]
+    },
+    "sha256:d0b9a56354f3dd220a2beb97a65c522f1a930560401fb498324203d5a243127c": {
+      "logline": "process-type@1",
+      "id": "slots@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "cites": {
+            "one": {
+              "frequency": "course.lesson@1",
+              "once": true
+            },
+            "two": {
+              "frequency": "course.lesson@1",
+              "once": true
+            }
+          }
+        }
+      ]
+    },
+    "sha256:06a634232c2c359c24aeb2a0d8f0a342960afefd094d444d4819ee1674161342": {
+      "logline": "process-type@1",
+      "id": "strict-truth@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "truthy",
+              "check": "yes",
+              "if_not": "not",
+              "reason": "Boolean true required"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:67714aa5398e86cb25ee34698a06e0d3243755e29d80043a7c61bae53d2a66b4": {
+      "logline": "process-type@1",
+      "id": "explicit-doubt@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [
+            {
+              "id": "conditional",
+              "check": false,
+              "if_not": "doubt",
+              "reason": "Insufficient"
+            }
+          ],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided"
+        }
+      ]
+    },
+    "sha256:1f954b215ca59c352ffb497245ff47c00990111fad71c808ec17c9afbfa4b51a": {
+      "logline": "process-type@1",
+      "id": "unsafe-grant@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "grants": {
+            "unsafe": {
+              "+": [
+                9007199254740991,
+                1
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "sha256:626bada64bffb0d394a7e14babb0d3979a49ce9c3877834761e2799613bf534d": {
+      "logline": "process-type@1",
+      "id": "v2-cite@1",
+      "issuer": "Example",
+      "recognize": true,
+      "runs": [
+        {
+          "id": "open",
+          "after": [],
+          "requires": {},
+          "steps": [],
+          "if_ok": "Accepted",
+          "if_not": "Rejected",
+          "if_doubt": "Undecided",
+          "cites": {
+            "proof": {
+              "frequency": "blue@1",
+              "status": [
+                "ok"
+              ]
+            }
+          },
+          "grants": {
+            "owner": {
+              "var": "$cites.proof.detail.grants.owner"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "snapshots": {
+    "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd": {
+      "logline": "registry@1",
+      "types": [],
+      "scan_ops": 100
+    },
+    "sha256:dc33ce20e084be198ccd3c061496ce0e8fdf081d44620a61ae8b98f2fe5421d5": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c",
+        "sha256:f037dff7bf6bc093225cffd6eac6b77f5f14a7212b515a4db101da269b9dd1a6"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:d3cb8a81565d9b82be743162c3a40a986bff9046bf93208594ec41c135ec6260": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:555048949783049d8ee51a0f0c317cb8ab4b0518c52f6f7b86e22a67518c54d6",
+        "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:75eae8c060cf901d7deda25cff89de5b8abe1c4e89ef065363c41106f620ddb8": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:8b4a2c5a362f628cde7eae23ed3ceae642ac98eb5d89ba622a5901cdb844cd73": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:9a31c1e283ff6a2a0cdd3aff839d3fd71e74eff48c4c69d44700c1894ab6ba44"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:ab56e091f30407a3da29e4d7cbcb6d3210a2d6199209b7cff8c6345f20dcc837": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:9d96129e378ed537187dbbb56497281eeec3c253e8d3ca63f7edf99f148f2370"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:0eee0fecf923b0ffbe82c84d65fcf99d09df111dea5f9faf9802a2783eef7632": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:18db7698f2f048fc5057d675610e3fba66d1488f36debf4eff8ddea1556aefec"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:684f95643dc3c2253299118c6d8bd55cc893e2dae3c6bd91fc581aea687628e9": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:7225d25e13d0c7d0cd1b19ec2c55be06dcd9937cc3b9905d0f846f7fce361261"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:9d7cb92d1368c5e2cd194f27513bffea5c5c61e5972144a40f2068480c5c0db1": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:ed5547907235150876544b94266ca0924e1bac5442915e48366f34de94a05176"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:69868b14b88a1bfd03adb0243ec5bd7fa558290527b2f4ede5d042f85c899b69": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:29cb346578b99f80e1a906896976845f06e675b834b3fc7558a23eb0465ee69a"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:47c1b058f2588c98dd75ab44bb5eee227250088d77a2766db2333273d9da80fc": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:d0b9a56354f3dd220a2beb97a65c522f1a930560401fb498324203d5a243127c"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:41556626d4af48e169739da21350d3ba7cf178c5f1302de24611bc194606381e": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:06a634232c2c359c24aeb2a0d8f0a342960afefd094d444d4819ee1674161342"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:9cb870cde48898690b8a0de5ddc1eb0e65167316492b734cd6aca208c0efb66c": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:67714aa5398e86cb25ee34698a06e0d3243755e29d80043a7c61bae53d2a66b4"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:90fbc6689de447c29160fa1933be77d7b924ff2205807c94f5755361582884ce": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:1f954b215ca59c352ffb497245ff47c00990111fad71c808ec17c9afbfa4b51a"
+      ],
+      "scan_ops": 100
+    },
+    "sha256:90118bf82ebecb28eab1547b8c24158c98c540bd14b34a64abe30a61673b5c2d": {
+      "logline": "registry@1",
+      "types": [
+        "sha256:626bada64bffb0d394a7e14babb0d3979a49ce9c3877834761e2799613bf534d"
+      ],
+      "scan_ops": 100
+    }
+  },
+  "evidence": {
+    "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061": {
+      "receipt": {
+        "header": {
+          "logline": "receipt@2",
+          "frequency": "blue@1",
+          "status": "ok",
+          "activated": true,
+          "process": "blue@1",
+          "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+          "run": "open",
+          "instance": null,
+          "input_hash": "sha256:efc33e97945be7e406736b90b187f9097e4e7a32843ee325421b9e118d7046fc",
+          "context_hash": "sha256:bb4cd55a774a178535dabc125c3fe47a1e61b216db3ba17d477998f78d195487",
+          "detail_hash": "sha256:485119c2abce535248bf135b886b0fa310073a4ff29018517e321350b1666116",
+          "when": "2026-11-25T00:00:00Z",
+          "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev": [],
+          "public": {}
+        },
+        "id": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+        "sig": {
+          "alg": "Ed25519",
+          "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+          "value": "mLA030yo8R1ZawAkHtqnl5aRcN1pRrMvgV-H-atKfz84gRQfQyKa50fXTFekkqEUD8kxx0XZ-HXvJmZ2LM0bAA"
+        }
+      },
+      "detail": {
+        "logline": "detail@2",
+        "consequence": "Opened",
+        "findings": [],
+        "unmet": null,
+        "grants": {
+          "subject": "A",
+          "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "reason": null,
+        "recognition": {
+          "outcome": "unique",
+          "matches": [
+            "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+          ],
+          "selected": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "diagnostics": [],
+          "ops_used": 5
+        }
+      }
+    },
+    "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096": {
+      "receipt": {
+        "header": {
+          "logline": "receipt@2",
+          "frequency": "blue@1",
+          "status": "ok",
+          "activated": true,
+          "process": "blue@1",
+          "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+          "run": "open",
+          "instance": null,
+          "input_hash": "sha256:b8d23a51e83596814cde73069bc202f961f9651519e7c91e037cc01422aea15d",
+          "context_hash": "sha256:a482cdef193487a63e281b83243447c619e21bf7c022e2daa6013dca7e7017b5",
+          "detail_hash": "sha256:4f0300cdbfc8f9aeb80395152d099f3f2635e2210be0e0b1e7177157a58ac5ab",
+          "when": "2026-11-25T00:00:00Z",
+          "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev": [],
+          "public": {}
+        },
+        "id": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096",
+        "sig": {
+          "alg": "Ed25519",
+          "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+          "value": "CqMBH5FnO5ThTZGsKdYLk_rTmYO0aR-WuLf-3WLOPdRM7fSxjVCBp-gfZEOvJvvfuURPuOSqjtRiya2i9luIDA"
+        }
+      },
+      "detail": {
+        "logline": "detail@2",
+        "consequence": "Opened",
+        "findings": [],
+        "unmet": null,
+        "grants": {
+          "subject": "B",
+          "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "reason": null,
+        "recognition": {
+          "outcome": "unique",
+          "matches": [
+            "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+          ],
+          "selected": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "diagnostics": [],
+          "ops_used": 5
+        }
+      }
+    },
+    "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0": {
+      "receipt": {
+        "header": {
+          "logline": "receipt@2",
+          "frequency": "blue@1",
+          "status": "ok",
+          "activated": true,
+          "process": "blue@1",
+          "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+          "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+          "run": "review",
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "input_hash": "sha256:48ee0d541d9129335e25d5341818a00e148503cb91fd43cbc45c648d30ba63de",
+          "context_hash": "sha256:f604f25c13ca0e55bc7509c9dd319851ba9cfcf050fc9d03d18e9a7839f93524",
+          "detail_hash": "sha256:983f8b7a1f8fb338c78cc8de896631ca329d10e7d32bbeca60ac7a57e3cfe12e",
+          "when": "2026-11-25T00:00:00Z",
+          "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "prev": [
+            "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          ],
+          "public": {}
+        },
+        "id": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+        "sig": {
+          "alg": "Ed25519",
+          "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+          "value": "noz7Uow4TRzmwdGvPIA8dwx4pcCAlS2XLoRXgUeShTerTItluYDnxNIGtCofFKyM1vIJV0CkhsMbMh9G-0LKCg"
+        }
+      },
+      "detail": {
+        "logline": "detail@2",
+        "consequence": "Reviewed",
+        "findings": [
+          {
+            "step": "owner",
+            "result": "ok"
+          },
+          {
+            "step": "score",
+            "result": "ok"
+          }
+        ],
+        "unmet": null,
+        "grants": {
+          "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "reason": null,
+        "recognition": null
+      }
+    },
+    "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284": {
+      "receipt": {
+        "header": {
+          "activated": true,
+          "by": "p:ana",
+          "depth": 0,
+          "detail_hash": "sha256:397dc6139d2b249fbb8b55ad1e68148ff7034de8abee5f3c8501498c8fce1298",
+          "frequency": "course.lesson@1",
+          "input_hash": "sha256:e9d7032dc01ee0fd9411146813c5a9115dde4cb67affb8b6521a1e739299baac",
+          "logline": "receipt@1",
+          "prev": [],
+          "process": "course.lesson@1",
+          "process_hash": "sha256:d9da5aed9a4e4473aa43bb1ca047358311ef7195f9194ea57c1edab93f8e2e27",
+          "public": {
+            "detail.grants.completed": 1,
+            "detail.grants.course": "logline-101"
+          },
+          "spent": [],
+          "status": "ok",
+          "when": "2026-11-25T10:00:00Z"
+        },
+        "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
+        "sig": {
+          "alg": "Ed25519",
+          "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+          "value": "pNTdM7jC27mCbHQ1C2c0DWWEZqTg9aQSiyqAEx3w_GyZ5aF2hcTvNfXBiBqYzdHDFrz1sky_ptFeRiVIuYtbDQ"
+        }
+      },
+      "detail": {
+        "consequence": "Lesson completed. Cite this receipt when you submit the next lesson.",
+        "findings": [
+          {
+            "result": "ok",
+            "step": "same_course"
+          },
+          {
+            "result": "ok",
+            "step": "same_learner"
+          },
+          {
+            "result": "ok",
+            "step": "next_in_order"
+          },
+          {
+            "result": "ok",
+            "step": "passed"
+          }
+        ],
+        "grants": {
+          "best_score": 88,
+          "completed": 1,
+          "course": "logline-101"
+        },
+        "logline": "detail@1",
+        "unmet": null
+      }
+    }
+  },
+  "cases": [
+    {
+      "name": "no-match",
+      "request": {
+        "tuple": {
+          "who": "admin",
+          "this": "blue@1"
+        },
+        "submission": "CgoKCgoKCgoKCgoKCgoKCg"
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "_unaddressed",
+            "status": "registered",
+            "activated": false,
+            "process": null,
+            "process_hash": null,
+            "registry_hash": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+            "run": null,
+            "instance": null,
+            "input_hash": "sha256:363fd413f8a29f19087f7d708ceaf6913c8a5af8dd45627184aa869ba52b08fb",
+            "context_hash": "sha256:1729c4b145c11c6f00875282a1628a1043ec07d83d2501da7558367a565f2989",
+            "detail_hash": "sha256:922688b5b685c65c78c8056be7363250101ca37a8ad478a961aab73dc6f67f11",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:97bb6cb991c20e97bacfb0b6310a715cc9c7878e0c6ede3ed649a0c5b7eda88a",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "awytcwoWP9IvKdTr-t-dUpCp_sembM9X4k9O5UJ1dNlheJXEyLtFD9_fIj6n-irzdgvJXbuI1dAcXFLokvOdBA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "recognition_none"
+          ],
+          "grants": null,
+          "reason": "recognition_none",
+          "recognition": {
+            "outcome": "none",
+            "matches": [],
+            "selected": null,
+            "diagnostics": [],
+            "ops_used": 0
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "CgoKCgoKCgoKCgoKCgoKCg",
+          "request_hash": "sha256:93ada5bf79f54b4ae8aedfe158df8d2f42e1d02c0fca3e923416e78aea9e6897",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:183b07db3ec5778ed4fe8203b60be7e2dc8deaf73c991e0172f04439d62bc5e3"
+      }
+    },
+    {
+      "name": "ambiguous",
+      "request": {
+        "tuple": null,
+        "submission": "CwsLCwsLCwsLCwsLCwsLCw"
+      },
+      "registry": "sha256:dc33ce20e084be198ccd3c061496ce0e8fdf081d44620a61ae8b98f2fe5421d5",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "_unaddressed",
+            "status": "registered",
+            "activated": false,
+            "process": null,
+            "process_hash": null,
+            "registry_hash": "sha256:dc33ce20e084be198ccd3c061496ce0e8fdf081d44620a61ae8b98f2fe5421d5",
+            "run": null,
+            "instance": null,
+            "input_hash": "sha256:74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+            "context_hash": "sha256:d7a50eed341507d174897e0745f7025e895638cbcdab451261aa031315d36266",
+            "detail_hash": "sha256:efbb8847df6d5f68ef988d802222d664399d6099bc3015e2bb466a74a299e42e",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:5b0436d0a0d989d2ed470e3ac4bebf400db3951f4ca24e0f513f2f309c7443d5",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "oLg0R4aU4yqTHUQUIpLyOrd5x-37LolL-FkBhKtsZnOuLT-oxb-UMnUtLqPMw94YKj9GH-bRTrDabz32JCncAg"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "recognition_ambiguous"
+          ],
+          "grants": null,
+          "reason": "recognition_ambiguous",
+          "recognition": {
+            "outcome": "ambiguous",
+            "matches": [
+              "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c",
+              "sha256:f037dff7bf6bc093225cffd6eac6b77f5f14a7212b515a4db101da269b9dd1a6"
+            ],
+            "selected": null,
+            "diagnostics": [],
+            "ops_used": 2
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "CwsLCwsLCwsLCwsLCwsLCw",
+          "request_hash": "sha256:c98c35b03e88ca6e33cdf69fe218cdc7ad463f70c732bfbc610fe9709edbb392",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:690046036fb3b6d7b15b55e45fc04b8160261125d56bd7b8ecbfa4447d593515"
+      }
+    },
+    {
+      "name": "indeterminate-partial-match",
+      "request": {
+        "tuple": null,
+        "submission": "DAwMDAwMDAwMDAwMDAwMDA"
+      },
+      "registry": "sha256:d3cb8a81565d9b82be743162c3a40a986bff9046bf93208594ec41c135ec6260",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "_unaddressed",
+            "status": "registered",
+            "activated": false,
+            "process": null,
+            "process_hash": null,
+            "registry_hash": "sha256:d3cb8a81565d9b82be743162c3a40a986bff9046bf93208594ec41c135ec6260",
+            "run": null,
+            "instance": null,
+            "input_hash": "sha256:74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+            "context_hash": "sha256:4f195cc073e80639688f63b198e6bbba133e9c9367f75b26e5002d481e768e86",
+            "detail_hash": "sha256:fea112e19893f8ae10babf9afcb06360bbcc3b3b04e2a5bb6fc245699f8b8aa8",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:bcb0cb7f5eb99959fd37a49598ad9bd29616bdf58bec113cfc523c893910d47d",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "nttxfQpO3TWCBlMZgi4DUNuiPoFlkoYKq6UQNqRLbOXHUYYSkkyvOUQfmIa2USlC6eit4xsTNK1ekEcdSv4-BQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "recognition_indeterminate"
+          ],
+          "grants": null,
+          "reason": "recognition_indeterminate",
+          "recognition": {
+            "outcome": "indeterminate",
+            "matches": [
+              "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c"
+            ],
+            "selected": null,
+            "diagnostics": [
+              {
+                "law_hash": "sha256:555048949783049d8ee51a0f0c317cb8ab4b0518c52f6f7b86e22a67518c54d6",
+                "code": "eval_missing"
+              }
+            ],
+            "ops_used": 3
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "DAwMDAwMDAwMDAwMDAwMDA",
+          "request_hash": "sha256:c98c35b03e88ca6e33cdf69fe218cdc7ad463f70c732bfbc610fe9709edbb392",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:b0318d7e7d7c94c8bd5895607ef42133b317bb6f1fa306ecfd39a0af9b998c50"
+      }
+    },
+    {
+      "name": "free-scalar",
+      "request": {
+        "tuple": 42,
+        "submission": "DQ0NDQ0NDQ0NDQ0NDQ0NDQ"
+      },
+      "registry": "sha256:75eae8c060cf901d7deda25cff89de5b8abe1c4e89ef065363c41106f620ddb8",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "literal@1",
+            "status": "ok",
+            "activated": true,
+            "process": "literal@1",
+            "process_hash": "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c",
+            "registry_hash": "sha256:75eae8c060cf901d7deda25cff89de5b8abe1c4e89ef065363c41106f620ddb8",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
+            "context_hash": "sha256:8120c90ce6ea1f92d98d5c431527317c34c8ab32b1d4f5024c977a496f3ae1c5",
+            "detail_hash": "sha256:1a698d5bf0ebb6f0ca6799b52a1197a927325d636c10a27f581d27877819591a",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:a42585652a67227a9a16af3b255c44fba6dd650026e9eca725b1fbf7978a340d",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "f79YaOUSURmtUFyLG3Hu7tagoQNKxSF6wpNC0KakAsiZsZYDLyT1wOI9XgD7PdOirp8zjPrshwljq7YymLuNAA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Accepted",
+          "findings": [],
+          "unmet": null,
+          "grants": null,
+          "reason": null,
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c"
+            ],
+            "selected": "sha256:c1268d506fcffa1b2d8ebb263802badfd1dc37e47a4f4d06b166c32006159e2c",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "DQ0NDQ0NDQ0NDQ0NDQ0NDQ",
+          "request_hash": "sha256:f33c272c1c367c29005cf14452107cdd9c2228e75ade980d83939d4ebb57d977",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:4b64b1c0612c10e67f501e913ff947e551b869bb9e62bdd250a388c891ea60e7"
+      }
+    },
+    {
+      "name": "requires-order",
+      "request": {
+        "tuple": {
+          "z": "wrong"
+        },
+        "submission": "Dg4ODg4ODg4ODg4ODg4ODg"
+      },
+      "registry": "sha256:8b4a2c5a362f628cde7eae23ed3ceae642ac98eb5d89ba622a5901cdb844cd73",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "requires@1",
+            "status": "registered",
+            "activated": false,
+            "process": "requires@1",
+            "process_hash": "sha256:9a31c1e283ff6a2a0cdd3aff839d3fd71e74eff48c4c69d44700c1894ab6ba44",
+            "registry_hash": "sha256:8b4a2c5a362f628cde7eae23ed3ceae642ac98eb5d89ba622a5901cdb844cd73",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:03092644805375acb96e43cddb0ba5714ad463fd92e3880a6b8178d2a01b47f0",
+            "context_hash": "sha256:7529dcb09f74e64cc61d5733c597e1ba31cba61bf6f1187f82f2d63ebb0c9af8",
+            "detail_hash": "sha256:780511ecdc717a05906afd55a74c594009699d5d21f43d768acf3a5f9a28a17f",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:368b633035848a0398cfe4f2a9fdf757ea388995cb1bcf9037b4b052338393ef",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "6onBPsKzZ6OWj-ugXSEAA-NYRAPStKYSBVnFD33NanlKhprEZcFWCriIwEVZ6Vc4GVB5PpOW5GHW4rNSJM22CA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "a",
+            "z"
+          ],
+          "grants": null,
+          "reason": "requires_unmet",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:9a31c1e283ff6a2a0cdd3aff839d3fd71e74eff48c4c69d44700c1894ab6ba44"
+            ],
+            "selected": "sha256:9a31c1e283ff6a2a0cdd3aff839d3fd71e74eff48c4c69d44700c1894ab6ba44",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "Dg4ODg4ODg4ODg4ODg4ODg",
+          "request_hash": "sha256:ee472962ad1d81ed4e11aa42e901cad532af99e51beb20d3e948afb2e1fcd225",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:fd45d19b14b981d869daf971abf08f155861ae0c1d7c0d11f146cd5cde5a078b"
+      }
+    },
+    {
+      "name": "not-precedes-doubt",
+      "request": {
+        "tuple": {},
+        "submission": "Dw8PDw8PDw8PDw8PDw8PDw"
+      },
+      "registry": "sha256:ab56e091f30407a3da29e4d7cbcb6d3210a2d6199209b7cff8c6345f20dcc837",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "precedence@1",
+            "status": "not",
+            "activated": true,
+            "process": "precedence@1",
+            "process_hash": "sha256:9d96129e378ed537187dbbb56497281eeec3c253e8d3ca63f7edf99f148f2370",
+            "registry_hash": "sha256:ab56e091f30407a3da29e4d7cbcb6d3210a2d6199209b7cff8c6345f20dcc837",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:d9e6c02581f277c821e2aa6e656cbf20899f5fe58b6159a9345b8b5e9dc3853f",
+            "detail_hash": "sha256:247da888ce616e270dde241db3b8e047a55ce197d321607ac1c5549462e6c035",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:782bbcbc60fdd0d85bb6b49375b0a9e57b41a7b62a8d2c8eb26b8b66549123b1",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "mt1mO66Ns1E4nsJhc-futHl1tya-gMDwjvgmPhDAjqm_51PjsdpUVnnqHkwu7fOGtbzd55rgACxr9w7qR8xHCg"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Rejected",
+          "findings": [
+            {
+              "step": "unknown",
+              "result": "doubt",
+              "reason": "Unknown",
+              "error": "eval_missing"
+            },
+            {
+              "step": "denied",
+              "result": "not",
+              "reason": "Denied"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_not",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:9d96129e378ed537187dbbb56497281eeec3c253e8d3ca63f7edf99f148f2370"
+            ],
+            "selected": "sha256:9d96129e378ed537187dbbb56497281eeec3c253e8d3ca63f7edf99f148f2370",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "Dw8PDw8PDw8PDw8PDw8PDw",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:85f6a74d18599dc2f5b3871fb8183acc542431d7f1dfe0235b6f4a8075a7a3f9"
+      }
+    },
+    {
+      "name": "step-error-is-doubt",
+      "request": {
+        "tuple": {},
+        "submission": "EBAQEBAQEBAQEBAQEBAQEA"
+      },
+      "registry": "sha256:0eee0fecf923b0ffbe82c84d65fcf99d09df111dea5f9faf9802a2783eef7632",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "doubt@1",
+            "status": "doubt",
+            "activated": true,
+            "process": "doubt@1",
+            "process_hash": "sha256:18db7698f2f048fc5057d675610e3fba66d1488f36debf4eff8ddea1556aefec",
+            "registry_hash": "sha256:0eee0fecf923b0ffbe82c84d65fcf99d09df111dea5f9faf9802a2783eef7632",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:8ee7a97052345a79dc4bde360df59e7df819c4df4ff444fbe113e0cb5c4faa91",
+            "detail_hash": "sha256:15530e4fd4cd2a315c79d8f72c35e6c6418e2bafd5e9360fe5721814c259b48b",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:956befd12babefce60fa62c52a5be868f982d8cf541c7f321d9823a2e36a8231",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "oseg5E-HcsFK0xNJ4MF79IHahKQD1EZnVR82JpLJYGXRpiMO2DFIZgawruHZNz1DXc-QO2fjj2R2hkIGoERDDA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Undecided",
+          "findings": [
+            {
+              "step": "uncertain",
+              "result": "doubt",
+              "reason": "Cannot decide",
+              "error": "eval_missing"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_doubt",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:18db7698f2f048fc5057d675610e3fba66d1488f36debf4eff8ddea1556aefec"
+            ],
+            "selected": "sha256:18db7698f2f048fc5057d675610e3fba66d1488f36debf4eff8ddea1556aefec",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "EBAQEBAQEBAQEBAQEBAQEA",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:b0f745e6d4dda2159e6d9f2723bb6cf3dc4fc974f32b9f252ed2c109ff2bf4e0"
+      }
+    },
+    {
+      "name": "grant-error-is-doubt",
+      "request": {
+        "tuple": {},
+        "submission": "EREREREREREREREREREREQ"
+      },
+      "registry": "sha256:684f95643dc3c2253299118c6d8bd55cc893e2dae3c6bd91fc581aea687628e9",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "grants@1",
+            "status": "doubt",
+            "activated": true,
+            "process": "grants@1",
+            "process_hash": "sha256:7225d25e13d0c7d0cd1b19ec2c55be06dcd9937cc3b9905d0f846f7fce361261",
+            "registry_hash": "sha256:684f95643dc3c2253299118c6d8bd55cc893e2dae3c6bd91fc581aea687628e9",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:b7714caf718050ac61b73c6e0108fe6cf5e3bbb5a2cff49e1b888e797ef39ccf",
+            "detail_hash": "sha256:357032787086dcfe15720cf27979b028ef5b58cd379fa353cf37a0c529daabd3",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:b4126b25dd992f2119f39e98645c08987a95736e1dff8501ad65b3991080286f",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "E7WB38ObF6Nrngey42Cf8mEjGzyaG_sMGbzmjqmPqjsArvTyq06R8t0ADvv7IHZSwYRfAKmoZmlD6TMP3BXAAw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Undecided",
+          "findings": [
+            {
+              "step": "truth",
+              "result": "ok"
+            },
+            {
+              "step": "grants",
+              "result": "doubt",
+              "reason": "The grants could not be computed.",
+              "error": "eval_missing"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "grants_doubt",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:7225d25e13d0c7d0cd1b19ec2c55be06dcd9937cc3b9905d0f846f7fce361261"
+            ],
+            "selected": "sha256:7225d25e13d0c7d0cd1b19ec2c55be06dcd9937cc3b9905d0f846f7fce361261",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "EREREREREREREREREREREQ",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:441b38fefaabf1631e9aad3bea8dfc25e2889e451bca74aace93f4cfcd16d131"
+      }
+    },
+    {
+      "name": "shared-run-budget",
+      "request": {
+        "tuple": {},
+        "submission": "EhISEhISEhISEhISEhISEg"
+      },
+      "registry": "sha256:9d7cb92d1368c5e2cd194f27513bffea5c5c61e5972144a40f2068480c5c0db1",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "budget@1",
+            "status": "doubt",
+            "activated": true,
+            "process": "budget@1",
+            "process_hash": "sha256:ed5547907235150876544b94266ca0924e1bac5442915e48366f34de94a05176",
+            "registry_hash": "sha256:9d7cb92d1368c5e2cd194f27513bffea5c5c61e5972144a40f2068480c5c0db1",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:6c006fef2d6c4da2cb17f2ba57759e5a72e14b358d65212a6df3238da865052f",
+            "detail_hash": "sha256:0c9bb4551686a56d6b4e3c7ffac645dd78fcb0d8c5696c4327b44157eb11be3e",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:b9bfc2663048100bf1d7658512de24c84e0c198fb46037fe949533e7f35f8776",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "5xyYk_XCuihAk3eONlg5qHo74FQL16hfkYNI7IoxPLHkBGqWlbBpZVnjwx4oV9qf7X95Hn1t1hsL33IelkMfAA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Undecided",
+          "findings": [
+            {
+              "step": "one",
+              "result": "ok"
+            },
+            {
+              "step": "two",
+              "result": "doubt",
+              "reason": "Budget",
+              "error": "eval_budget"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_doubt",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:ed5547907235150876544b94266ca0924e1bac5442915e48366f34de94a05176"
+            ],
+            "selected": "sha256:ed5547907235150876544b94266ca0924e1bac5442915e48366f34de94a05176",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "EhISEhISEhISEhISEhISEg",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:9673badc7ec0ea3e42b6d48d23559b04880808c003ceb2029e42032a83fd83d1"
+      }
+    },
+    {
+      "name": "attested-not-tuple-identity",
+      "request": {
+        "tuple": {
+          "who": "admin",
+          "did": "request"
+        },
+        "submission": "ExMTExMTExMTExMTExMTEw"
+      },
+      "registry": "sha256:69868b14b88a1bfd03adb0243ec5bd7fa558290527b2f4ede5d042f85c899b69",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "identity@1",
+            "status": "ok",
+            "activated": true,
+            "process": "identity@1",
+            "process_hash": "sha256:29cb346578b99f80e1a906896976845f06e675b834b3fc7558a23eb0465ee69a",
+            "registry_hash": "sha256:69868b14b88a1bfd03adb0243ec5bd7fa558290527b2f4ede5d042f85c899b69",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:dbe4fd5d40c6dd907a591c09b2eb9c6ac2a6bf9a20c2fabc3ed1b1b42a6c820b",
+            "context_hash": "sha256:fcf74f434d3c9202d2cc9011f6f80e1a280a7bbd36a6e7c2608ff8816900b1c9",
+            "detail_hash": "sha256:2e8ae75291373cb838c1cff0573acc8e05273719585413e46aa890e7789629d6",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {
+              "detail.grants.owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "tuple.did": "request"
+            }
+          },
+          "id": "sha256:6ad27d1e5fac3a92ba60ea01ce67f7809aa9c46a020e8bf624578ffcb9361292",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "i0Q3UHdE8dhIjaObOaw3v-GPUxBIyQdJSYydCoYcAnhsW0gArh5STtR_ZX6NUGwjE2Y8DwIy2ICp7fqmFy17Aw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Accepted",
+          "findings": [],
+          "unmet": null,
+          "grants": {
+            "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "__proto__": "admin"
+          },
+          "reason": null,
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:29cb346578b99f80e1a906896976845f06e675b834b3fc7558a23eb0465ee69a"
+            ],
+            "selected": "sha256:29cb346578b99f80e1a906896976845f06e675b834b3fc7558a23eb0465ee69a",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "ExMTExMTExMTExMTExMTEw",
+          "request_hash": "sha256:fe5bf2c4503801bc5b7658e1751c7de88e00722b78e33cd06279c14d213b0de3",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:d2abe76c5abecc654cdabc763fa2740ef4cd6617471ba4df459e398b2d66f562"
+      }
+    },
+    {
+      "name": "retired-law-continuation",
+      "request": {
+        "tuple": {
+          "with": {
+            "score": 80
+          }
+        },
+        "submission": "FBQUFBQUFBQUFBQUFBQUFA",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "ok",
+            "activated": true,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": "review",
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:48ee0d541d9129335e25d5341818a00e148503cb91fd43cbc45c648d30ba63de",
+            "context_hash": "sha256:2569760e3e48ce0ae341ac212b320b2b6960bad67c2b94bf9176b4ccea20511d",
+            "detail_hash": "sha256:983f8b7a1f8fb338c78cc8de896631ca329d10e7d32bbeca60ac7a57e3cfe12e",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:b741565bb3fd46e9c08c858def9ed05518168235a88c4d48c492ce75a67afe40",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "cNyAUex93JJT6uHh3eg9WxeiqqRoG5kfBauQvqoMYQuV5-zTJu1IFhJ4fWcJvmzXFapai26dBLPe2rSDyDgcBw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Reviewed",
+          "findings": [
+            {
+              "step": "owner",
+              "result": "ok"
+            },
+            {
+              "step": "score",
+              "result": "ok"
+            }
+          ],
+          "unmet": null,
+          "grants": {
+            "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reason": null,
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "FBQUFBQUFBQUFBQUFBQUFA",
+          "request_hash": "sha256:378b33d778c9d43866e8217d7b48fe09085145c41baa7c794abf5edbf91806c8",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            },
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:ab420e3340ad645a8db077a4e5bc3e798f32686cb35a4128a70eaaaed60f7253"
+      }
+    },
+    {
+      "name": "missing-root",
+      "request": {
+        "tuple": {},
+        "submission": "FRUVFRUVFRUVFRUVFRUVFQ",
+        "continue": {
+          "instance": "sha256:4b62d186290abd5651b6ca8a99670b9e820692e11ed5ff8b5e786d6c59475917",
+          "run": "review",
+          "parents": {
+            "open": "sha256:4b62d186290abd5651b6ca8a99670b9e820692e11ed5ff8b5e786d6c59475917"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "_unaddressed",
+            "status": "registered",
+            "activated": false,
+            "process": null,
+            "process_hash": null,
+            "registry_hash": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+            "run": null,
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:9c72534326577803f36c1ebe72c742890bab3d996b2447c86286d0216a8556f5",
+            "detail_hash": "sha256:224266815268c68e916728d3466f86e85f55d461f93347d3ebd2dd79a6eb96a3",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:7f3ba110a99a9f758734781c2a6e7451ce0808d0af07bef1f06832e82dc67941",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "tkyvHyFW_0nFaTrLQr2qRzyBJgxjdPdVJkRAh5Q06ewEOwun5lR5wk1OZ47ElEIFyCsL6CxK7wuc3IVNw5uKBg"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "continuation"
+          ],
+          "grants": null,
+          "reason": "continuation_unavailable",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "FRUVFRUVFRUVFRUVFRUVFQ",
+          "request_hash": "sha256:c8087503401f2d623340c2f3a81d442f44dffd5b74f2e07f8ebf3f6f7173d312",
+          "continue": {
+            "instance": "sha256:4b62d186290abd5651b6ca8a99670b9e820692e11ed5ff8b5e786d6c59475917",
+            "run": "review",
+            "parents": {
+              "open": "sha256:4b62d186290abd5651b6ca8a99670b9e820692e11ed5ff8b5e786d6c59475917"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:68eecab6c224b4c0493de3b5770c91f3393201e4a31a8cf21d050385e5202154"
+      }
+    },
+    {
+      "name": "denied-root",
+      "request": {
+        "tuple": {},
+        "submission": "FhYWFhYWFhYWFhYWFhYWFg",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [
+        "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+      ],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "_unaddressed",
+            "status": "registered",
+            "activated": false,
+            "process": null,
+            "process_hash": null,
+            "registry_hash": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+            "run": null,
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:69b56cb8830dd344b5dd2975569e2746bc7829c775ae263839823f13ba76c89b",
+            "detail_hash": "sha256:224266815268c68e916728d3466f86e85f55d461f93347d3ebd2dd79a6eb96a3",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:3c6f2feaaa25dbd7968ffe11dc47c1d6dd615cd1ea1bc84a9ab532fcd38e2b87",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "aPlfFVDN0EfOn6AZebWTO_Ihpe3bhTQbpzx5fWL0kmvqbzj2FYGUKnX-Z35qcKI6ez79Vgv_3ytvkK2DcbK8AQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "continuation"
+          ],
+          "grants": null,
+          "reason": "continuation_unavailable",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "FhYWFhYWFhYWFhYWFhYWFg",
+          "request_hash": "sha256:0bdb7098343ac69051750254cc6ecf5b51a847b13fbddfcb7aad8f95342c82c8",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:7601a7c4507ad55ff2c39e24a1744a4bfa385cb0a97a56f927edc50f7cbc5f42"
+      }
+    },
+    {
+      "name": "unknown-run",
+      "request": {
+        "tuple": {},
+        "submission": "FxcXFxcXFxcXFxcXFxcXFw",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "unknown",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "registered",
+            "activated": false,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": null,
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:3e807233f2ef9ddb83514d55a690900a61fc58772080c64707d27eb2679be0b5",
+            "detail_hash": "sha256:79719f21b2b9d1c0425f1015477cd922c85e1b789af0452caf55532599a8839f",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:9c98aef4f25bb3d078908d2d26eb09ab4c091c09a83bfcca9ceb222052a54232",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "fe_J_3vazzJ4EEc-437qX0u6xLFcJz9KoYLsdkCOha2uPjrAtXSQObURUMG-2a6rsrGpkVAQwrjs5mLaAL3ODA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "run"
+          ],
+          "grants": null,
+          "reason": "run_unavailable",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "FxcXFxcXFxcXFxcXFxcXFw",
+          "request_hash": "sha256:72e55d3f69cf0080a4b07534ac8ca0a6b6a195743734231129c5d25522e28566",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "unknown",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:09737e789de2179e794255182390c1afbfe79a8b233ffdc3c3f2348875163595"
+      }
+    },
+    {
+      "name": "entry-run-forbidden",
+      "request": {
+        "tuple": {},
+        "submission": "GBgYGBgYGBgYGBgYGBgYGA",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "open",
+          "parents": {}
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "registered",
+            "activated": false,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": null,
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:9d38dcf2fae6852ee7f4aa7e43840c675e619764d345f666b71af5a31b121f2f",
+            "detail_hash": "sha256:79719f21b2b9d1c0425f1015477cd922c85e1b789af0452caf55532599a8839f",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:1cd31027f437401731dc7feea52eabe06046ebff3de8297a6be453c091784d90",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "ARRMgVlyi0ayzUSAiWk5BpcVhJvtaYBjqzwM-71Gp_q7ylITDRoUS3Jcs3q3lz-ziihDSCBE9UcTsjfXewYVBw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "run"
+          ],
+          "grants": null,
+          "reason": "run_unavailable",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "GBgYGBgYGBgYGBgYGBgYGA",
+          "request_hash": "sha256:94f7c324b2ff10b83282cce5749e5bd71bc24b540061014fd61ea2c4febd0668",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "open",
+            "parents": {}
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:e877bebf0f4eca527a8adaf1882259430319ee5e6688e1c40384b9414fb6fe97"
+      }
+    },
+    {
+      "name": "wrong-parent-role",
+      "request": {
+        "tuple": {},
+        "submission": "GRkZGRkZGRkZGRkZGRkZGQ",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "other": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "registered",
+            "activated": false,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": "review",
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:b0a1e23acf40145c79335b74cec5e90cd9c3dab29b50f488c51d6abe995b198b",
+            "detail_hash": "sha256:20c7787adc02103e14ffa6be885724076451e2e4a0ab72d03f497b0d9f3b0dc1",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:9a0932be8da106101e8062c2c6784ac9212363464fd36f10701c6334f9245f50",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "dh8jjDzlO_3IOsyEJ8yMYbS-zHq1aQCby8AtnZh0Xm3Y__Ew_a_2SFXIf-Y2d5ArYr29h8-k8LqyuImtSH5NAw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "parents"
+          ],
+          "grants": null,
+          "reason": "parents_unmet",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "GRkZGRkZGRkZGRkZGRkZGQ",
+          "request_hash": "sha256:6202401a936e5303a7badf9264c3b8621ee1541d4e4afe29e8e294980aa602cd",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "other": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:8dc3ee6997fbc032e504db1471f8386c15ba55fa1054703290b5c20bf195cf64"
+      }
+    },
+    {
+      "name": "cross-instance-parent",
+      "request": {
+        "tuple": {},
+        "submission": "GhoaGhoaGhoaGhoaGhoaGg",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "registered",
+            "activated": false,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": "review",
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:85e39c8d9763e243b60923e91e4fcf1dce2027dee47f6bc933e6aa40fa0641d3",
+            "detail_hash": "sha256:8f9ed7800cac4ccc161cbd9b186ca2844eda718f486a09784407ee3aa8b7892e",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:7a9a66c8d5f96c13a63de283f7ff000a560c877390d6a0f8cee444fcd5a0f278",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "RT_HCT4lqmv8wakcoB_08tQxXmmYY7i5bm6Iq8c7cT74iAaDQSJMqq77_EbudRcmKlhSiv_ykHLlnej7AdUeBg"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "parents.open"
+          ],
+          "grants": null,
+          "reason": "parents_unmet",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "GhoaGhoaGhoaGhoaGhoaGg",
+          "request_hash": "sha256:51172b830686058149572f57a333ff50271be0a8cba73173b4533b87c8b0c81d",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "open": "sha256:c5779dce2b159257651edbb4465ce3fc72b84ff4b20d4a111779c0657c401096"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:7de6722d0790b768ee6b626662463270076041aa57aaab72edc92ab6c3103cdf"
+      }
+    },
+    {
+      "name": "completed-before-requires",
+      "request": {
+        "tuple": {},
+        "submission": "GxsbGxsbGxsbGxsbGxsbGw",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "registered",
+            "activated": false,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": "review",
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:db8660c69629cc9f219f6824811729a99fb102a64642b85330f74f03651864a4",
+            "detail_hash": "sha256:07ce0318ccc610aee751b2c3a769b403ff1581e25acee4702c1512ff3bdfb876",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:374354f162b2bcc348feec30f2a489fdb074d588f5207db3ba278e93e7f2ed91",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "kv6nMarQZ84Vys97Pc0DilKxLCUNAKMj_ytE1M97pZX5CT_kCm3-TFV0dUG3_BFoB9Cl11m8noHnXmc8f2UhAA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "run"
+          ],
+          "grants": null,
+          "reason": "run_completed",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "GxsbGxsbGxsbGxsbGxsbGw",
+          "request_hash": "sha256:0bdb7098343ac69051750254cc6ecf5b51a847b13fbddfcb7aad8f95342c82c8",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": "sha256:ef40503ef907b7cc9c3f881ed5726a95fbfd7f31c2683c3aa832770eb77599b0",
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            },
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:64b4064918c3b705e2935a7e7ab4fd241f9600bbf9f0be0527ec03bac6177f31"
+      }
+    },
+    {
+      "name": "actor-not-inherited",
+      "request": {
+        "tuple": {
+          "with": {
+            "score": 80
+          }
+        },
+        "submission": "HBwcHBwcHBwcHBwcHBwcHA",
+        "continue": {
+          "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+          "run": "review",
+          "parents": {
+            "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        }
+      },
+      "registry": "sha256:d98ac98b071a5eb55ee076daf7104cd7f0ff9cf4271f025fd68d011958ccd8cd",
+      "by": "p:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "blue@1",
+            "status": "not",
+            "activated": true,
+            "process": "blue@1",
+            "process_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+            "registry_hash": "sha256:e26e346bc6462289aa2a01fa0936a847fe2c957b37101c2bec33c61c399d0b59",
+            "run": "review",
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "input_hash": "sha256:48ee0d541d9129335e25d5341818a00e148503cb91fd43cbc45c648d30ba63de",
+            "context_hash": "sha256:c20672eb5b2ffac65b54c3414dd19d8e5e4e5b22fc655c120346b9cd5fb02e9f",
+            "detail_hash": "sha256:d434ec86553c3d046d3b63776608481106ef02c0049313a3d0105fb9f16e365c",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:a73ea96042590e748d33fcb97f865fa376a02fd349a1ef43f818b21336662c22",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "wCfzFsUKbDotuahfHJLiKCz-20PoImcuj1eTXz6Dq2h2GVTGdwlvGNwav_47iJgqb7qwiF6TgYxWwyqSo928AQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Not reviewed",
+          "findings": [
+            {
+              "step": "owner",
+              "result": "not",
+              "reason": "Owner required"
+            },
+            {
+              "step": "score",
+              "result": "ok"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_not",
+          "recognition": null
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "HBwcHBwcHBwcHBwcHBwcHA",
+          "request_hash": "sha256:378b33d778c9d43866e8217d7b48fe09085145c41baa7c794abf5edbf91806c8",
+          "continue": {
+            "instance": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "run": "review",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          },
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061",
+            "parents": {
+              "open": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            },
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:f36e9476c4ee9e997575457cc991cc974cb8c5fd6d91826a2269f0f1f4c31580"
+      }
+    },
+    {
+      "name": "legacy-citation",
+      "request": {
+        "tuple": {
+          "cites": {
+            "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+          }
+        },
+        "submission": "HR0dHR0dHR0dHR0dHR0dHQ"
+      },
+      "registry": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "consume@1",
+            "status": "ok",
+            "activated": true,
+            "process": "consume@1",
+            "process_hash": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "registry_hash": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:dbe7e9823d2897ebb00fb063ff76673d75bb2deb481a75ebc7d8e7a7d1cea512",
+            "context_hash": "sha256:1e861c81747f82b1ad49349fe4824cea61e5d2584ff3c1680e8dc1dc380df1ad",
+            "detail_hash": "sha256:8b2f1c3edc41883afcdd1dc6fc9fd6fe834e2868dda0594f9487f5ae19646948",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            ],
+            "public": {}
+          },
+          "id": "sha256:2cbceebd196155b20bb15436b3fa87c3a0bc63f26d7503a176d290beca385d80",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "DUuMMjGmo-pcStakVr6DnmIN_-At1mWZwAHX5et_gqtSsSZpgBkHGu901BucnMIN5LEE109g5pypJ-AOk4WHCA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Accepted",
+          "findings": [],
+          "unmet": null,
+          "grants": {
+            "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+          },
+          "reason": null,
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36"
+            ],
+            "selected": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "HR0dHR0dHR0dHR0dHR0dHQ",
+          "request_hash": "sha256:d92c0dc3045132628770bb30cce542192369fb7c2cb5b0438ec9c07f2b6f8b16",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {
+              "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          }
+        },
+        "submission_key": "sha256:2889ce6ef461a233224b676faf6c3235ef3c34bd438900c2ac8b6aa1f03025b8"
+      }
+    },
+    {
+      "name": "spent-citation",
+      "request": {
+        "tuple": {
+          "cites": {
+            "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+          }
+        },
+        "submission": "Hh4eHh4eHh4eHh4eHh4eHg"
+      },
+      "registry": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [
+        {
+          "slot": "proof",
+          "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+        }
+      ],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "consume@1",
+            "status": "registered",
+            "activated": false,
+            "process": "consume@1",
+            "process_hash": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "registry_hash": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:dbe7e9823d2897ebb00fb063ff76673d75bb2deb481a75ebc7d8e7a7d1cea512",
+            "context_hash": "sha256:230b6964e556eabb5a63a0a7ff095d8e22505a46d3315ad1c6d6e768a2bbda16",
+            "detail_hash": "sha256:d551345956c4733f799ad2c9617db4b7a039a5384dd1348bfad313ebd7e66fe5",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            ],
+            "public": {}
+          },
+          "id": "sha256:57266cb87a3c715b81352460d4d2046c9b19fa06cb73e9d44e1bf537e47d75a6",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "4vIYl0-12Qj9sTyCN_Upsg-wNJVLY0qeP-WrTdMJ8bkWpGEfkqlWDwsiW7ugh3QMlz9RyIlsQQMfjJfZETJBAQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "cites.proof"
+          ],
+          "grants": null,
+          "reason": "citation_spent",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36"
+            ],
+            "selected": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "Hh4eHh4eHh4eHh4eHh4eHg",
+          "request_hash": "sha256:d92c0dc3045132628770bb30cce542192369fb7c2cb5b0438ec9c07f2b6f8b16",
+          "continue": null,
+          "spent": [
+            {
+              "slot": "proof",
+              "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          ],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {
+              "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          }
+        },
+        "submission_key": "sha256:977926f93bc5c2037d2e125be930882907e3c49ac290fadc7a869af49520d377"
+      }
+    },
+    {
+      "name": "optional-explicitly-invalid",
+      "request": {
+        "tuple": {
+          "cites": {
+            "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
+            "optional": "bad"
+          }
+        },
+        "submission": "Hx8fHx8fHx8fHx8fHx8fHw"
+      },
+      "registry": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "consume@1",
+            "status": "registered",
+            "activated": false,
+            "process": "consume@1",
+            "process_hash": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "registry_hash": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:2131e81f355d8dd5d16d2b8dcb28401092bb11a058f08f52a15624093ff8c3f6",
+            "context_hash": "sha256:3dd7912d3e653900a36b74267d7fcdeaadf2f5b941b1a9f0be5a1e83e522435a",
+            "detail_hash": "sha256:6193c37efa3e86860f8692e1a6f9f7f0065f10d763db0d77a6a429adccdf608a",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            ],
+            "public": {}
+          },
+          "id": "sha256:3ce6c9729c86c075ddf4421b56770e58fee4701210ea6373ddc3bb38f8153944",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "fH6zCFNJKMm0YKcwB88DOo-SZWE0Gv37r2mmdPkonEwY4TdKmp06lv_6r6hMQPpD-pHiMCUOoVqHjuWJT7CbAw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "cites.optional"
+          ],
+          "grants": null,
+          "reason": "cites_unmet",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36"
+            ],
+            "selected": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "Hx8fHx8fHx8fHx8fHx8fHw",
+          "request_hash": "sha256:100b7d40426934247ac6e59f1a1ca3d28189e23bea7d2bb8e8fd61e76219c23b",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {
+              "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          }
+        },
+        "submission_key": "sha256:719c5c0b3b140fcc6e82095c23afd6c348ffeca9d893ffa0569c1ed2ef305ae4"
+      }
+    },
+    {
+      "name": "citation-missing-or-denied",
+      "request": {
+        "tuple": {
+          "cites": {
+            "proof": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+          }
+        },
+        "submission": "ICAgICAgICAgICAgICAgIA"
+      },
+      "registry": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [
+        "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+      ],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "consume@1",
+            "status": "registered",
+            "activated": false,
+            "process": "consume@1",
+            "process_hash": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "registry_hash": "sha256:c8df2e8d91b632731b8c7b15a48c19eba43a8e903c409becd7fafc7c7e4ad1f1",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:dbe7e9823d2897ebb00fb063ff76673d75bb2deb481a75ebc7d8e7a7d1cea512",
+            "context_hash": "sha256:98384654c711ed7bf8aae690d507e8271172fe4191cc68a396bf7be45ff573e3",
+            "detail_hash": "sha256:fd3bb6ce2faf1e3f81c7d0182d64f7d3e79e2eadcfe591e97a6846c9435a496b",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:ead64bbf47ab4de8d4b2424656ce7cb16fee364c30246ad3b3726a29f04868fd",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "PHBnGF538z9taq0OiBGlYko5zhkMzHnKWYLfvY5CjxxdnYGYUqMS7oasFHuRXuudQtY25Qe6wsEK6UyfayuxAw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "cites.proof"
+          ],
+          "grants": null,
+          "reason": "cites_unmet",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36"
+            ],
+            "selected": "sha256:58aac5581d4e3acb5312f447bfaad00f157c2f34d0285f7af0d1ea02669e8a36",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "ICAgICAgICAgICAgICAgIA",
+          "request_hash": "sha256:d92c0dc3045132628770bb30cce542192369fb7c2cb5b0438ec9c07f2b6f8b16",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:c9908c51d2a25368c93330ad896b830f5845ea36f86931c9a36fc2fd57e5d704"
+      }
+    },
+    {
+      "name": "once-slot-scope",
+      "request": {
+        "tuple": {
+          "cites": {
+            "one": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
+            "two": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+          }
+        },
+        "submission": "ISEhISEhISEhISEhISEhIQ"
+      },
+      "registry": "sha256:47c1b058f2588c98dd75ab44bb5eee227250088d77a2766db2333273d9da80fc",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [
+        {
+          "slot": "two",
+          "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+        }
+      ],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "slots@1",
+            "status": "registered",
+            "activated": false,
+            "process": "slots@1",
+            "process_hash": "sha256:d0b9a56354f3dd220a2beb97a65c522f1a930560401fb498324203d5a243127c",
+            "registry_hash": "sha256:47c1b058f2588c98dd75ab44bb5eee227250088d77a2766db2333273d9da80fc",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:f86665cf6d9cde539245bff462341a243a641bceb8e532fb98cbfd70c2cb83d6",
+            "context_hash": "sha256:c5d966e1fb6849090664e95a536e39114bc94da402652b3936aa2881b789f482",
+            "detail_hash": "sha256:eba61b1c37ea8ca3945cb43b00f59c78c7e369fc20c69d2439d712e3888e2f54",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            ],
+            "public": {}
+          },
+          "id": "sha256:bf0635b82a49a10455165cc862461cc21f22cf7f97f6f8ada7f61141214d582a",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "loTT3icIPD5i0cnfHIGn32SmGkiUv3lk5zGwgMSi14n3SrbhKaURN_rdX_AgRTT9AT8r3a61Tre2iwFCWbOsBQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Recorded. The RUN did not activate.",
+          "findings": [],
+          "unmet": [
+            "cites.two"
+          ],
+          "grants": null,
+          "reason": "citation_spent",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:d0b9a56354f3dd220a2beb97a65c522f1a930560401fb498324203d5a243127c"
+            ],
+            "selected": "sha256:d0b9a56354f3dd220a2beb97a65c522f1a930560401fb498324203d5a243127c",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "ISEhISEhISEhISEhISEhIQ",
+          "request_hash": "sha256:213fcb2849dc3278444b4af1d2cee230978582de21a874497c458d2b66cc3aa0",
+          "continue": null,
+          "spent": [
+            {
+              "slot": "two",
+              "id": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          ],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {
+              "one": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284",
+              "two": "sha256:3a2c0214dec514a6c27a59883a018125d99ce524a36af0baa920a8adcc1c6284"
+            }
+          }
+        },
+        "submission_key": "sha256:b205cd0c3f42b338508266bc954f65407c19288d321309c594e55d0c06ef44ef"
+      }
+    },
+    {
+      "name": "truthy-not-ok",
+      "request": {
+        "tuple": {},
+        "submission": "IiIiIiIiIiIiIiIiIiIiIg"
+      },
+      "registry": "sha256:41556626d4af48e169739da21350d3ba7cf178c5f1302de24611bc194606381e",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "strict-truth@1",
+            "status": "not",
+            "activated": true,
+            "process": "strict-truth@1",
+            "process_hash": "sha256:06a634232c2c359c24aeb2a0d8f0a342960afefd094d444d4819ee1674161342",
+            "registry_hash": "sha256:41556626d4af48e169739da21350d3ba7cf178c5f1302de24611bc194606381e",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:4effd3103dd08e6f4da7c59e6a27d167d84480f6fc426555949ab8a5323b80da",
+            "detail_hash": "sha256:3fa14ab1f6969cff71377a025628da8dc5f872365f86b4f3b751b60a8bbb175c",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:842d7aa0da257d2463e3a065accba68cc7e0ea79fcd94ba201a488c4320122b0",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "uFowQ4qgmSPL_QoXHy30D7_Cl_cbjdH-HPgPk0OSya1gy4ssAnhSJ-yFnXL2BjDGYRnK_3XatE0JQLQ_Ppz2Bw"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Rejected",
+          "findings": [
+            {
+              "step": "truthy",
+              "result": "not",
+              "reason": "Boolean true required"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_not",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:06a634232c2c359c24aeb2a0d8f0a342960afefd094d444d4819ee1674161342"
+            ],
+            "selected": "sha256:06a634232c2c359c24aeb2a0d8f0a342960afefd094d444d4819ee1674161342",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "IiIiIiIiIiIiIiIiIiIiIg",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:782c3ad086ed23b8384e0ae66f031715dc0c0aa6486bf04ec752261cf344e090"
+      }
+    },
+    {
+      "name": "declared-doubt",
+      "request": {
+        "tuple": {},
+        "submission": "IyMjIyMjIyMjIyMjIyMjIw"
+      },
+      "registry": "sha256:9cb870cde48898690b8a0de5ddc1eb0e65167316492b734cd6aca208c0efb66c",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "explicit-doubt@1",
+            "status": "doubt",
+            "activated": true,
+            "process": "explicit-doubt@1",
+            "process_hash": "sha256:67714aa5398e86cb25ee34698a06e0d3243755e29d80043a7c61bae53d2a66b4",
+            "registry_hash": "sha256:9cb870cde48898690b8a0de5ddc1eb0e65167316492b734cd6aca208c0efb66c",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:96e84ef53c4eb966f09771c6436937376ff0205edd2bb708759e52cacb908ab1",
+            "detail_hash": "sha256:0894666f0239d74b7ce6f7bdf19be97a1ece171034854352ecfbfaa1cad4691e",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:c1987fec58f3ea5523d36605cf0cde91e7cc56ba48993358f97bb5a634b1bb9e",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "kWfFdSdxWRqv34ji15TktcLS92AFw19dCj6cJ9EreTTtom03aCl9ymo50UgFcONtLjkSozLnusrokAjFBdQ_BA"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Undecided",
+          "findings": [
+            {
+              "step": "conditional",
+              "result": "doubt",
+              "reason": "Insufficient"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "check_doubt",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:67714aa5398e86cb25ee34698a06e0d3243755e29d80043a7c61bae53d2a66b4"
+            ],
+            "selected": "sha256:67714aa5398e86cb25ee34698a06e0d3243755e29d80043a7c61bae53d2a66b4",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "IyMjIyMjIyMjIyMjIyMjIw",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:819a2b84ff6ee3e84af54ebd81b996174593729504586ad5a08efbec9b9b1d10"
+      }
+    },
+    {
+      "name": "unsafe-grant",
+      "request": {
+        "tuple": {},
+        "submission": "JCQkJCQkJCQkJCQkJCQkJA"
+      },
+      "registry": "sha256:90fbc6689de447c29160fa1933be77d7b924ff2205807c94f5755361582884ce",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "unsafe-grant@1",
+            "status": "doubt",
+            "activated": true,
+            "process": "unsafe-grant@1",
+            "process_hash": "sha256:1f954b215ca59c352ffb497245ff47c00990111fad71c808ec17c9afbfa4b51a",
+            "registry_hash": "sha256:90fbc6689de447c29160fa1933be77d7b924ff2205807c94f5755361582884ce",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+            "context_hash": "sha256:0c5b751d2c26d77422bf63a9cb5197da826e562393e4ee14695c4c525c449643",
+            "detail_hash": "sha256:664e5a5efb0afbfde2b10b1db936ab9403a923bd2c663c2da59c37dfc1ba40cb",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [],
+            "public": {}
+          },
+          "id": "sha256:568d5e35ea46ca7cf9cdcfa1038bbc1b74fe5c214efb7de985713eb2baa98e3c",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "IvyfkoWlEqO6-tR5dlv86s-NxY3rU9rsqsS0SgPsBip8j7l_xGbv0mKQNVqPNZlNnqOn5252ZDbAjvkJ0ZbRCg"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Undecided",
+          "findings": [
+            {
+              "step": "grants",
+              "result": "doubt",
+              "reason": "The grants could not be computed.",
+              "error": "eval_range"
+            }
+          ],
+          "unmet": null,
+          "grants": null,
+          "reason": "grants_doubt",
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:1f954b215ca59c352ffb497245ff47c00990111fad71c808ec17c9afbfa4b51a"
+            ],
+            "selected": "sha256:1f954b215ca59c352ffb497245ff47c00990111fad71c808ec17c9afbfa4b51a",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "JCQkJCQkJCQkJCQkJCQkJA",
+          "request_hash": "sha256:4d97ed2603ccff9aae0e45531fcdd03377598e0e23199c7204380985ab07ce4f",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {}
+          }
+        },
+        "submission_key": "sha256:2aaaa7596b101c1855e01eefca24d3b43922591ecaab5d6f59620009129f1fbd"
+      }
+    },
+    {
+      "name": "v2-citation",
+      "request": {
+        "tuple": {
+          "cites": {
+            "proof": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+          }
+        },
+        "submission": "JSUlJSUlJSUlJSUlJSUlJQ"
+      },
+      "registry": "sha256:90118bf82ebecb28eab1547b8c24158c98c540bd14b34a64abe30a61673b5c2d",
+      "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "when": "2026-11-25T00:00:00Z",
+      "read_exclude": [],
+      "observed_completed": null,
+      "observed_spent": [],
+      "expected": {
+        "receipt": {
+          "header": {
+            "logline": "receipt@2",
+            "frequency": "v2-cite@1",
+            "status": "ok",
+            "activated": true,
+            "process": "v2-cite@1",
+            "process_hash": "sha256:626bada64bffb0d394a7e14babb0d3979a49ce9c3877834761e2799613bf534d",
+            "registry_hash": "sha256:90118bf82ebecb28eab1547b8c24158c98c540bd14b34a64abe30a61673b5c2d",
+            "run": "open",
+            "instance": null,
+            "input_hash": "sha256:9d26cd90307238e40e2765b09fc03902fb4f0262f8bd27159b6390060a7eb184",
+            "context_hash": "sha256:2baaf1431730a54d14faeec2f16f0c2796c572d9936d8e9ed7e2eb833739f38d",
+            "detail_hash": "sha256:3a06745132a69b90cdcb606e62b996a545013cb241a7f165085912d1aaf3c320",
+            "when": "2026-11-25T00:00:00Z",
+            "by": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "prev": [
+              "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            ],
+            "public": {}
+          },
+          "id": "sha256:dfb8b31cea480dccca5cc803c4c76183e2280519cbcbcd8ab4fb6b0d8f865001",
+          "sig": {
+            "alg": "Ed25519",
+            "key": "sha256:854223887738ec84fa8c1f65bdeca176f1c6210a7af10f2a29d12581ec52e19b",
+            "value": "KH9-GtsxXGLawQtrL1s7719oBntBvha2g-rYVXSdIqMVgLey4lpjUPYMNozPcP5icc-m8aufcw9AvAvpO2U4AQ"
+          }
+        },
+        "detail": {
+          "logline": "detail@2",
+          "consequence": "Accepted",
+          "findings": [],
+          "unmet": null,
+          "grants": {
+            "owner": "p:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "reason": null,
+          "recognition": {
+            "outcome": "unique",
+            "matches": [
+              "sha256:626bada64bffb0d394a7e14babb0d3979a49ce9c3877834761e2799613bf534d"
+            ],
+            "selected": "sha256:626bada64bffb0d394a7e14babb0d3979a49ce9c3877834761e2799613bf534d",
+            "diagnostics": [],
+            "ops_used": 1
+          }
+        },
+        "context": {
+          "logline": "context@1",
+          "submission": "JSUlJSUlJSUlJSUlJSUlJQ",
+          "request_hash": "sha256:ddba12ddb61d37a6e8e8eab009adff43673b1b35cdcbda440e633843d7160dee",
+          "continue": null,
+          "spent": [],
+          "completed": null,
+          "resolved": {
+            "root": null,
+            "parents": {},
+            "cites": {
+              "proof": "sha256:e9de6b2e19edc95e2d3f90c97f93aca69c04c895659611f1328eb057b1d17061"
+            }
+          }
+        },
+        "submission_key": "sha256:eb010f3c37eef9a24fab27a2543eab461fa37443e2c4a78e9510df6ea7c456ba"
+      }
+    }
+  ]
+}

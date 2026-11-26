@@ -10,6 +10,7 @@ export type KeyRing = Record<string, { jwk: PublicJwk; not_before?: string; not_
 
 const ALG = { name: "Ed25519" } as const;
 export const SIGNING_DOMAIN = "logline-receipt-v1:";
+export const SIGNING_DOMAIN_V2 = "logline-receipt-v2:";
 
 /** Key id: sha256 over the JCS form of {crv, kty, x} (the RFC 7638 thumbprint input), as "sha256:<hex>". */
 export const keyId = (jwk: PublicJwk) => hashOf({ crv: jwk.crv, kty: jwk.kty, x: jwk.x });
@@ -29,14 +30,19 @@ export async function importMachineKey(jwk: PrivateJwk): Promise<MachineKey> {
   return { id: await keyId(pub), public: pub, private: priv };
 }
 
-export async function signId(key: MachineKey, id: string): Promise<string> {
-  return b64url(await crypto.subtle.sign(ALG, key.private, utf8(SIGNING_DOMAIN + id)));
+async function signDomain(key: MachineKey, id: string, domain: string): Promise<string> {
+  return b64url(await crypto.subtle.sign(ALG, key.private, utf8(domain + id)));
 }
 
-export async function verifyId(jwk: PublicJwk, id: string, sig: string): Promise<boolean> {
+async function verifyDomain(jwk: PublicJwk, id: string, sig: string, domain: string): Promise<boolean> {
   try {
     const pub = await crypto.subtle.importKey("jwk", { kty: "OKP", crv: "Ed25519", x: jwk.x }, ALG, false, ["verify"]);
     const raw = unb64url(sig);
-    return raw.length === 64 && (await crypto.subtle.verify(ALG, pub, raw, utf8(SIGNING_DOMAIN + id)));
+    return raw.length === 64 && (await crypto.subtle.verify(ALG, pub, raw, utf8(domain + id)));
   } catch { return false; }
 }
+
+export const signId = (key: MachineKey, id: string) => signDomain(key,id,SIGNING_DOMAIN);
+export const verifyId = (jwk: PublicJwk, id: string, sig: string) => verifyDomain(jwk,id,sig,SIGNING_DOMAIN);
+export const signIdV2 = (key: MachineKey, id: string) => signDomain(key,id,SIGNING_DOMAIN_V2);
+export const verifyIdV2 = (jwk: PublicJwk, id: string, sig: string) => verifyDomain(jwk,id,sig,SIGNING_DOMAIN_V2);
