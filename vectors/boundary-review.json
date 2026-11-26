@@ -1,0 +1,257 @@
+{
+  "format": "radio-boundary-review@1",
+  "status": "proposed-not-frozen",
+  "provenance": "Candidate package identities calculated independently with Python json/hashlib on ASCII JSON; law reused from an approved independent receipt fixture. Operational scenarios are expected acceptance cases, not executed native or archive integration tests.",
+  "package": {
+    "files": {
+      "process-type.json": "{\"id\":\"blue@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"and\":[{\"has\":\"did\"},{\"==\":[{\"var\":\"did\"},\"request\"]}]},\"runs\":[{\"after\":[],\"grants\":{\"owner\":{\"var\":\"$by\"},\"subject\":{\"var\":\"with.subject\"}},\"id\":\"open\",\"if_doubt\":\"Open undecided\",\"if_not\":\"Not opened\",\"if_ok\":\"Opened\",\"requires\":{\"with.subject\":\"string\"},\"steps\":[]},{\"after\":[\"open\"],\"grants\":{\"owner\":{\"var\":\"$by\"}},\"id\":\"review\",\"if_doubt\":\"Review undecided\",\"if_not\":\"Not reviewed\",\"if_ok\":\"Reviewed\",\"requires\":{\"with.score\":\"integer\"},\"steps\":[{\"check\":{\"==\":[{\"var\":\"$by\"},{\"var\":\"$parents.open.detail.grants.owner\"}]},\"id\":\"owner\",\"if_not\":\"not\",\"reason\":\"Owner required\"},{\"check\":{\">=\":[{\"var\":\"with.score\"},70]},\"id\":\"score\",\"if_not\":\"not\",\"reason\":\"Score below 70\"}]}]}",
+      "skills/participant/SKILL.md": "---\nname: participant\ndescription: Form a valid request and continue the blue trajectory.\n---\nRead the Process Type and your authorized evidence. Submit an expression only under your own mandate.\n",
+      "skills/observer/SKILL.md": "---\nname: observer\ndescription: Observe committed blue receipts and verify supplied evidence.\n---\nVerify receipts with independently trusted keys. Observing a receipt is not authority to act.\n"
+    },
+    "manifest": {
+      "logline": "diplomacy@1",
+      "files": {
+        "process-type.json": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+        "skills/participant/SKILL.md": "sha256:d5c156ceccba3552ee6e0a0abd135eb4e4ffed6d2b339c113de5be96177c422d",
+        "skills/observer/SKILL.md": "sha256:1b72948f49efe3b8a9372d7f293016ba8fa063ab5bbb16ec4d43f67383982c4c"
+      }
+    },
+    "package_id": "sha256:56b08f529eb14887275ea7ea1825ce1782441a9b990e8d2aa78eced5c5180e3e",
+    "law_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+  },
+  "guidance_revision": {
+    "files": {
+      "process-type.json": "{\"id\":\"blue@1\",\"issuer\":\"Example\",\"logline\":\"process-type@1\",\"recognize\":{\"and\":[{\"has\":\"did\"},{\"==\":[{\"var\":\"did\"},\"request\"]}]},\"runs\":[{\"after\":[],\"grants\":{\"owner\":{\"var\":\"$by\"},\"subject\":{\"var\":\"with.subject\"}},\"id\":\"open\",\"if_doubt\":\"Open undecided\",\"if_not\":\"Not opened\",\"if_ok\":\"Opened\",\"requires\":{\"with.subject\":\"string\"},\"steps\":[]},{\"after\":[\"open\"],\"grants\":{\"owner\":{\"var\":\"$by\"}},\"id\":\"review\",\"if_doubt\":\"Review undecided\",\"if_not\":\"Not reviewed\",\"if_ok\":\"Reviewed\",\"requires\":{\"with.score\":\"integer\"},\"steps\":[{\"check\":{\"==\":[{\"var\":\"$by\"},{\"var\":\"$parents.open.detail.grants.owner\"}]},\"id\":\"owner\",\"if_not\":\"not\",\"reason\":\"Owner required\"},{\"check\":{\">=\":[{\"var\":\"with.score\"},70]},\"id\":\"score\",\"if_not\":\"not\",\"reason\":\"Score below 70\"}]}]}",
+      "skills/participant/SKILL.md": "---\nname: participant\ndescription: Form a valid request and continue the blue trajectory.\n---\nRead the Process Type and your authorized evidence. Submit an expression only under your own mandate.\nUse a fresh submission nonce for each new attempt.\n",
+      "skills/observer/SKILL.md": "---\nname: observer\ndescription: Observe committed blue receipts and verify supplied evidence.\n---\nVerify receipts with independently trusted keys. Observing a receipt is not authority to act.\n"
+    },
+    "manifest": {
+      "logline": "diplomacy@1",
+      "files": {
+        "process-type.json": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63",
+        "skills/participant/SKILL.md": "sha256:4033a39ce317a1482fa1a3a88c629501b7bde7b34b0ba219c01f282870e3ccfd",
+        "skills/observer/SKILL.md": "sha256:1b72948f49efe3b8a9372d7f293016ba8fa063ab5bbb16ec4d43f67383982c4c"
+      }
+    },
+    "package_id": "sha256:ffe72058309cd9b553feee2483215ef23f616cbd0bd27f02a23f80b2e95ef84b",
+    "law_hash": "sha256:dc26c29e0b6f333efc2cbdee754ce7664778e897b69b9091eed152e50a51fd63"
+  },
+  "pending_scenarios": [
+    {
+      "area": "authority",
+      "name": "wrong-issuer",
+      "given": "verified credential belongs to another issuer",
+      "expect": "unauthenticated"
+    },
+    {
+      "area": "authority",
+      "name": "wrong-resource",
+      "given": "credential not valid for this machine resource",
+      "expect": "unauthenticated"
+    },
+    {
+      "area": "authority",
+      "name": "wrong-client",
+      "given": "credential valid but client not admitted for operation",
+      "expect": "forbidden"
+    },
+    {
+      "area": "authority",
+      "name": "account-admin-client-read-only",
+      "given": "account has publication authority but client has read-only mandate",
+      "expect": "forbidden"
+    },
+    {
+      "area": "authority",
+      "name": "client-cannot-expand-account",
+      "given": "client grant allows publication but principal does not",
+      "expect": "forbidden"
+    },
+    {
+      "area": "authority",
+      "name": "spoofed-actor",
+      "given": "valid admission with tuple.who/by claiming another actor",
+      "expect": "actual attested by"
+    },
+    {
+      "area": "authority",
+      "name": "same-principal-two-clients",
+      "given": "both clients independently authorized for same submission and result access",
+      "expect": "same committed receipt for same nonce and request"
+    },
+    {
+      "area": "authority",
+      "name": "revoked-retry",
+      "given": "client grant withdrawn before retry",
+      "expect": "forbidden; no previous private result"
+    },
+    {
+      "area": "authority",
+      "name": "revoked-before-commit",
+      "given": "admission previously allowed; authoritative permission withdrawn before commit",
+      "expect": "no commit or notification"
+    },
+    {
+      "area": "authority",
+      "name": "evidence-use-vs-read",
+      "given": "law may use evidence under mandate; caller cannot retrieve raw private object",
+      "expect": "no raw private read"
+    },
+    {
+      "area": "authority",
+      "name": "denied-root",
+      "given": "known but unauthorized root versus missing root",
+      "expect": "same continuation_unavailable disposition"
+    },
+    {
+      "area": "authority",
+      "name": "denied-citation",
+      "given": "known but unauthorized citation versus missing citation",
+      "expect": "same cites_unmet disposition"
+    },
+    {
+      "area": "authority",
+      "name": "bundle-missing-authority",
+      "given": "head readable, one causal or completed evidence object not readable",
+      "expect": "no complete private bundle"
+    },
+    {
+      "area": "authority",
+      "name": "revoked-live-lease",
+      "given": "grant revoked after subscription; existing bounded lease expires",
+      "expect": "no delivery after lease expiry; no renewal without current grant"
+    },
+    {
+      "area": "history",
+      "name": "late-commit",
+      "given": "A allocates physical sequence 10, B allocates 11 and commits first, scan finishes, then A commits",
+      "expect": "next completed window includes A; B not skipped"
+    },
+    {
+      "area": "history",
+      "name": "concurrent-page",
+      "given": "commit occurs while fixed history window paginated",
+      "expect": "receipt appears in current or subsequent completed window exactly once after deduplication"
+    },
+    {
+      "area": "history",
+      "name": "empty-window",
+      "given": "no receipts match authorized tuning",
+      "expect": "terminal page with checkpoint"
+    },
+    {
+      "area": "history",
+      "name": "duplicate-live",
+      "given": "same committed receipt arrives via live and catch-up",
+      "expect": "one receipt identity after verification and deduplication"
+    },
+    {
+      "area": "history",
+      "name": "replacement",
+      "given": "new observer holds last completed checkpoint only",
+      "expect": "recover authorized committed receipt set without resident listener"
+    },
+    {
+      "area": "history",
+      "name": "changed-scope",
+      "given": "cursor used with changed client, visibility, machine or tuning",
+      "expect": "cursor_invalid; restart authorized recovery"
+    },
+    {
+      "area": "history",
+      "name": "expired-window",
+      "given": "retained snapshot or cursor unavailable",
+      "expect": "cursor_expired; explicit restart; no false complete"
+    },
+    {
+      "area": "history",
+      "name": "rollback",
+      "given": "transaction allocates position then rolls back",
+      "expect": "no receipt, no notice, no false history gap requirement"
+    },
+    {
+      "area": "transport",
+      "name": "stateless-retry",
+      "given": "new worker receives identical admitted submission",
+      "expect": "same committed response; replayed true"
+    },
+    {
+      "area": "transport",
+      "name": "changed-nonce-binding",
+      "given": "same actor and nonce with changed tuple or continuation",
+      "expect": "submission_conflict; no receipt"
+    },
+    {
+      "area": "transport",
+      "name": "unsupported-version",
+      "given": "incompatible request version",
+      "expect": "unsupported_version; no evaluation"
+    },
+    {
+      "area": "transport",
+      "name": "client-citation-bundle",
+      "given": "submission carries extra caller-supplied bundle or spent claims",
+      "expect": "invalid_request; authoritative resolution only"
+    },
+    {
+      "area": "transport",
+      "name": "unacknowledged-candidate",
+      "given": "signed candidate has no acknowledged commit",
+      "expect": "no committed reply or notification"
+    },
+    {
+      "area": "package",
+      "name": "duplicate-entry",
+      "given": "ZIP contains the same path twice",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "unsafe-entry",
+      "given": "absolute path, dot segment, backslash, symlink or file-directory conflict",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "case-collision",
+      "given": "two paths differ only in ASCII case",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "undeclared-file",
+      "given": "archive contains unlisted file or manifest lists absent file",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "bad-skill",
+      "given": "directory name disagrees with SKILL.md name or required metadata invalid",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "bad-law",
+      "given": "law bytes not canonical valid Process Type or digest mismatches",
+      "expect": "reject"
+    },
+    {
+      "area": "package",
+      "name": "guidance-change",
+      "given": "only instruction file bytes change",
+      "expect": "different package identity; identical law identity"
+    },
+    {
+      "area": "package",
+      "name": "archive-metadata-change",
+      "given": "compression, entry ordering or timestamps change only",
+      "expect": "same package identity"
+    },
+    {
+      "area": "package",
+      "name": "oversize",
+      "given": "actual decompressed bytes or entry count exceed declared limits",
+      "expect": "reject before extraction/publication"
+    }
+  ]
+}
