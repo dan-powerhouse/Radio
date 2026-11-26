@@ -32,6 +32,7 @@
     "zip": "node scripts/zip.mjs",
     "stage:edge": "npm run build && node scripts/stage-edge.mjs",
     "test:edge": "npm run stage:edge && node test/edge-v2.integration.mjs",
+    "test:mcp": "RADIO_TEST_MCP=yes npm run test:edge",
     "test:postgres": "npm run stage:edge && node test/postgres.integration.mjs && node test/postgres-v2.integration.mjs",
     "test:mutations": "npm run build && node scripts/test-mutations.mjs"
   },
